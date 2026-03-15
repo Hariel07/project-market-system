@@ -1,6 +1,6 @@
 # 🛒 Project Market System
 
-Sistema de mercado com CRUD completo, REST API, autenticação JWT, mensageria com Kafka, comunicação gRPC, mapa de entregas em tempo real e automações com n8n.
+Sistema de mercado com CRUD completo, REST API, autenticação JWT, mensageria com Kafka, comunicação gRPC para rastreamento em tempo real, mapa de entregas e automações inteligentes com n8n.
 
 > 💡 **Este projeto é uma base de conhecimento.**
 > Foi construído seguindo um processo completo de Engenharia de Software — do briefing até o código — servindo como porta de entrada e referência para projetos futuros.
@@ -33,8 +33,8 @@ Antes de qualquer código ou tela, definimos **o que o sistema precisa fazer**.
 |---|---|
 | **Nome** | Project Market System |
 | **Objetivo** | Sistema de mercado com gestão de produtos, pedidos e entregas |
-| **Público-alvo** | Administradores e entregadores |
-| **Problema que resolve** | Centralizar cadastro de produtos, autenticação e rastreamento de entregas |
+| **Público-alvo** | Administradores, entregadores e clientes |
+| **Problema que resolve** | Centralizar cadastro de produtos, autenticação, rastreamento de entregas e atendimento inteligente |
 
 ### Requisitos Funcionais (RF)
 
@@ -42,17 +42,21 @@ Antes de qualquer código ou tela, definimos **o que o sistema precisa fazer**.
 - **RF02** — O sistema deve permitir CRUD completo de produtos
 - **RF03** — Produtos devem suportar atributos variáveis por categoria (JSONB)
 - **RF04** — O sistema deve autenticar usuários via JWT
-- **RF05** — O sistema deve exibir um mapa de entregas em tempo real
+- **RF05** — O sistema deve exibir um mapa de entregas com rastreamento em tempo real
 - **RF06** — O sistema deve emitir eventos ao criar/atualizar pedidos (Kafka)
-- **RF07** — O sistema deve suportar automações via n8n
+- **RF07** — O sistema deve enviar email de confirmação ao criar um pedido
+- **RF08** — O sistema deve alertar quando o estoque de um produto estiver baixo
+- **RF09** — O sistema deve enviar relatório diário de vendas por email
+- **RF10** — O sistema deve responder dúvidas de clientes via WhatsApp com IA (Gemini/GPT), encaminhando casos complexos para um humano
 
 ### Requisitos Não Funcionais (RNF)
 
 - **RNF01** — Toda a infraestrutura deve rodar em Docker
 - **RNF02** — O backend deve ser modular por domínio
-- **RNF03** — A comunicação interna entre serviços deve usar gRPC
-- **RNF04** — O sistema deve usar TypeScript no frontend e backend
-- **RNF05** — O código deve ser comentado para fins didáticos
+- **RNF03** — A comunicação REST será usada em toda a API
+- **RNF04** — gRPC será usado exclusivamente para o stream de localização em tempo real (mapa de entregas)
+- **RNF05** — O sistema deve usar TypeScript no frontend e backend
+- **RNF06** — O código deve ser comentado para fins didáticos
 
 ---
 
@@ -79,7 +83,7 @@ Mockup de Alta Fidelidade
 | **Dashboard** | Visão geral do sistema |
 | **Lista de Produtos** | Exibição e busca de produtos |
 | **Formulário de Produto** | Criar e editar produto (com JSONB dinâmico) |
-| **Mapa de Entregas** | Rastreamento de pedidos em tempo real |
+| **Mapa de Entregas** | Rastreamento de pedidos em tempo real via gRPC |
 
 > 🔗 Link do Figma: *(será adicionado após o design)*
 
@@ -95,7 +99,7 @@ Após o design, modelamos as **entidades e funções** do sistema com UML antes 
 |---|---|---|
 | **Casos de Uso** | Draw.io | O que cada ator pode fazer no sistema |
 | **Diagrama de Classes** | Draw.io | Entidades, atributos e relacionamentos |
-| **Diagrama de Sequência** | Draw.io | Fluxo de uma requisição (ex: login) |
+| **Diagrama de Sequência** | Draw.io | Fluxo de uma requisição (ex: login, pedido) |
 | **Diagrama de Componentes** | Draw.io | Como os módulos se comunicam |
 
 ### Entidades principais (prévia)
@@ -133,7 +137,7 @@ Entrega
 - localizacao: JSONB
 -----------------
 + atualizarStatus(status: String): void
-+ atualizarLocalizacao(lat, lng): void
++ streamLocalizacao(lat, lng): void   ← via gRPC
 ```
 
 ---
@@ -152,18 +156,22 @@ Nível 4 — Código      → Classes, interfaces e dependências (UML)
 ### Nível 2 — Visão de Containers (prévia)
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                  Project Market System               │
-│                                                      │
-│  [React Frontend] ──────→ [Nginx] ──────→ [Backend] │
-│                                               │      │
-│                                        ┌──────┴───┐  │
-│                                        │PostgreSQL│  │
-│                                        │  Redis   │  │
-│                                        │  Kafka   │  │
-│                                        └──────────┘  │
-│  [n8n] ←──────── eventos ────────────── [Backend]   │
-└─────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                    Project Market System                      │
+│                                                               │
+│  [React Frontend] ──── REST ────→ [Nginx] ───→ [Backend]     │
+│                                                    │          │
+│                         gRPC (só localização)      │          │
+│  [Mapa de Entregas] ←────────────────────────── [Backend]    │
+│                                                    │          │
+│                                          ┌─────────┴──────┐  │
+│                                          │  PostgreSQL     │  │
+│                                          │  Redis          │  │
+│                                          │  Kafka          │  │
+│                                          └────────────────┘  │
+│  [n8n] ←──── eventos Kafka ────────────── [Backend]          │
+│  [WhatsApp] → [n8n] → [Gemini/GPT] → resposta automática     │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 > 🔗 Diagramas completos: *(serão adicionados no Draw.io)*
@@ -176,16 +184,64 @@ Nível 4 — Código      → Classes, interfaces e dependências (UML)
 |---|---|
 | Frontend | React + TypeScript |
 | Backend | Node.js + Express + TypeScript |
-| Comunicação interna | gRPC |
+| Comunicação principal | REST API |
+| Comunicação de localização | gRPC *(exclusivo para stream do mapa de entregas)* |
 | Mensageria | Apache Kafka |
 | Banco de Dados | PostgreSQL 16 (JSONB) |
 | Cache / JWT | Redis |
 | Autenticação | JWT + OAuth |
 | Automações | n8n |
+| Atendimento IA | n8n + Gemini/GPT + WhatsApp |
 | Proxy / Roteamento | Nginx |
 | Infraestrutura | Docker + Docker Compose |
 | Design | Figma |
 | Modelagem | Draw.io (UML + C4 Model) |
+
+---
+
+## 🤖 Automações com n8n
+
+O n8n é responsável por todos os fluxos automáticos do sistema, acionados por eventos do Kafka ou por agendamento.
+
+### 1. 📦 Email de Confirmação de Pedido
+**Gatilho:** Kafka recebe evento `pedido.criado`
+**Fluxo:**
+```
+Kafka (pedido.criado) → n8n → formata dados do pedido → envia email ao cliente
+```
+
+---
+
+### 2. ⚠️ Alerta de Estoque Baixo
+**Gatilho:** Kafka recebe evento `produto.estoque_baixo`
+**Fluxo:**
+```
+Kafka (produto.estoque_baixo) → n8n → verifica quantidade → envia email/Telegram ao administrador
+```
+
+---
+
+### 3. 📊 Relatório Diário de Vendas
+**Gatilho:** Agendado todos os dias às 8h
+**Fluxo:**
+```
+Schedule (08:00) → n8n → consulta API de vendas do dia → monta relatório → envia por email ao administrador
+```
+
+---
+
+### 4. 🤖 Atendimento Inteligente via WhatsApp + IA
+**Gatilho:** Cliente envia mensagem no WhatsApp
+**Fluxo:**
+```
+WhatsApp → n8n → analisa mensagem
+                    ↓
+          IA (Gemini/GPT) responde dúvidas simples
+          (produtos, status de pedido, preços)
+                    ↓
+          Se complexo → encaminha para atendente humano
+```
+> Esta automação elimina atendimentos repetitivos e garante resposta imediata 24h.
 
 ---
 
@@ -247,10 +303,10 @@ docker-compose up -d postgres redis
 Docker
 ├── nginx        → Porta 80 — roteia frontend e backend
 ├── frontend     → React (porta 3000 interna)
-├── backend      → Node.js + Express + gRPC (portas 4000 e 50051 internas)
+├── backend      → Node.js + Express (porta 4000) + gRPC para localização (porta 50051)
 ├── postgres     → Banco de dados (porta 5432)
 ├── redis        → Cache e controle de tokens JWT (porta 6379)
-├── n8n          → Automações (porta 5678)
+├── n8n          → Automações e atendimento IA (porta 5678)
 ├── zookeeper    → Gerenciador do Kafka
 └── kafka        → Mensageria entre serviços (porta 9092 interna)
 ```
@@ -320,7 +376,8 @@ project-market-system/
 │       │       ├── delivery.repository.ts
 │       │       ├── delivery.service.ts
 │       │       ├── delivery.controller.ts
-│       │       └── delivery.routes.ts
+│       │       ├── delivery.routes.ts
+│       │       └── delivery.grpc.ts      # Stream de localização via gRPC
 │       ├── shared/
 │       │   ├── middlewares/
 │       │   │   └── auth.middleware.ts
@@ -332,7 +389,7 @@ project-market-system/
 │       │   │   ├── producer.ts
 │       │   │   └── consumer.ts
 │       │   ├── grpc/
-│       │   │   └── server.ts
+│       │   │   └── server.ts             # Servidor gRPC exclusivo para localização
 │       │   └── errors/
 │       │       └── AppError.ts
 │       └── app.ts
@@ -350,7 +407,7 @@ project-market-system/
         │   │   ├── ProductFormPage.tsx
         │   │   └── product.service.ts
         │   └── deliveries/
-        │       ├── DeliveryMapPage.tsx
+        │       ├── DeliveryMapPage.tsx    # Mapa com stream gRPC de localização
         │       └── delivery.service.ts
         └── shared/
             ├── components/
@@ -379,7 +436,7 @@ project-market-system/
 ### 🧩 Fase 2 — Modelagem (UML + C4 Model)
 - [ ] Diagrama de Casos de Uso
 - [ ] Diagrama de Classes (entidades e relacionamentos)
-- [ ] Diagrama de Sequência (fluxo de login, criação de produto)
+- [ ] Diagrama de Sequência (fluxo de login, criação de pedido)
 - [ ] C4 Model — Nível 1 (Contexto)
 - [ ] C4 Model — Nível 2 (Containers)
 - [ ] C4 Model — Nível 3 (Componentes)
@@ -390,16 +447,16 @@ project-market-system/
 - [ ] Criar tabela `deliveries`
 - [ ] Testar queries CRUD
 
-### ⚙️ Fase 4 — Backend
+### ⚙️ Fase 4 — Backend (REST API)
 - [ ] Estrutura de pastas modular
 - [ ] Conexão com PostgreSQL e Redis
 - [ ] CRUD de Produtos (GET, POST, PUT, DELETE)
 - [ ] Registro e Login com JWT + OAuth
 - [ ] Middleware de autenticação
-- [ ] Eventos Kafka (pedido criado, status atualizado)
-- [ ] Servidor gRPC para comunicação interna
+- [ ] Eventos Kafka (pedido criado, estoque baixo)
+- [ ] Stream de localização via gRPC
 
-### 🖥️ Fase 5 — Frontend
+### 🖥️ Fase 5 — Frontend (React)
 - [ ] Tela de Login/Register
 - [ ] Listagem de Produtos
 - [ ] Formulário Criar/Editar Produto
@@ -407,9 +464,10 @@ project-market-system/
 - [ ] Mapa de entregas em tempo real
 
 ### 🤖 Fase 6 — Automações n8n
-- [ ] Notificação de novo pedido
-- [ ] Email de confirmação
-- [ ] Integração com WhatsApp/Telegram
+- [ ] Email de confirmação de pedido
+- [ ] Alerta de estoque baixo
+- [ ] Relatório diário de vendas por email
+- [ ] Atendimento inteligente via WhatsApp + IA (Gemini/GPT)
 
 ---
 
@@ -451,8 +509,8 @@ docker-compose up -d --build frontend
 - **Docker Compose** — orquestração de múltiplos containers para ambiente de desenvolvimento
 - **JWT + OAuth** — autenticação stateless via token com suporte a provedores externos
 - **Redis** — cache de consultas e invalidação de tokens JWT no logout
-- **REST API** — padrão de comunicação entre frontend e backend
-- **gRPC** — comunicação de alta performance entre serviços internos
-- **Kafka** — mensageria assíncrona para eventos entre módulos
+- **REST API** — padrão principal de comunicação entre frontend e backend
+- **gRPC** — usado exclusivamente para stream de localização em tempo real no mapa de entregas
+- **Kafka** — mensageria assíncrona para eventos entre módulos (pedido criado, estoque baixo)
 - **Nginx** — reverse proxy que roteia requisições para os serviços corretos
-- **n8n** — automação de fluxos sem código (notificações, integrações)
+- **n8n** — automação de fluxos: confirmação de pedido, alerta de estoque, relatório diário e atendimento via WhatsApp com IA
