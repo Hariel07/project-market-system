@@ -1,6 +1,113 @@
-version: '3.8'
+# ============================================================
+# Docker Compose — project-market-system
+# Todos os serviços do projeto em containers isolados
+# ============================================================
+#
+# SERVIÇOS:
+#   nginx      → Reverse proxy (porta 80)
+#   frontend   → React (porta 3000 interna)
+#   backend    → Node.js + Express + gRPC (porta 4000 interna)
+#   postgres   → Banco de dados (porta 5432)
+#   redis      → Cache e controle de tokens JWT (porta 6379)
+#   n8n        → Automações (porta 5678)
+#   zookeeper  → Necessário para o Kafka funcionar
+#   kafka      → Mensageria entre serviços (porta 9092)
+#
+# COMO USAR:
+#   Subir tudo:         docker-compose up -d
+#   Parar tudo:         docker-compose down
+#   Ver logs:           docker-compose logs -f [serviço]
+#   Rebuild backend:    docker-compose up -d --build backend
+# ============================================================
 
 services:
+
+  # ------------------------------------------------------------
+  # NGINX — Reverse Proxy
+  # Recebe todas as requisições na porta 80 e roteia:
+  #   /api  → backend (Node.js)
+  #   /     → frontend (React)
+  #   /n8n  → n8n (automações)
+  # ------------------------------------------------------------
+  nginx:
+    image: nginx:alpine
+    container_name: market-nginx
+    ports:
+      - "80:80"           # Porta pública — acesse pelo navegador em http://localhost
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro   # Arquivo de configuração do nginx
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+
+  # ------------------------------------------------------------
+  # FRONTEND — React
+  # Aplicação visual do sistema
+  # Acessível via nginx em: http://localhost
+  # ------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend    # Onde está o Dockerfile do frontend
+      dockerfile: Dockerfile
+    container_name: market-frontend
+    environment:
+      - REACT_APP_API_URL=http://localhost/api   # URL da API que o React vai consumir
+    volumes:
+      - ./frontend:/app             # Hot reload: alterações locais refletem no container
+      - /app/node_modules           # Evita sobrescrever node_modules do container
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # ------------------------------------------------------------
+  # BACKEND — Node.js + Express + gRPC
+  # API REST na porta 4000 (interna)
+  # Servidor gRPC na porta 50051 (interna)
+  # Acessível via nginx em: http://localhost/api
+  # ------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend     # Onde está o Dockerfile do backend
+      dockerfile: Dockerfile
+    container_name: market-backend
+    environment:
+      # Banco de dados
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: market_user
+      DB_PASS: market_pass
+      DB_NAME: market_db
+
+      # Redis (cache e JWT)
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      # JWT
+      JWT_SECRET: troque_esta_chave_por_uma_segura_em_producao
+      JWT_EXPIRES_IN: 1d
+
+      # Kafka
+      KAFKA_BROKER: kafka:9092
+
+      # Ambiente
+      NODE_ENV: development
+      PORT: 4000
+      GRPC_PORT: 50051
+    volumes:
+      - ./backend:/app          # Hot reload
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+    restart: unless-stopped
+
+  # ------------------------------------------------------------
+  # POSTGRESQL — Banco de Dados Principal
+  # Acessível externamente para o pgAdmin em: localhost:5432
+  # Internamente os containers usam o hostname "postgres"
+  # ------------------------------------------------------------
   postgres:
     image: postgres:16
     container_name: market-db
@@ -9,10 +116,101 @@ services:
       POSTGRES_PASSWORD: market_pass
       POSTGRES_DB: market_db
     ports:
-      - "5432:5432"
+      - "5432:5432"     # Exposto para acesso pelo pgAdmin no Windows
     volumes:
-      - market-db-data:/var/lib/postgresql/data
+      - market-db-data:/var/lib/postgresql/data   # Dados persistidos
     restart: unless-stopped
 
+  # ------------------------------------------------------------
+  # REDIS — Cache e Controle de Tokens JWT
+  # Usado para:
+  #   - Invalidar tokens JWT (logout)
+  #   - Cache de consultas frequentes
+  #   - Sessões temporárias
+  # ------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: market-redis
+    ports:
+      - "6379:6379"     # Exposto para debug local se necessário
+    volumes:
+      - market-redis-data:/data   # Dados persistidos
+    restart: unless-stopped
+
+  # ------------------------------------------------------------
+  # N8N — Automações e Integrações
+  # Interface acessível em: http://localhost:5678
+  # Exemplos de uso neste projeto:
+  #   - Notificações de novo pedido
+  #   - Envio de email de confirmação
+  #   - Integração com WhatsApp/Telegram
+  # ------------------------------------------------------------
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: market-n8n
+    ports:
+      - "5678:5678"     # Interface do n8n
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=admin123
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - WEBHOOK_URL=http://localhost:5678/
+    volumes:
+      - market-n8n-data:/home/node/.n8n    # Workflows salvos
+    restart: unless-stopped
+
+  # ------------------------------------------------------------
+  # ZOOKEEPER — Gerenciador do Kafka
+  # O Kafka depende do Zookeeper para funcionar
+  # Não é acessado diretamente — só pelo Kafka
+  # ------------------------------------------------------------
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: market-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - market-zookeeper-data:/var/lib/zookeeper/data
+    restart: unless-stopped
+
+  # ------------------------------------------------------------
+  # KAFKA — Mensageria entre Serviços
+  # Usado para:
+  #   - Evento: pedido criado → notificar entregador
+  #   - Evento: status atualizado → atualizar mapa em tempo real
+  #   - Comunicação assíncrona entre módulos
+  # Acessível internamente em: kafka:9092
+  # Acessível externamente em: localhost:9094 (para debug)
+  # ------------------------------------------------------------
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: market-kafka
+    ports:
+      - "9094:9094"     # Porta externa para debug/ferramentas locais
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    volumes:
+      - market-kafka-data:/var/lib/kafka/data
+    depends_on:
+      - zookeeper
+    restart: unless-stopped
+
+# ============================================================
+# VOLUMES — Persistência de dados
+# Os dados ficam salvos mesmo que os containers sejam recriados
+# Para apagar tudo: docker-compose down -v  ⚠️ CUIDADO
+# ============================================================
 volumes:
   market-db-data:
+  market-redis-data:
+  market-n8n-data:
+  market-zookeeper-data:
+  market-kafka-data:
