@@ -1093,3 +1093,7 @@ docker-compose up -d --build frontend
 - **Nginx** — reverse proxy que roteia requisições para os serviços corretos
 - **PWA** — cardápio QR Code acessível no navegador mobile sem instalação de app
 - **n8n** — automação de fluxos: confirmação de pedido, alerta de estoque, recálculo de custo, relatório diário e atendimento via WhatsApp com IA
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
