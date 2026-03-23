@@ -662,7 +662,7 @@ Briefing → Navigation Flow (FigJam) → Wireframe → Mockup de Alta Fidelidad
 ## 🎨 Fase 2 — Design de Telas (Figma)
 
 ### Navigation Flow — MVP 1
-![Briefing MVP 1](docs/briefing-mvp1.png)
+![Briefing MVP 1](docs/brifing%20Market%20System.png)
 
 > 🔗 Link do Figma: *(será adicionado após o design)*
 
