@@ -659,6 +659,11 @@ Briefing → Navigation Flow (FigJam) → Wireframe → Mockup de Alta Fidelidad
 | Dashboard | `#F97316` (laranja) | Dashboards, PDV em operação |
 | Mapa / Tracking | `#EF4444` (vermelho) | Rastreamento, Mapa Entregas, Mapa de Locais |
 
+## 🎨 Fase 2 — Design de Telas (Figma)
+
+### Navigation Flow — MVP 1
+![Briefing MVP 1](docs/briefing-mvp1.png)
+
 > 🔗 Link do Figma: *(será adicionado após o design)*
 
 ---
