@@ -42,7 +42,7 @@ export default function ComercianteLayout({ title, subtitle, actions, children }
             </button>
           ))}
         </nav>
-        <button className="sidebar-link sidebar-logout" onClick={() => navigate('/login')}>
+        <button className="sidebar-link sidebar-logout" onClick={() => { localStorage.removeItem('@MarketSystem:token'); localStorage.removeItem('@MarketSystem:user'); navigate('/login'); }}>
           <span className="sidebar-icon">🚪</span>
           Sair
         </button>

@@ -257,6 +257,8 @@
   border-radius: var(--radius-lg);
   background: rgba(255, 255, 255, 0.6);
   transition: all var(--transition-fast);
+  width: 100%;
+  overflow: hidden;
 }
 
 .demo-btn:hover {
@@ -274,6 +276,16 @@
   font-size: 0.6rem;
   font-weight: 600;
   color: var(--color-text-secondary);
+}
+
+.demo-sublabel {
+  font-size: 0.55rem;
+  opacity: 0.7;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
 }
 
 /* Footer */

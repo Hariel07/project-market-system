@@ -53,7 +53,7 @@ export interface Pedido {
   numero: string;
   comercioNome: string;
   comercioLogo: string;
-  status: 'confirmado' | 'preparando' | 'pronto' | 'saiu_entrega' | 'entregue' | 'cancelado';
+  status: 'novo' | 'confirmado' | 'preparando' | 'pronto' | 'saiu_entrega' | 'entregue' | 'cancelado';
   items: { nome: string; quantidade: number; preco: number }[];
   subtotal: number;
   taxaEntrega: number;
@@ -232,6 +232,7 @@ export function formatPrice(value: number): string {
 
 export function getStatusLabel(status: Pedido['status']): string {
   const labels: Record<Pedido['status'], string> = {
+    novo: 'Novo',
     confirmado: 'Confirmado',
     preparando: 'Preparando',
     pronto: 'Pronto',
@@ -244,6 +245,7 @@ export function getStatusLabel(status: Pedido['status']): string {
 
 export function getStatusColor(status: Pedido['status']): string {
   const colors: Record<Pedido['status'], string> = {
+    novo: 'badge-warning',
     confirmado: 'badge-info',
     preparando: 'badge-warning',
     pronto: 'badge-accent',

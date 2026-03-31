@@ -54,7 +54,7 @@ export default function ComercianteConfig() {
           </div>
         ))}
 
-        <button className="btn btn-outline btn-block config-logout" onClick={() => navigate('/login')}>
+        <button className="btn btn-outline btn-block config-logout" onClick={() => { localStorage.removeItem('@MarketSystem:token'); localStorage.removeItem('@MarketSystem:user'); navigate('/login'); }}>
           🚪 Sair da conta
         </button>
       </div>

@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes';
+import categoriasRoutes from './routes/categorias.routes';
+import produtosRoutes from './routes/produtos.routes';
 
 dotenv.config();
 
@@ -17,6 +19,8 @@ app.get('/api/status', (req, res) => {
 
 // Rotas Base API
 app.use('/api/auth', authRoutes);
+app.use('/api/categorias', categoriasRoutes);
+app.use('/api/produtos', produtosRoutes);
 
 app.listen(port, () => {
   console.log(`🚀 Servidor backend rodando na porta ${port}`);

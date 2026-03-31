@@ -1,69 +1,152 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ComercianteLayout from './ComercianteLayout';
-import { itensMock, formatPrice } from '../../data/mockData';
+import { api } from '../../lib/api';
 import './ComercianteItemForm.css';
 
-interface Composicao {
-  itemId: number;
+interface CategoriaAPI {
+  id: string;
   nome: string;
-  quantidade: number;
+  icone: string | null;
+}
+
+interface ProdutoAPI {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  precoVenda: number;
+  precoPromocional: number | null;
   unidade: string;
+  imagemUrl: string | null;
+  estoque: number;
+  isCombo: boolean;
+  ativo: boolean;
+  categoriaId: string | null;
+  categoria: CategoriaAPI | null;
 }
 
 export default function ComercianteItemForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditing = id && id !== 'novo';
-  const existing = isEditing ? itensMock.find(i => i.id === Number(id)) : null;
 
-  const [nome, setNome] = useState(existing?.nome || '');
-  const [descricao, setDescricao] = useState(existing?.descricao || '');
-  const [preco, setPreco] = useState(existing?.preco?.toString() || '');
-  const [precoOriginal, setPrecoOriginal] = useState(existing?.precoOriginal?.toString() || '');
-  const [categoria, setCategoria] = useState(existing?.categoriaNome || '');
-  const [unidade, setUnidade] = useState(existing?.unidadeMedida || 'un');
-  const [tipo, setTipo] = useState(existing?.tipo || 'simples');
-  const [estoque, setEstoque] = useState(existing?.estoque?.toString() || '');
-  const [emPromocao, setEmPromocao] = useState(existing?.emPromocao || false);
-  const [promocaoNome, setPromocaoNome] = useState(existing?.promocaoNome || '');
+  // Form state
+  const [nome, setNome] = useState('');
+  const [descricao, setDescricao] = useState('');
+  const [preco, setPreco] = useState('');
+  const [precoPromocional, setPrecoPromocional] = useState('');
+  const [categoriaId, setCategoriaId] = useState('');
+  const [unidade, setUnidade] = useState('UN');
+  const [estoque, setEstoque] = useState('');
+  const [isCombo, setIsCombo] = useState(false);
   const [ativo, setAtivo] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
 
-  // BOM — Bill of Materials
-  const [composicao, setComposicao] = useState<Composicao[]>(
-    existing?.tipo === 'composto' || existing?.tipo === 'combo'
-      ? [
-          { itemId: 7, nome: 'Smash Burger Duplo', quantidade: 2, unidade: 'un' },
-          { itemId: 10, nome: 'Batata Frita Grande', quantidade: 2, unidade: 'un' },
-        ]
-      : []
-  );
+  // Categorias vindas da API
+  const [categorias, setCategorias] = useState<CategoriaAPI[]>([]);
 
-  const addComposicao = () => {
-    setComposicao([...composicao, { itemId: 0, nome: '', quantidade: 1, unidade: 'un' }]);
+  // Carrega categorias + dados do produto (se editando)
+  useEffect(() => {
+    loadInitialData();
+  }, [id]);
+
+  const loadInitialData = async () => {
+    try {
+      setLoadingData(true);
+
+      // Busca categorias reais do comércio
+      try {
+        const catResponse = await api.get('/api/categorias');
+        setCategorias(catResponse.data);
+      } catch (err: any) {
+        // Se não tem categorias, segue sem elas
+        console.warn('Nenhuma categoria encontrada ou erro:', err.response?.data?.error);
+        setCategorias([]);
+      }
+
+      // Se editando, busca dados do produto
+      if (isEditing) {
+        const prodResponse = await api.get(`/api/produtos/${id}`);
+        const prod: ProdutoAPI = prodResponse.data;
+        setNome(prod.nome);
+        setDescricao(prod.descricao || '');
+        setPreco(prod.precoVenda.toString());
+        setPrecoPromocional(prod.precoPromocional?.toString() || '');
+        setCategoriaId(prod.categoriaId || '');
+        setUnidade(prod.unidade);
+        setEstoque(prod.estoque.toString());
+        setIsCombo(prod.isCombo);
+        setAtivo(prod.ativo);
+      }
+    } catch (error: any) {
+      console.error('Erro ao carregar dados:', error);
+      if (error.response?.status === 401) {
+        alert('Sessão expirada. Faça login novamente.');
+        navigate('/login');
+        return;
+      }
+      if (error.response?.status === 404) {
+        alert('Produto não encontrado.');
+        navigate('/comerciante/catalogo');
+        return;
+      }
+    } finally {
+      setLoadingData(false);
+    }
   };
 
-  const removeComposicao = (idx: number) => {
-    setComposicao(composicao.filter((_, i) => i !== idx));
-  };
-
-  const updateComposicao = (idx: number, field: keyof Composicao, value: string | number) => {
-    setComposicao(composicao.map((c, i) => i === idx ? { ...c, [field]: value } : c));
-  };
-
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!nome || !preco) {
+      alert('Nome e preço de venda são obrigatórios.');
+      return;
+    }
+
     setSaving(true);
-    setTimeout(() => {
-      setSaving(false);
+
+    const payload = {
+      nome,
+      descricao: descricao || null,
+      precoVenda: preco,
+      precoPromocional: precoPromocional || null,
+      categoriaId: categoriaId || null,
+      unidade,
+      estoque: estoque || '0',
+      isCombo,
+      ativo,
+    };
+
+    try {
+      if (isEditing) {
+        await api.put(`/api/produtos/${id}`, payload);
+      } else {
+        await api.post('/api/produtos', payload);
+      }
       navigate('/comerciante/catalogo');
-    }, 1500);
+    } catch (error: any) {
+      console.error('Erro ao salvar produto:', error);
+      alert(error.response?.data?.error || 'Erro ao salvar produto.');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loadingData) {
+    return (
+      <ComercianteLayout title={isEditing ? 'Editar Item' : 'Novo Item'} subtitle="Carregando...">
+        <div className="empty-state" style={{ padding: '3rem' }}>
+          <span className="empty-icon"><span className="spinner" /></span>
+          <h3>Carregando dados...</h3>
+        </div>
+      </ComercianteLayout>
+    );
+  }
 
   return (
     <ComercianteLayout
-      title={isEditing ? `Editar: ${existing?.nome}` : 'Novo Item'}
+      title={isEditing ? `Editar: ${nome}` : 'Novo Item'}
       subtitle={isEditing ? 'Edite as informações do item' : 'Cadastre um novo item no catálogo'}
     >
       <form className="item-form animate-fade-in-up" onSubmit={handleSave}>
@@ -80,21 +163,25 @@ export default function ComercianteItemForm() {
               <textarea id="item-desc" className="input textarea" placeholder="Descreva o item..." rows={3} value={descricao} onChange={e => setDescricao(e.target.value)} />
             </div>
             <div className="input-group">
-              <label htmlFor="item-cat">Categoria *</label>
-              <select id="item-cat" className="input select-input" value={categoria} onChange={e => setCategoria(e.target.value)} required>
-                <option value="">Selecione</option>
-                {['Alimentos', 'Laticínios', 'Bebidas', 'Limpeza', 'Hortifruti', 'Lanches', 'Combos', 'Pães', 'Bolos', 'Acompanhamentos'].map(c => (
-                  <option key={c} value={c}>{c}</option>
+              <label htmlFor="item-cat">Categoria</label>
+              <select id="item-cat" className="input select-input" value={categoriaId} onChange={e => setCategoriaId(e.target.value)}>
+                <option value="">Sem categoria</option>
+                {categorias.map(c => (
+                  <option key={c.id} value={c.id}>{c.nome}</option>
                 ))}
               </select>
+              {categorias.length === 0 && (
+                <small style={{ color: 'var(--text-secondary)', marginTop: '0.25rem', display: 'block' }}>
+                  Nenhuma categoria cadastrada. Crie categorias nas configurações.
+                </small>
+              )}
             </div>
             <div className="input-group">
-              <label htmlFor="item-tipo">Tipo do item *</label>
-              <select id="item-tipo" className="input select-input" value={tipo} onChange={e => setTipo(e.target.value)}>
-                <option value="simples">📋 Simples</option>
-                <option value="composto">🔗 Composto (tem composição)</option>
-                <option value="combo">📦 Combo</option>
-              </select>
+              <label>Tipo</label>
+              <label className="toggle-label" style={{ marginTop: '0.5rem' }}>
+                <input type="checkbox" className="checkbox" checked={isCombo} onChange={e => setIsCombo(e.target.checked)} />
+                <span>É um combo</span>
+              </label>
             </div>
           </div>
         </section>
@@ -108,18 +195,18 @@ export default function ComercianteItemForm() {
               <input id="item-preco" type="number" className="input" placeholder="0,00" step="0.01" min="0" value={preco} onChange={e => setPreco(e.target.value)} required />
             </div>
             <div className="input-group">
-              <label htmlFor="item-preco-original">Preço original (R$) <span className="optional">(para promoção)</span></label>
-              <input id="item-preco-original" type="number" className="input" placeholder="0,00" step="0.01" min="0" value={precoOriginal} onChange={e => setPrecoOriginal(e.target.value)} />
+              <label htmlFor="item-preco-promo">Preço promocional (R$) <span className="optional">(opcional)</span></label>
+              <input id="item-preco-promo" type="number" className="input" placeholder="0,00" step="0.01" min="0" value={precoPromocional} onChange={e => setPrecoPromocional(e.target.value)} />
             </div>
             <div className="input-group">
               <label htmlFor="item-unidade">Unidade de medida</label>
               <select id="item-unidade" className="input select-input" value={unidade} onChange={e => setUnidade(e.target.value)}>
-                <option value="un">Unidade (un)</option>
-                <option value="kg">Quilograma (kg)</option>
+                <option value="UN">Unidade (UN)</option>
+                <option value="KG">Quilograma (KG)</option>
                 <option value="L">Litro (L)</option>
-                <option value="ml">Mililitro (ml)</option>
-                <option value="g">Grama (g)</option>
-                <option value="pct">Pacote (pct)</option>
+                <option value="ML">Mililitro (ML)</option>
+                <option value="G">Grama (G)</option>
+                <option value="PCT">Pacote (PCT)</option>
               </select>
             </div>
             <div className="input-group">
@@ -128,97 +215,6 @@ export default function ComercianteItemForm() {
             </div>
           </div>
         </section>
-
-        {/* Seção 3: Promoção */}
-        <section className="form-section">
-          <h2 className="form-section-title">🏷️ Promoção</h2>
-          <div className="form-grid">
-            <div className="input-group">
-              <label className="toggle-label">
-                <input type="checkbox" className="checkbox" checked={emPromocao} onChange={e => setEmPromocao(e.target.checked)} />
-                <span>Item em promoção</span>
-              </label>
-            </div>
-            {emPromocao && (
-              <div className="input-group">
-                <label htmlFor="item-promo-nome">Nome da promoção</label>
-                <input id="item-promo-nome" type="text" className="input" placeholder="Ex: Oferta do dia" value={promocaoNome} onChange={e => setPromocaoNome(e.target.value)} />
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Seção 4: Composição / BOM (se composto ou combo) */}
-        {(tipo === 'composto' || tipo === 'combo') && (
-          <section className="form-section bom-section">
-            <div className="bom-header">
-              <h2 className="form-section-title">🔗 Composição (BOM)</h2>
-              <button type="button" className="btn btn-outline btn-sm" onClick={addComposicao}>
-                ➕ Adicionar componente
-              </button>
-            </div>
-            <p className="text-sm text-secondary mb-4">
-              {tipo === 'composto'
-                ? 'Defina os materiais/ingredientes que compõem este item. O estoque será descontado automaticamente.'
-                : 'Defina os itens que fazem parte deste combo.'
-              }
-            </p>
-
-            {composicao.length === 0 ? (
-              <div className="bom-empty">
-                <span>📦</span>
-                <p>Nenhum componente adicionado</p>
-                <button type="button" className="btn btn-primary btn-sm" onClick={addComposicao}>
-                  Adicionar primeiro componente
-                </button>
-              </div>
-            ) : (
-              <div className="bom-list">
-                <div className="bom-list-header">
-                  <span>Item componente</span>
-                  <span>Quantidade</span>
-                  <span>Unidade</span>
-                  <span></span>
-                </div>
-                {composicao.map((comp, idx) => (
-                  <div key={idx} className="bom-item">
-                    <select
-                      className="input select-input bom-select"
-                      value={comp.itemId}
-                      onChange={e => {
-                        const selected = itensMock.find(i => i.id === Number(e.target.value));
-                        updateComposicao(idx, 'itemId', Number(e.target.value));
-                        if (selected) updateComposicao(idx, 'nome', selected.nome);
-                      }}
-                    >
-                      <option value={0}>Selecione o item</option>
-                      {itensMock.filter(i => i.comercioId === 1 && i.tipo === 'simples').map(i => (
-                        <option key={i.id} value={i.id}>{i.nome}</option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      className="input bom-qty"
-                      min={1}
-                      value={comp.quantidade}
-                      onChange={e => updateComposicao(idx, 'quantidade', Number(e.target.value))}
-                    />
-                    <select className="input select-input bom-unit" value={comp.unidade} onChange={e => updateComposicao(idx, 'unidade', e.target.value)}>
-                      <option value="un">un</option>
-                      <option value="kg">kg</option>
-                      <option value="g">g</option>
-                      <option value="L">L</option>
-                      <option value="ml">ml</option>
-                    </select>
-                    <button type="button" className="btn btn-ghost btn-sm text-danger" onClick={() => removeComposicao(idx)}>
-                      🗑️
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
 
         {/* Ativo */}
         <section className="form-section">
