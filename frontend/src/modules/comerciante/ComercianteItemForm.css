@@ -1,0 +1,110 @@
+/* ====== Item Form ====== */
+
+.item-form {
+  max-width: 700px;
+}
+
+.form-section {
+  padding: var(--space-6);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+  margin-bottom: var(--space-4);
+}
+
+.form-section-title {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* BOM */
+.bom-section {
+  border-color: var(--color-primary-subtle);
+  background: linear-gradient(to right, var(--color-primary-subtle), var(--color-bg-card));
+}
+
+.bom-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.bom-header .form-section-title {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.bom-empty {
+  text-align: center;
+  padding: var(--space-8) var(--space-4);
+  color: var(--color-text-secondary);
+}
+
+.bom-empty span { font-size: 2rem; display: block; margin-bottom: var(--space-3); }
+.bom-empty p { margin-bottom: var(--space-4); }
+
+.bom-list { margin-top: var(--space-4); }
+
+.bom-list-header {
+  display: grid;
+  grid-template-columns: 1fr 100px 100px 40px;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+}
+
+.bom-item {
+  display: grid;
+  grid-template-columns: 1fr 100px 100px 40px;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  align-items: center;
+}
+
+.bom-item + .bom-item { border-top: 1px solid var(--color-border-light); }
+
+.bom-select { font-size: var(--font-size-sm); }
+.bom-qty { text-align: center; }
+.bom-unit { font-size: var(--font-size-sm); }
+
+/* Actions */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+}
+
+@media (max-width: 600px) {
+  .bom-list-header { display: none; }
+
+  .bom-item {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+    padding: var(--space-3) 0;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .form-actions .btn { width: 100%; }
+}

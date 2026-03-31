@@ -1,0 +1,133 @@
+/* ====== Pedidos Page ====== */
+
+.pedidos-section-title {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  margin-bottom: var(--space-4);
+  color: var(--color-text-secondary);
+}
+
+.pedidos-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-8);
+}
+
+.pedido-card {
+  padding: var(--space-4);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.pedido-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.pedido-card-active {
+  border-color: var(--color-primary-subtle);
+  background: linear-gradient(to right, var(--color-primary-subtle), var(--color-bg-card));
+}
+
+.pedido-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.pedido-card-store {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.pedido-store-logo {
+  font-size: 1.5rem;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.pedido-store-name {
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+}
+
+.pedido-number {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+.pedido-card-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+
+.pedido-item-tag {
+  padding: 2px 8px;
+  background: var(--color-surface);
+  border-radius: var(--radius-full);
+  font-size: 0.65rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.pedido-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pedido-total {
+  font-weight: 800;
+  font-size: var(--font-size-base);
+}
+
+.pedido-eta {
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.pedido-payment {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.pedido-progress {
+  margin-top: var(--space-3);
+}
+
+.pedido-card-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border-light);
+}
+
+@media (min-width: 768px) {
+  .pedidos-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .pedidos-page .container {
+    max-width: 900px;
+  }
+}

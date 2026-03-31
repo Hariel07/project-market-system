@@ -1,0 +1,320 @@
+/* ====== Pedido Status Page ====== */
+
+/* Hero */
+.status-hero {
+  text-align: center;
+  padding: var(--space-6) 0;
+  margin-bottom: var(--space-6);
+}
+
+.status-hero-icon {
+  font-size: 3.5rem;
+  margin-bottom: var(--space-3);
+  animation: float 3s ease-in-out infinite;
+}
+
+.status-hero-title {
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+  margin-bottom: var(--space-2);
+}
+
+.status-hero-eta {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Timeline */
+.status-timeline {
+  margin-bottom: var(--space-8);
+  padding: 0 var(--space-4);
+}
+
+.timeline-step {
+  display: flex;
+  gap: var(--space-4);
+  min-height: 56px;
+}
+
+.timeline-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 32px;
+  flex-shrink: 0;
+}
+
+.timeline-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+}
+
+.timeline-step.done .timeline-dot {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+.timeline-step.current .timeline-dot {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+  box-shadow: var(--shadow-primary);
+  animation: pulse 2s infinite;
+}
+
+.timeline-line {
+  width: 2px;
+  flex: 1;
+  min-height: 20px;
+  background: var(--color-border);
+  transition: background var(--transition-base);
+}
+
+.timeline-step.done .timeline-line {
+  background: var(--color-primary);
+}
+
+.timeline-content {
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-4);
+}
+
+.timeline-label {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.timeline-step.done .timeline-label {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.timeline-step.current .timeline-label {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* Tracking */
+.tracking-section {
+  margin-bottom: var(--space-8);
+}
+
+.tracking-map {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: var(--space-4);
+}
+
+.map-placeholder {
+  height: 200px;
+  background: linear-gradient(135deg, #E0E7FF, #C7D2FE);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-radius: var(--radius-lg);
+}
+
+.map-pin {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  font-size: 1.5rem;
+  animation: float 2s ease-in-out infinite;
+}
+
+.map-route {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.route-dot {
+  font-size: 1.5rem;
+}
+
+.route-line {
+  width: 60px;
+  height: 3px;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+}
+
+.route-line.dashed {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--color-primary) 0,
+    var(--color-primary) 6px,
+    transparent 6px,
+    transparent 12px
+  );
+}
+
+.map-text {
+  margin-top: var(--space-3);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.driver-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+}
+
+.driver-avatar {
+  font-size: 1.8rem;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-subtle);
+  border-radius: var(--radius-full);
+}
+
+.driver-info {
+  flex: 1;
+}
+
+.driver-name {
+  font-weight: 700;
+  font-size: var(--font-size-base);
+}
+
+.driver-phone {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+/* Order Details */
+.order-details {
+  margin-bottom: var(--space-6);
+}
+
+.detail-card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+  overflow: hidden;
+}
+
+.detail-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.detail-store-logo {
+  font-size: 1.5rem;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+}
+
+.detail-store-name {
+  font-weight: 700;
+}
+
+.detail-date {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.detail-items {
+  padding: var(--space-2) 0;
+}
+
+.detail-item-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
+}
+
+.detail-qty {
+  font-weight: 700;
+  color: var(--color-primary);
+  min-width: 28px;
+}
+
+.detail-name {
+  flex: 1;
+}
+
+.detail-price {
+  font-weight: 600;
+}
+
+.detail-summary {
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.detail-footer {
+  padding: var(--space-4);
+  background: var(--color-surface);
+}
+
+.detail-footer-item {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-1) 0;
+  font-size: var(--font-size-sm);
+}
+
+.detail-footer-label {
+  color: var(--color-text-secondary);
+}
+
+.detail-footer-value {
+  font-weight: 600;
+}
+
+/* Actions */
+.status-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-8);
+}
+
+@media (min-width: 768px) {
+  .map-placeholder {
+    height: 280px;
+  }
+
+  .route-line {
+    width: 100px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .pedido-status-page .container {
+    max-width: 800px;
+  }
+}

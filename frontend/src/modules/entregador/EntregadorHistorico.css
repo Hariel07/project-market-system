@@ -1,0 +1,75 @@
+/* ============================================================
+   Entregador Histórico
+   ============================================================ */
+
+.ent-historico {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Balanço Card */
+.ent-balanco-card {
+  background: var(--gradient-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  color: white;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+}
+
+.balanco-subtitle { font-size: var(--font-size-sm); font-weight: 500; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.05em; }
+.balanco-title { font-size: 2.5rem; font-weight: 800; margin: 4px 0 16px; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+.balanco-actions { display: flex; justify-content: center; }
+.balance-btn { background: white; color: var(--color-primary-dark); font-weight: 800; border: none; padding: 12px 24px; border-radius: 30px;}
+.balance-btn:hover { background: #F3F4F6; transform: translateY(-2px); }
+
+/* Resumo de Hoje */
+.ent-historico-hoje {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border-light);
+}
+
+.hist-hoje-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border-light);
+  padding-bottom: var(--space-3);
+}
+
+.hist-hoje-header h3 { font-size: var(--font-size-md); font-weight: 700; color: var(--color-text-secondary); }
+.hist-hoje-header span { font-size: var(--font-size-xl); font-weight: 800; color: var(--color-primary); }
+
+.hist-meters { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); text-align: center; }
+.meter-label { font-size: var(--font-size-xs); color: var(--color-text-tertiary); font-weight: 600; display: block; margin-bottom: 4px;}
+.meter-val { font-size: var(--font-size-base); font-weight: 800; color: var(--color-text); }
+
+/* Lista Histórico */
+.ent-historico-lista { margin-top: var(--space-2); }
+.section-title { font-size: var(--font-size-md); font-weight: 700; margin-bottom: var(--space-4); color: var(--color-text-secondary); }
+
+.hist-list { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.hist-card {
+  display: flex; align-items: center; gap: var(--space-3);
+  background: white; border-radius: var(--radius-md); padding: var(--space-3);
+  border: 1px solid var(--color-border-light);
+}
+
+.hist-cancelado { opacity: 0.6; background: #F9FAFB; }
+
+.hist-icon { font-size: 1.2rem; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; background: var(--color-surface); border-radius: 50%;}
+
+.hist-details { flex: 1; display: flex; flex-direction: column; }
+.hist-date { font-size: 0.65rem; font-weight: 700; color: var(--color-primary); text-transform: uppercase; margin-bottom: 2px;}
+.hist-cancelado .hist-date { color: var(--color-text-tertiary); }
+.hist-rest { font-weight: 600; font-size: var(--font-size-sm); color: var(--color-text); }
+.hist-desc { font-size: var(--font-size-xs); color: var(--color-text-secondary); }
+.hist-tip { color: var(--color-accent-dark); font-weight: 600; background: #ECFDF5; padding: 1px 4px; border-radius: 4px;}
+
+.hist-value { font-weight: 800; font-size: var(--font-size-sm); color: var(--color-text); }

@@ -1,0 +1,162 @@
+/* ====== Estoque Comerciante ====== */
+
+.estoque-tabs {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--color-border-light);
+  margin-bottom: var(--space-6);
+}
+
+.estoque-tab {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  border-bottom: 2px solid transparent;
+  transition: all var(--transition-fast);
+  margin-bottom: -1px;
+  white-space: nowrap;
+}
+
+.estoque-tab:hover { color: var(--color-text); }
+.estoque-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); font-weight: 700; }
+
+.estoque-section-title {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  margin-bottom: var(--space-3);
+}
+
+/* Alertas */
+.estoque-alertas {
+  margin-bottom: var(--space-6);
+}
+
+.estoque-alerta-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: #FEF3C7;
+  border: 1px solid #FDE68A;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+.estoque-alerta-msg { flex: 1; color: #92400E; }
+.estoque-alerta-time { font-size: var(--font-size-xs); color: #B45309; white-space: nowrap; }
+
+/* Search */
+.estoque-search {
+  position: relative;
+  margin-bottom: var(--space-4);
+  max-width: 400px;
+}
+
+/* Grid */
+.estoque-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-3);
+}
+
+.estoque-card {
+  padding: var(--space-4);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+  transition: all var(--transition-base);
+}
+
+.estoque-card:hover { box-shadow: var(--shadow-md); }
+.estoque-card.estoque-low { border-color: #FCA5A5; background: #FEF2F2; }
+
+.estoque-card-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.estoque-card-emoji { font-size: 1.3rem; }
+.estoque-card-name { font-weight: 700; font-size: var(--font-size-sm); display: block; }
+.estoque-card-cat { font-size: var(--font-size-xs); color: var(--color-text-tertiary); }
+.estoque-card-info { flex: 1; min-width: 0; }
+.estoque-low-badge { font-size: var(--font-size-xs); font-weight: 600; color: var(--color-danger); }
+
+.estoque-card-bar { display: flex; align-items: center; gap: var(--space-3); }
+
+.estoque-bar-bg {
+  flex: 1;
+  height: 8px;
+  background: var(--color-surface);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.estoque-bar-fill {
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: var(--radius-full);
+  transition: width 0.6s ease;
+}
+
+.estoque-bar-fill.fill-low { background: var(--color-danger); }
+
+.estoque-card-qty {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+/* Movimentos */
+.movimentos-table-wrap {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+  overflow-x: auto;
+}
+
+.mov-type { font-size: var(--font-size-xs); font-weight: 600; white-space: nowrap; }
+.mov-entrada { color: var(--color-accent-dark); }
+.mov-saida { color: var(--color-danger); }
+.mov-ajuste { color: var(--color-warning); }
+
+.text-accent { color: var(--color-accent-dark); font-weight: 700; }
+.text-danger { color: var(--color-danger); font-weight: 700; }
+
+/* Entrada */
+.entrada-form {
+  max-width: 600px;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+  padding: var(--space-6);
+}
+
+.mb-4 { margin-bottom: var(--space-4); }
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.full-width { grid-column: 1 / -1; }
+
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+.entrada-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+@media (max-width: 600px) {
+  .form-grid { grid-template-columns: 1fr; }
+}

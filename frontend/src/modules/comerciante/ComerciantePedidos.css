@@ -1,0 +1,147 @@
+/* ====== Pedidos Comerciante ====== */
+
+.pedidos-filters {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--space-4);
+  scrollbar-width: none;
+}
+
+.pedidos-filters::-webkit-scrollbar { display: none; }
+
+.pedido-filter-btn {
+  padding: var(--space-2) var(--space-4);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-card);
+}
+
+.pedido-filter-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.pedido-filter-btn.active { background: var(--color-primary); color: white; border-color: var(--color-primary); }
+.pedido-filter-btn.filter-novo { border-color: var(--color-warning); color: var(--color-warning); }
+.pedido-filter-btn.filter-novo.active { background: var(--color-warning); color: white; }
+
+/* Cards */
+.pedidos-com-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.pedido-com-card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+  padding: var(--space-4);
+  transition: all var(--transition-base);
+}
+
+.pedido-com-card:hover { box-shadow: var(--shadow-md); }
+
+.pedido-com-card.status-novo {
+  border-left: 4px solid var(--color-warning);
+  background: linear-gradient(to right, #FFFBEB, var(--color-bg-card));
+}
+
+.pedido-com-card.status-preparando {
+  border-left: 4px solid var(--color-primary);
+}
+
+.pedido-com-card.status-saiu_entrega {
+  border-left: 4px solid var(--color-accent);
+}
+
+.pedido-com-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.pedido-com-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pedido-com-numero { font-weight: 800; font-size: var(--font-size-base); }
+.pedido-com-time { font-size: var(--font-size-xs); color: var(--color-text-tertiary); }
+
+.pedido-com-elapsed {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.pedido-com-elapsed.urgente {
+  color: var(--color-warning);
+  animation: pulse 2s infinite;
+}
+
+.pedido-com-client {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.pedido-com-client-icon { font-size: 1rem; }
+.pedido-com-client-name { font-weight: 600; }
+.pedido-com-payment { color: var(--color-text-tertiary); font-size: var(--font-size-xs); margin-left: auto; }
+
+.pedido-com-items {
+  padding: var(--space-2) 0;
+  margin-bottom: var(--space-3);
+  border-top: 1px dashed var(--color-border-light);
+  border-bottom: 1px dashed var(--color-border-light);
+}
+
+.pedido-com-item-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  font-size: var(--font-size-sm);
+}
+
+.pedido-com-item-qty { font-weight: 700; color: var(--color-primary); min-width: 28px; }
+.pedido-com-item-name { flex: 1; }
+.pedido-com-item-price { font-weight: 600; font-size: var(--font-size-xs); }
+
+.pedido-com-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.pedido-com-total { font-size: var(--font-size-sm); }
+.pedido-com-total strong { font-size: var(--font-size-md); }
+
+.pedido-com-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+@media (min-width: 768px) {
+  .pedidos-com-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .pedidos-com-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

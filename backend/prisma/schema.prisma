@@ -1,0 +1,180 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------
+// ENUMS
+// ----------------------------------------------------------------------
+
+enum Role {
+  ADMIN       // Nível 6: Plataforma Global
+  DONO        // Nível 5: Proprietário do Comércio
+  GERENTE     // Nível 4: Gerente da Loja
+  ESTOQUE     // Nível 3: Repositor/Estoquista
+  CAIXA       // Nível 2: Operador PDV
+  GARCOM      // Nível 1: Atendimento
+  ENTREGADOR  // Externo: Faz as entregas
+  CLIENTE     // Externo: Compra pelo App
+}
+
+enum OrderStatus {
+  PENDENTE
+  PREPARANDO
+  PRONTO
+  SAIU_ENTREGA
+  ENTREGUE
+  CANCELADO
+}
+
+enum PaymentMethod {
+  PIX
+  CREDITO
+  DEBITO
+  DINHEIRO
+}
+
+// ----------------------------------------------------------------------
+// MODELOS GLOBAIS
+// ----------------------------------------------------------------------
+
+model User {
+  id        String   @id @default(uuid())
+  nome      String
+  email     String   @unique
+  senha     String   // Bcrypt hash
+  role      Role     @default(CLIENTE)
+  cpf_cnpj  String?  @unique
+  telefone  String?
+  ativo     Boolean  @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relações
+  comercioId     String?
+  comercio       Commerce?  @relation(fields: [comercioId], references: [id])
+  pedidosCliente Order[]    @relation("ClientePedidos")
+  entregas       Delivery[] @relation("EntregadorDeliveries")
+}
+
+model Commerce {
+  id          String   @id @default(uuid())
+  razaoSocial String
+  nomeFantasia String
+  cnpj        String   @unique
+  segmento    String   // Mercado, Restaurante, Farmácia, etc.
+  logoUrl     String?  
+  ativo       Boolean  @default(false)
+  planoAtual  String   @default("GRATIS")
+  
+  // Endereço e Configs Básicas
+  taxaEntrega Float    @default(0.0)
+  tempoMedio  String?  // Ex: "30-45 min"
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relações
+  usuarios    User[]
+  produtos    Product[]
+  pedidos     Order[]
+  categorias  Category[]
+}
+
+// ----------------------------------------------------------------------
+// CATÁLOGO E PRODUTOS
+// ----------------------------------------------------------------------
+
+model Category {
+  id         String   @id @default(uuid())
+  nome       String
+  icone      String?
+  comercioId String
+  comercio   Commerce @relation(fields: [comercioId], references: [id])
+  produtos   Product[]
+}
+
+model Product {
+  id            String   @id @default(uuid())
+  comercioId    String
+  categoriaId   String?
+  
+  nome          String
+  descricao     String?
+  precoVenda    Float
+  precoPromocional Float?
+  unidade       String   @default("UN") // UN, KG, L
+  imagemUrl     String?
+  
+  estoque       Float    @default(0)
+  isCombo       Boolean  @default(false)
+  ativo         Boolean  @default(true)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relações
+  comercio      Commerce @relation(fields: [comercioId], references: [id])
+  categoria     Category? @relation(fields: [categoriaId], references: [id])
+  itensPedido   OrderItem[]
+}
+
+// ----------------------------------------------------------------------
+// PEDIDOS E ENTREGAS
+// ----------------------------------------------------------------------
+
+model Order {
+  id            String   @id @default(uuid())
+  comercioId    String
+  clienteId     String
+  
+  status        OrderStatus @default(PENDENTE)
+  valorTotal    Float
+  taxaEntrega   Float       @default(0.0)
+  metodoPagto   PaymentMethod
+
+  observacoes   String?
+  enderecoEntrega String? // JSON ou string formatada
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relações
+  comercio      Commerce @relation(fields: [comercioId], references: [id])
+  cliente       User     @relation("ClientePedidos", fields: [clienteId], references: [id])
+  itens         OrderItem[]
+  entrega       Delivery?
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  pedidoId    String
+  produtoId   String
+  
+  quantidade  Float
+  precoUnitario Float
+  
+  pedido      Order    @relation(fields: [pedidoId], references: [id])
+  produto     Product  @relation(fields: [produtoId], references: [id])
+}
+
+model Delivery {
+  id            String   @id @default(uuid())
+  pedidoId      String   @unique
+  entregadorId  String?
+  
+  status        String   @default("AGUARDANDO_COLETA") // AGUARDANDO, A_CAMINHO, ENTREGUE
+  taxaRepasse   Float?   // Quanto o entregador ganha
+  
+  coletadoEm    DateTime?
+  entregueEm    DateTime?
+
+  // Relações
+  pedido        Order    @relation(fields: [pedidoId], references: [id])
+  entregador    User?    @relation("EntregadorDeliveries", fields: [entregadorId], references: [id])
+}

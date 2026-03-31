@@ -1,0 +1,149 @@
+/* ====== Perfil Page ====== */
+
+.perfil-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-6) 0;
+  margin-bottom: var(--space-4);
+}
+
+.perfil-avatar-section {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.perfil-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-full);
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.perfil-avatar-emoji {
+  font-size: 1.8rem;
+  filter: grayscale(1) brightness(2);
+}
+
+.perfil-name {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+}
+
+.perfil-email {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.perfil-phone {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+/* Stats */
+.perfil-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-4);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+}
+
+.stat-value {
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.stat-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+/* Menu */
+.perfil-menu {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+  overflow: hidden;
+  margin-bottom: var(--space-6);
+}
+
+.perfil-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  transition: background var(--transition-fast);
+  text-align: left;
+  width: 100%;
+}
+
+.perfil-menu-item:hover {
+  background: var(--color-surface);
+}
+
+.perfil-menu-item + .perfil-menu-item {
+  border-top: 1px solid var(--color-border-light);
+}
+
+.perfil-menu-icon {
+  font-size: 1.3rem;
+  width: 36px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.perfil-menu-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.perfil-menu-label {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+
+.perfil-menu-desc {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+.perfil-menu-arrow {
+  color: var(--color-text-tertiary);
+  font-size: 1rem;
+}
+
+.logout-btn {
+  color: var(--color-danger) !important;
+  border-color: #FEE2E2 !important;
+  margin-bottom: var(--space-8);
+}
+
+.logout-btn:hover {
+  background: #FEE2E2 !important;
+}
+
+@media (min-width: 1024px) {
+  .perfil-page .container {
+    max-width: 700px;
+  }
+}
