@@ -814,6 +814,7 @@ EmissaoFiscal
 | Notificações em tempo real | WebSocket / SSE | Baixa latência |
 | Mensageria | Apache Kafka | Desacopla eventos |
 | Banco de Dados | PostgreSQL 16 (JSONB) | Atributos flexíveis + índices |
+| ORM | Prisma | Type-safety, produtividade e migrações automáticas |
 | Cache / Sessão | Redis | Sub-milissegundo + tokens |
 | Autenticação | JWT + OAuth | Stateless, multi-role |
 | Storage de arquivos | S3 ou storage local | Arquivos fora do banco |
@@ -1044,9 +1045,14 @@ localhostForwarding=true
 ```bash
 git clone https://github.com/seu-usuario/project-market-system.git
 cd project-market-system
-docker-compose up -d        # sobe tudo
-docker ps                   # verifica containers
-docker-compose up -d postgres redis   # só banco e cache
+docker-compose up -d        # sobe todos os containers básicos (db, redis, kafka)
+
+# Configuração do Backend e Prisma
+cd backend
+npm install                 # instala dependências do backend
+npx prisma generate         # gera o cliente Prisma (baseado no schema.prisma)
+npx prisma migrate dev      # aplica as migrações iniciais ao banco de dados
+npm run dev                 # inicia o servidor de desenvolvimento
 ```
 
 ---
@@ -1092,7 +1098,17 @@ Docker
 | Usuário | `market_user` |
 | Senha | `market_pass` |
 
-### Tabelas Principais
+### ORM (Object-Relational Mapping)
+
+O projeto utiliza o **Prisma ORM** como ponte entre o backend Node.js e o PostgreSQL. 
+
+**Por que Prisma?**
+- 🛡️ **Type-Safety Total**: O Prisma gera tipos TypeScript automaticamente a partir do schema, garantindo que o código e o banco estejam sempre sincronizados e evitando erros de query em tempo de execução.
+- 🚀 **Produtividade**: Auto-complete inteligente no IDE e uma API simplificada que substitui queries SQL complexas por métodos legíveis.
+- 🔄 **Migrações Automatizadas**: O Controle de versão do banco de dados (schema migrations) é feito de forma simples e segura, essencial para a evolução modular do sistema.
+- 📖 **Esquema como Documentação**: O arquivo `schema.prisma` serve como uma única fonte de verdade, facilitando o entendimento da modelagem para novos desenvolvedores.
+
+### Tabelas Principais (Visão SQL para Referência)
 
 ```sql
 -- Hierarquia recursiva de locais físicos
