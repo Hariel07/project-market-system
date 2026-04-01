@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
 import './TopBar.css';
@@ -64,7 +65,13 @@ export default function TopBar({
               <button
                 key={item.path}
                 className={`top-bar-nav-link ${location.pathname === item.path ? 'active' : ''}`}
-                onClick={() => navigate(item.path)}
+                onClick={() => {
+                  if (item.path === '/cliente/pedidos' && !localStorage.getItem('@MarketSystem:token')) {
+                    navigate(`/login?redirect=${encodeURIComponent(item.path)}`);
+                  } else {
+                    navigate(item.path);
+                  }
+                }}
               >
                 {item.label}
               </button>
@@ -84,9 +91,31 @@ export default function TopBar({
             </button>
           )}
 
-          <button className="top-bar-avatar hide-mobile" onClick={() => navigate('/cliente/perfil')} id="btn-profile">
-            👤
-          </button>
+          {localStorage.getItem('@MarketSystem:token') ? (
+            <button className="top-bar-avatar hide-mobile" onClick={() => {
+              const userStr = localStorage.getItem('@MarketSystem:user');
+              if (userStr) {
+                try {
+                  const user = JSON.parse(userStr);
+                  if (['DONO', 'GERENTE', 'ESTOQUE', 'CAIXA'].includes(user.role)) return navigate('/comerciante');
+                  if (user.role === 'ENTREGADOR') return navigate('/entregador');
+                  if (user.role === 'ADMIN') return navigate('/admin');
+                } catch(e) {}
+              }
+              navigate('/cliente/perfil');
+            }} id="btn-profile">
+              👤
+            </button>
+          ) : (
+            <button 
+              className="btn btn-outline btn-sm hide-mobile" 
+              onClick={() => navigate('/login')} 
+              id="btn-login-header"
+              style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+            >
+              Entrar / Cadastrar
+            </button>
+          )}
         </div>
       </div>
     </header>

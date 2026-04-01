@@ -17,7 +17,17 @@ export default function BottomNav() {
 
   return (
     <nav className="bottom-nav" id="bottom-nav">
-      {navItems.map(item => {
+      {navItems.filter(item => {
+        if (item.path !== '/cliente/perfil') return true;
+        const userStr = localStorage.getItem('@MarketSystem:user');
+        if (!userStr) return false;
+        try {
+          const user = JSON.parse(userStr);
+          return user.role === 'CLIENTE';
+        } catch {
+          return false;
+        }
+      }).map(item => {
         const isActive = location.pathname === item.path ||
           (item.path !== '/cliente' && location.pathname.startsWith(item.path));
         const isCart = item.path === '/cliente/carrinho';

@@ -9,26 +9,24 @@ export default function ComercianteConfig() {
     {
       title: '🏪 Comércio',
       items: [
-        { icon: '📝', label: 'Dados do comércio', desc: 'Nome, segmento, endereço, contato' },
-        { icon: '🕐', label: 'Horário de funcionamento', desc: 'Defina os dias/horários de abertura' },
-        { icon: '📍', label: 'Área de entrega', desc: 'Raio de cobertura e taxas por região' },
-        { icon: '🚚', label: 'Taxas e prazos', desc: 'Configure taxa de entrega e tempo estimado' },
+        { path: '/comerciante/config/perfil', icon: '📝', label: 'Perfil da Loja', desc: 'Dados e Horário de Funcionamento' },
+        { path: '#', icon: '📍', label: 'Área de entrega', desc: 'Raio de cobertura e taxas por região' },
       ]
     },
     {
       title: '💳 Financeiro',
       items: [
-        { icon: '🏦', label: 'Dados bancários', desc: 'Conta para recebimentos' },
-        { icon: '💰', label: 'Formas de pagamento', desc: 'PIX, cartão, dinheiro' },
-        { icon: '📊', label: 'Relatórios', desc: 'Vendas, comissões e extratos' },
+        { path: '#', icon: '🏦', label: 'Dados bancários', desc: 'Conta para recebimentos' },
+        { path: '#', icon: '💰', label: 'Formas de pagamento', desc: 'PIX, cartão, dinheiro' },
+        { path: '#', icon: '📊', label: 'Relatórios', desc: 'Vendas, comissões e extratos' },
       ]
     },
     {
       title: '⚙️ Sistema',
       items: [
-        { icon: '🔔', label: 'Notificações', desc: 'Alertas de pedidos e estoque' },
-        { icon: '👥', label: 'Funcionários', desc: 'Gerencie acessos (MVP futuro)' },
-        { icon: '🖨️', label: 'Impressão', desc: 'Configurar impressora de comandas' },
+        { path: '#', icon: '🔔', label: 'Notificações', desc: 'Alertas de pedidos e estoque' },
+        { path: '#', icon: '👥', label: 'Funcionários', desc: 'Gerencie acessos (MVP futuro)' },
+        { path: '#', icon: '🖨️', label: 'Impressão', desc: 'Configurar impressora de comandas' },
       ]
     },
   ];
@@ -41,7 +39,11 @@ export default function ComercianteConfig() {
             <h3 className="config-section-title">{section.title}</h3>
             <div className="config-menu">
               {section.items.map(item => (
-                <button key={item.label} className="config-menu-item" id={`config-${item.label.toLowerCase().replace(/ /g,'-')}`}>
+                <button 
+                  key={item.label} 
+                  className="config-menu-item" 
+                  onClick={() => item.path !== '#' && navigate(item.path)}
+                >
                   <span className="config-menu-icon">{item.icon}</span>
                   <div className="config-menu-info">
                     <span className="config-menu-label">{item.label}</span>

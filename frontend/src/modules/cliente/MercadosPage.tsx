@@ -1,19 +1,47 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import TopBar from '../../shared/components/TopBar';
-import { comerciosMock, categoriasMock, formatPrice } from '../../data/mockData';
+import { categoriasMock, formatPrice } from '../../data/mockData';
+import { api } from '../../lib/api';
+import './MercadosPage.css';
 import './MercadosPage.css';
 
 export default function MercadosPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [realComercios, setRealComercios] = useState<any[]>([]);
   const [filtroCategoria, setFiltroCategoria] = useState(searchParams.get('categoria') || '');
   const [filtroAberto, setFiltroAberto] = useState(false);
   const [ordenar, setOrdenar] = useState<'avaliacao' | 'distancia' | 'entrega'>('avaliacao');
 
+  useEffect(() => {
+    fetchComercios();
+  }, []);
+
+  const fetchComercios = async () => {
+    try {
+      const { data } = await api.get('/api/comercios/public');
+      setRealComercios(data);
+    } catch (error) {
+      console.error('Erro ao buscar lojas:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredStores = useMemo(() => {
-    let result = comerciosMock;
+    let result = realComercios.map(c => ({
+      ...c,
+      nome: c.nomeFantasia,
+      logo: c.logoUrl ? <img src={c.logoUrl} alt={c.nomeFantasia} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '🏪',
+      aberto: c.isOpen,
+      tempoEntrega: c.tempoMedio || '?? min',
+      categorias: c.categorias ? c.categorias.map((cat:any) => cat.nome) : [],
+      distancia: '2.5 km', // Placeholder, future integration
+      avaliacao: 4.8      // Placeholder, future integration
+    }));
 
     if (search) {
       result = result.filter(s =>
@@ -23,10 +51,13 @@ export default function MercadosPage() {
     }
 
     if (filtroCategoria) {
-      result = result.filter(s =>
-        s.segmento.toLowerCase().includes(filtroCategoria.toLowerCase()) ||
-        s.tipo.toLowerCase().includes(filtroCategoria.toLowerCase())
-      );
+      result = result.filter(s => {
+        const seg = s.segmento ? s.segmento.toLowerCase() : '';
+        const searchCat = filtroCategoria.toLowerCase();
+        
+        return seg.includes(searchCat) || 
+               (s.categorias && s.categorias.some((cat: string) => cat.toLowerCase().includes(searchCat)));
+      });
     }
 
     if (filtroAberto) {
@@ -44,7 +75,7 @@ export default function MercadosPage() {
 
   return (
     <div className="mercados-page">
-      <TopBar title="Mercados" showBack showCart />
+      <TopBar showBack showCart />
 
       <main className="page-content">
         <div className="container">
@@ -108,13 +139,37 @@ export default function MercadosPage() {
           </p>
 
           <div className="stores-list animate-fade-in-up delay-2">
-            {filteredStores.map(store => (
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '3rem', width: '100%' }}>
+                <span className="spinner" style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent', width: '3rem', height: '3rem', borderWidth: '4px' }} />
+                <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>Carregando lojas...</p>
+              </div>
+            ) : filteredStores.map(store => (
               <div
                 key={store.id}
                 className={`store-list-card ${!store.aberto ? 'closed' : ''}`}
                 onClick={() => store.aberto && navigate(`/cliente/mercado/${store.id}`)}
                 id={`mercado-${store.id}`}
+                style={{ 
+                  filter: store.aberto ? 'none' : 'grayscale(100%) opacity(0.7)', 
+                  cursor: store.aberto ? 'pointer' : 'not-allowed',
+                  position: 'relative'
+                }}
               >
+                {!store.aberto && (
+                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(255,255,255,0.4)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ background: 'var(--bg-card)', padding: '0.8rem 1.5rem', borderRadius: '16px', boxShadow: '0 8px 30px rgba(0,0,0,0.15)', textAlign: 'center', border: '1px solid var(--border)' }}>
+                      <span style={{ fontSize: '1.5rem', display: 'block', marginBottom: '0.2rem' }}>😴</span>
+                      <strong style={{ color: 'var(--text-primary)', display: 'block' }}>Loja Fechada</strong>
+                      {store.horarioAtendimento && (
+                         <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.3rem', display: 'block', maxWidth: '200px' }}>
+                           {store.horarioAtendimento}
+                         </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="store-list-logo">{store.logo}</div>
                 <div className="store-list-info">
                   <div className="store-list-top">
@@ -130,7 +185,7 @@ export default function MercadosPage() {
                     <span>🕐 {store.tempoEntrega}</span>
                   </div>
                   <div className="store-list-tags">
-                    {store.categorias.map(cat => (
+                    {store.categorias.map((cat: string) => (
                       <span key={cat} className="store-tag">{cat}</span>
                     ))}
                   </div>

@@ -16,6 +16,9 @@ import CheckoutPage from './modules/cliente/CheckoutPage';
 import PedidosPage from './modules/cliente/PedidosPage';
 import PedidoStatusPage from './modules/cliente/PedidoStatusPage';
 import PerfilPage from './modules/cliente/PerfilPage';
+import EnderecosPage from './modules/cliente/EnderecosPage';
+// Formulário de Endereço (Forçando atualização do cache do TS)
+import EnderecoFormPage from './modules/cliente/EnderecoFormPage';
 
 // Comerciante
 import ComercianteDashboard from './modules/comerciante/ComercianteDashboard';
@@ -24,6 +27,7 @@ import ComercianteCatalogo from './modules/comerciante/ComercianteCatalogo';
 import ComercianteEstoque from './modules/comerciante/ComercianteEstoque';
 import ComercianteItemForm from './modules/comerciante/ComercianteItemForm';
 import ComercianteConfig from './modules/comerciante/ComercianteConfig';
+import ComerciantePerfilConfig from './modules/comerciante/ComerciantePerfilConfig';
 
 // Entregador
 import EntregadorDashboard from './modules/entregador/EntregadorDashboard';
@@ -34,6 +38,7 @@ import EntregadorConfig from './modules/entregador/EntregadorConfig';
 // Admin
 import AdminDashboard from './modules/admin/AdminDashboard';
 import AdminComercios from './modules/admin/AdminComercios';
+import AdminPlanos from './modules/admin/AdminPlanos';
 import AdminUsuarios from './modules/admin/AdminUsuarios';
 import AdminSistema from './modules/admin/AdminSistema';
 
@@ -45,7 +50,7 @@ function AppRoutes() {
     <>
       <Routes>
         {/* Auth */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<Navigate to="/cliente" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/cadastro" element={<CadastroPage />} />
 
@@ -59,14 +64,20 @@ function AppRoutes() {
         <Route path="/cliente/pedidos" element={<PedidosPage />} />
         <Route path="/cliente/pedido/:id" element={<PedidoStatusPage />} />
         <Route path="/cliente/perfil" element={<PerfilPage />} />
+        <Route path="/cliente/enderecos" element={<EnderecosPage />} />
+        <Route path="/cliente/enderecos/novo" element={<EnderecoFormPage />} />
+        <Route path="/cliente/enderecos/editar/:id" element={<EnderecoFormPage />} />
 
         {/* Comerciante */}
         <Route path="/comerciante" element={<ComercianteDashboard />} />
         <Route path="/comerciante/pedidos" element={<ComerciantePedidos />} />
         <Route path="/comerciante/catalogo" element={<ComercianteCatalogo />} />
+        <Route path="/comerciante/catalogo/novo" element={<ComercianteItemForm />} />
+        <Route path="/comerciante/catalogo/editar/:id" element={<ComercianteItemForm />} />
         <Route path="/comerciante/estoque" element={<ComercianteEstoque />} />
         <Route path="/comerciante/item/:id" element={<ComercianteItemForm />} />
         <Route path="/comerciante/config" element={<ComercianteConfig />} />
+        <Route path="/comerciante/config/perfil" element={<ComerciantePerfilConfig />} />
 
         {/* Entregador */}
         <Route path="/entregador" element={<EntregadorDashboard />} />
@@ -78,12 +89,18 @@ function AppRoutes() {
         {/* Admin Platform */}
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/comercios" element={<AdminComercios />} />
+        <Route path="/admin/planos" element={<AdminPlanos />} />
         <Route path="/admin/usuarios" element={<AdminUsuarios />} />
         <Route path="/admin/sistema" element={<AdminSistema />} />
       </Routes>
 
-      {/* Bottom nav only for cliente routes */}
-      {isClienteRoute && <BottomNav />}
+      {/* Client specific UI */}
+      {isClienteRoute && (
+        <>
+          {/* Removemos o modal de localização a pedido para uso orgânico nativo */}
+          <BottomNav />
+        </>
+      )}
     </>
   );
 }

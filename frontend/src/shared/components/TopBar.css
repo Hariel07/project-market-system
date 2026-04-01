@@ -74,6 +74,27 @@
   text-overflow: ellipsis;
 }
 
+/* Address Display */
+.top-bar-address {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 0.3rem 0.5rem;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.top-bar-address:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.address-text-container {
+  display: flex;
+  flex-direction: column;
+  margin-left: 0.3rem;
+  line-height: 1.1;
+}
+
 /* Search bar */
 .top-bar-search {
   flex: 1;

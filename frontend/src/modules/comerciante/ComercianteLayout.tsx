@@ -1,5 +1,6 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { api } from '../../lib/api';
 import './ComercianteDashboard.css';
 
 interface Props {
@@ -12,6 +13,19 @@ interface Props {
 export default function ComercianteLayout({ title, subtitle, actions, children }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [comercio, setComercio] = useState<any>(null);
+
+  useEffect(() => {
+    async function loadComercio() {
+      try {
+        const { data } = await api.get('/api/comercios/me');
+        setComercio(data);
+      } catch (error) {
+        console.error('Falha ao carregar dados do comércio:', error);
+      }
+    }
+    loadComercio();
+  }, []);
 
   const navItems = [
     { icon: '📊', label: 'Dashboard', path: '/comerciante' },
@@ -27,8 +41,12 @@ export default function ComercianteLayout({ title, subtitle, actions, children }
       {/* Sidebar desktop */}
       <aside className="com-sidebar hide-mobile">
         <div className="sidebar-brand">
-          <span className="sidebar-logo">🏪</span>
-          <span className="sidebar-name">Mercado<br/>Bom Preço</span>
+          <div className="sidebar-logo-wrapper">
+             {comercio?.logoUrl ? <img src={comercio.logoUrl} alt="Logo" className="sidebar-img-logo" /> : <span className="sidebar-logo">🏪</span>}
+          </div>
+          <span className="sidebar-name">
+            {comercio ? comercio.nomeFantasia : 'Carregando...'}
+          </span>
         </div>
         <nav className="sidebar-nav">
           {navItems.map(item => (
@@ -53,7 +71,7 @@ export default function ComercianteLayout({ title, subtitle, actions, children }
         <div className="com-topbar-inner">
           <div className="com-topbar-brand">
             <span>🏪</span>
-            <span className="com-topbar-name">{title}</span>
+            <span className="com-topbar-name">{comercio ? comercio.nomeFantasia : title}</span>
           </div>
         </div>
       </header>

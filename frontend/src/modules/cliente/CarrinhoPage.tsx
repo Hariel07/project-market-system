@@ -112,7 +112,13 @@ export default function CarrinhoPage() {
               </div>
               <button
                 className="btn btn-primary btn-lg flex-1"
-                onClick={() => navigate('/cliente/checkout')}
+                onClick={() => {
+                  if (localStorage.getItem('@MarketSystem:token')) {
+                    navigate('/cliente/checkout');
+                  } else {
+                    navigate('/login?redirect=/cliente/checkout');
+                  }
+                }}
                 id="btn-checkout"
               >
                 Finalizar pedido

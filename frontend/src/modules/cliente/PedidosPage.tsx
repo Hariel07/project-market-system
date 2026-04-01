@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TopBar from '../../shared/components/TopBar';
 import { pedidosMock, formatPrice, getStatusLabel, getStatusColor } from '../../data/mockData';
@@ -5,6 +6,12 @@ import './PedidosPage.css';
 
 export default function PedidosPage() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!localStorage.getItem('@MarketSystem:token')) {
+      navigate('/login?redirect=/cliente/pedidos');
+    }
+  }, [navigate]);
 
   const pedidosAtivos = pedidosMock.filter(p => !['entregue', 'cancelado'].includes(p.status));
   const pedidosHistorico = pedidosMock.filter(p => ['entregue', 'cancelado'].includes(p.status));

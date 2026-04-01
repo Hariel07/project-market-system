@@ -1,0 +1,471 @@
+/* ============================================================
+   AdminPlanos — Tela de Gerenciamento de Planos de Assinatura
+   ============================================================ */
+
+.admin-planos {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ------- Loading ------- */
+.admin-planos-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  gap: 1rem;
+  color: var(--text-secondary, #9ca3af);
+}
+
+.spinner-lg {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(99, 102, 241, 0.15);
+  border-top-color: var(--primary, #6366f1);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ------- Toggle Card ------- */
+.planos-toggle-card {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.06));
+  border: 1px solid rgba(99, 102, 241, 0.18);
+}
+
+.planos-toggle-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 0.25rem 0;
+}
+
+.planos-toggle-info h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.planos-toggle-info p {
+  font-size: 0.88rem;
+  color: var(--text-secondary, #9ca3af);
+  margin: 0;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  width: 56px;
+  height: 30px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.toggle-switch .toggle-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text-secondary, #9ca3af);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-switch.active {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+.toggle-switch.active .toggle-knob {
+  left: calc(100% - 23px);
+  background: #10b981;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+/* ------- Header ------- */
+.planos-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.planos-header-info h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.planos-count {
+  font-size: 0.82rem;
+  color: var(--text-tertiary, #6b7280);
+}
+
+/* ------- Plans Grid ------- */
+.planos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+}
+
+.plano-card {
+  background: var(--card-bg, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.plano-card:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.plano-card.destaque {
+  border-color: rgba(99, 102, 241, 0.4);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(139, 92, 246, 0.04));
+}
+
+.plano-card.inativo {
+  opacity: 0.55;
+  border-style: dashed;
+}
+
+/* Badges */
+.plano-badge-destaque {
+  position: absolute;
+  top: -10px;
+  right: 16px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 12px;
+  border-radius: 99px;
+  letter-spacing: 0.3px;
+}
+
+.plano-badge-inativo {
+  position: absolute;
+  top: -10px;
+  right: 16px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 12px;
+  border-radius: 99px;
+}
+
+/* Card content */
+.plano-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.plano-nome {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.plano-preco {
+  text-align: right;
+}
+
+.preco-valor {
+  font-size: 1.25rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #10b981, #34d399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.preco-periodo {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-tertiary, #6b7280);
+}
+
+.plano-descricao {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #9ca3af);
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Features list */
+.plano-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.plano-features li {
+  font-size: 0.84rem;
+  color: var(--text-primary, #e5e7eb);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.feature-check {
+  color: #10b981;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+/* Limits */
+.plano-limits {
+  display: flex;
+  gap: 1.25rem;
+  font-size: 0.78rem;
+  color: var(--text-tertiary, #6b7280);
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Comercios count */
+.plano-comercios {
+  font-size: 0.78rem;
+  color: var(--text-tertiary, #6b7280);
+}
+
+/* Actions */
+.plano-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+
+.plano-actions .btn {
+  flex: 1;
+  font-size: 0.8rem;
+}
+
+.btn-danger-outline {
+  color: #ef4444 !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+.btn-danger-outline:hover {
+  background: rgba(239, 68, 68, 0.1) !important;
+}
+
+.btn-success-outline {
+  color: #10b981 !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+.btn-success-outline:hover {
+  background: rgba(16, 185, 129, 0.1) !important;
+}
+
+/* ------- Modal ------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.plano-modal {
+  background: var(--card-bg, #1a1a2e);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 20px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.modal-header h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: var(--text-secondary, #9ca3af);
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.modal-close:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Form layout */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.input-group label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  color: var(--text-secondary, #9ca3af);
+}
+
+.optional {
+  font-weight: 400;
+  opacity: 0.6;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* Features editor */
+.features-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.feature-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+}
+
+.feature-remove {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: none;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  transition: all 0.2s;
+}
+
+.feature-remove:hover {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+.feature-input-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.feature-input-row .input {
+  flex: 1;
+}
+
+/* Checkbox row */
+.checkbox-row {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.checkbox-row .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+/* ------- Responsive ------- */
+@media (max-width: 768px) {
+  .planos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .planos-toggle-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .plano-modal {
+    max-width: 100%;
+    border-radius: 16px;
+  }
+
+  .planos-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .checkbox-row {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}

@@ -1,9 +1,44 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TopBar from '../../shared/components/TopBar';
+import ProfileEditModal from '../../shared/components/ProfileEditModal';
 import './PerfilPage.css';
 
 export default function PerfilPage() {
   const navigate = useNavigate();
+  
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('@MarketSystem:user');
+    return saved ? JSON.parse(saved) : { nome: 'Visitante', email: '', telefone: '' };
+  });
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('@MarketSystem:token');
+    const userStr = localStorage.getItem('@MarketSystem:user');
+
+    if (!token || !userStr) {
+      navigate('/login?redirect=/cliente/perfil');
+      return;
+    }
+
+    const parsedUser = JSON.parse(userStr);
+    
+    // Bloqueia Comerciantes, Entregadores e Admins de acessar a tela de perfil de Cliente
+    if (parsedUser.role !== 'CLIENTE') {
+      alert('Seu perfil atual não é de Cliente. Redirecionando para o seu Painel de Controle.');
+      if (['DONO', 'GERENTE', 'ESTOQUE', 'CAIXA'].includes(parsedUser.role)) {
+        navigate('/comerciante');
+      } else if (parsedUser.role === 'ENTREGADOR') {
+        navigate('/entregador');
+      } else if (parsedUser.role === 'ADMIN') {
+        navigate('/admin');
+      } else {
+        navigate('/login');
+      }
+    }
+  }, [navigate]);
 
   const menuItems = [
     { icon: '📍', label: 'Endereços', desc: 'Gerencie seus endereços de entrega' },
@@ -28,12 +63,12 @@ export default function PerfilPage() {
                 <span className="perfil-avatar-emoji">👤</span>
               </div>
               <div className="perfil-info">
-                <h1 className="perfil-name">João Silva</h1>
-                <p className="perfil-email">joao.silva@email.com</p>
-                <p className="perfil-phone">(11) 99999-1234</p>
+                <h1 className="perfil-name">{user.nome}</h1>
+                <p className="perfil-email">{user.email || user.cpf || 'Sem informações de contato'}</p>
+                <p className="perfil-phone">{user.telefone || ''}</p>
               </div>
             </div>
-            <button className="btn btn-outline btn-sm">Editar</button>
+            <button className="btn btn-outline btn-sm" onClick={() => setIsEditModalOpen(true)}>Editar</button>
           </div>
 
           {/* Stats */}
@@ -55,7 +90,16 @@ export default function PerfilPage() {
           {/* Menu */}
           <div className="perfil-menu animate-fade-in-up delay-2">
             {menuItems.map(item => (
-              <button key={item.label} className="perfil-menu-item" id={`menu-${item.label.toLowerCase()}`}>
+              <button 
+                key={item.label} 
+                className="perfil-menu-item" 
+                id={`menu-${item.label.toLowerCase()}`}
+                onClick={() => {
+                  if (item.label === 'Endereços') {
+                    navigate('/cliente/enderecos');
+                  }
+                }}
+              >
                 <span className="perfil-menu-icon">{item.icon}</span>
                 <div className="perfil-menu-info">
                   <span className="perfil-menu-label">{item.label}</span>
@@ -69,13 +113,20 @@ export default function PerfilPage() {
           {/* Logout */}
           <button
             className="btn btn-outline btn-block logout-btn animate-fade-in-up delay-3"
-            onClick={() => navigate('/')}
+            onClick={() => { localStorage.removeItem('@MarketSystem:token'); localStorage.removeItem('@MarketSystem:user'); navigate('/login'); }}
             id="btn-logout"
           >
             🚪 Sair da conta
           </button>
         </div>
       </main>
+
+      <ProfileEditModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => setIsEditModalOpen(false)} 
+        user={user} 
+        onSave={(updatedUser) => setUser(updatedUser)} 
+      />
     </div>
   );
 }

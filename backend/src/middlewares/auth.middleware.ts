@@ -8,6 +8,7 @@ export interface AuthPayload {
   id: string;
   role: string;
   comercioId?: string | null;
+  accountId?: string;
 }
 
 declare global {

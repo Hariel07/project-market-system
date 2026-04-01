@@ -41,39 +41,8 @@ export default function ClienteDashboard() {
           </div>
         </section>
 
-        {/* Pedido Ativo */}
-        {pedidoAtivo && (
-          <section className="container animate-fade-in-up delay-1">
-            <div
-              className="active-order-card"
-              onClick={() => navigate(`/cliente/pedido/${pedidoAtivo.id}`)}
-              id="active-order-card"
-            >
-              <div className="active-order-pulse" />
-              <div className="active-order-info">
-                <div className="active-order-top">
-                  <span className="active-order-logo">{pedidoAtivo.comercioLogo}</span>
-                  <div>
-                    <p className="active-order-title">Pedido {pedidoAtivo.numero}</p>
-                    <p className="active-order-subtitle">{pedidoAtivo.comercioNome}</p>
-                  </div>
-                </div>
-                <span className={`badge ${getStatusColor(pedidoAtivo.status)}`}>
-                  {getStatusLabel(pedidoAtivo.status)}
-                </span>
-              </div>
-              <div className="active-order-progress">
-                <div className="progress-bar">
-                  <div
-                    className="progress-fill"
-                    style={{ width: pedidoAtivo.status === 'saiu_entrega' ? '75%' : '50%' }}
-                  />
-                </div>
-                <p className="active-order-eta">Previsão: {pedidoAtivo.estimativaEntrega}</p>
-              </div>
-            </div>
-          </section>
-        )}
+        {/* Pedido Ativo Ocultado Temporariamente */}
+
 
         {/* Categorias */}
         <section className="container animate-fade-in-up delay-2">

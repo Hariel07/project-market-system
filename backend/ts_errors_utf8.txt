@@ -1,0 +1,5 @@
+﻿src/controllers/planos.controller.ts(96,16): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+src/controllers/planos.controller.ts(135,16): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+src/controllers/planos.controller.ts(142,32): error TS2339: Property '_count' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; nome: string; ativo: boolean; descricao: string | null; slug: string; preco: number; features: string[]; maxItens: number | null; maxPdvs: number | null; destaque: boolean; ordem: number; }'.

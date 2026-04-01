@@ -6,6 +6,8 @@ export default function EntregadorConfig() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
+    localStorage.removeItem('@MarketSystem:token');
+    localStorage.removeItem('@MarketSystem:user');
     navigate('/login');
   };
 

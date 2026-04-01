@@ -14,6 +14,7 @@ export default function AdminLayout({ title, children }: Props) {
   const navItems = [
     { icon: '🌐', label: 'Visão Global', path: '/admin' },
     { icon: '🏪', label: 'Comércios', path: '/admin/comercios' },
+    { icon: '💳', label: 'Planos', path: '/admin/planos' },
     { icon: '👤', label: 'Usuários', path: '/admin/usuarios' },
     { icon: '⚙️', label: 'Sistema', path: '/admin/sistema' },
   ];
@@ -44,7 +45,7 @@ export default function AdminLayout({ title, children }: Props) {
         </nav>
 
         <div className="admin-sidebar-footer">
-          <button className="admin-nav-item text-danger" onClick={() => navigate('/login')}>
+          <button className="admin-nav-item text-danger" onClick={() => { localStorage.removeItem('@MarketSystem:token'); localStorage.removeItem('@MarketSystem:user'); navigate('/login'); }}>
             <span className="admin-nav-icon">🚪</span>
             Sair do Painel
           </button>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TopBar from '../../shared/components/TopBar';
 import { useCart } from '../../contexts/CartContext';
@@ -21,6 +21,18 @@ export default function CheckoutPage() {
 
   const taxaEntrega = 5.99;
   const total = subtotal + taxaEntrega;
+
+  useEffect(() => {
+    const userStr = localStorage.getItem('@MarketSystem:user');
+    const user = userStr ? JSON.parse(userStr) : null;
+
+    if (!localStorage.getItem('@MarketSystem:token') || !user) {
+      navigate('/login?redirect=/cliente/checkout');
+    } else if (user.role !== 'CLIENTE') {
+      alert('Apenas clientes podem fazer compras na plataforma. Por favor, ative seu perfil de Cliente!');
+      navigate('/cadastro?role=cliente&redirect=/cliente/checkout');
+    }
+  }, [navigate]);
 
   const handleConfirm = () => {
     setProcessing(true);

@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import TopBar from '../../shared/components/TopBar';
 import { useCart } from '../../contexts/CartContext';
-import { comerciosMock, itensMock, formatPrice } from '../../data/mockData';
+import { itensMock, formatPrice } from '../../data/mockData';
+import { api } from '../../lib/api';
 import './MercadoDetalhePage.css';
 
 export default function MercadoDetalhePage() {
@@ -11,9 +12,35 @@ export default function MercadoDetalhePage() {
   const { addItem } = useCart();
   const [search, setSearch] = useState('');
   const [selectedCat, setSelectedCat] = useState('');
+  
+  const [comercio, setComercio] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const comercio = comerciosMock.find(c => c.id === Number(id));
-  const items = itensMock.filter(i => i.comercioId === Number(id));
+  useEffect(() => {
+    async function fetchComercio() {
+      try {
+        const { data } = await api.get('/api/comercios/public');
+        const found = data.find((c: any) => c.id === id);
+        if (found) {
+          setComercio({
+            ...found,
+            nome: found.nomeFantasia,
+            logo: found.logoUrl ? <img src={found.logoUrl} alt={found.nomeFantasia} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '🏪',
+            tempoEntrega: found.tempoMedio || '?? min',
+            distancia: '2.5 km',
+            avaliacao: 4.8
+          });
+        }
+      } catch (e) {
+        console.error('Error fetching commerce details', e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchComercio();
+  }, [id]);
+
+  const items = itensMock; // For now, items remain mocked as requested until Catalog is fully migrated
 
   const categorias = useMemo(() => {
     const cats = [...new Set(items.map(i => i.categoriaNome))];
@@ -31,8 +58,10 @@ export default function MercadoDetalhePage() {
     return result;
   }, [items, search, selectedCat]);
 
+  if (loading) return <div className="container" style={{ padding: '4rem 1rem', textAlign: 'center' }}>Carregando dados do mercado...</div>;
+
   if (!comercio) {
-    return <div className="container" style={{ padding: '4rem 1rem', textAlign: 'center' }}>Mercado não encontrado</div>;
+    return <div className="container" style={{ padding: '4rem 1rem', textAlign: 'center' }}>Mercado não encontrado no sistema</div>;
   }
 
   return (

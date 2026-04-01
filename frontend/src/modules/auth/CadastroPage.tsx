@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../lib/api';
 import './AuthPages.css';
 
@@ -9,11 +9,28 @@ const roles = [
   { id: 'entregador', icon: '🛵', label: 'Entregador', desc: 'Faça entregas e ganhe' },
 ];
 
+interface PlanData {
+  id: string;
+  nome: string;
+  slug: string;
+  preco: number;
+  descricao: string | null;
+  features: string[];
+  maxItens: number | null;
+  maxPdvs: number | null;
+  destaque: boolean;
+}
+
 export default function CadastroPage() {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1);
-  const [role, setRole] = useState('');
+  const [searchParams] = useSearchParams();
+  
+  const initialRole = searchParams.get('role') || '';
+
+  const [step, setStep] = useState(initialRole ? 2 : 1);
+  const [role, setRole] = useState(initialRole);
   const [nome, setNome] = useState('');
+  const [cpf, setCpf] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
@@ -26,11 +43,43 @@ export default function CadastroPage() {
   const [cnpj, setCnpj] = useState('');
   const [plano, setPlano] = useState('gratis');
 
+  // Dados dinâmicos da API
+  const [assinaturaObrigatoria, setAssinaturaObrigatoria] = useState(false);
+  const [planosDisponiveis, setPlanosDisponiveis] = useState<PlanData[]>([]);
+  const [configLoaded, setConfigLoaded] = useState(false);
+
+  // Carrega config da plataforma e planos ao montar
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const [configRes, planosRes] = await Promise.all([
+          api.get('/api/public/config'),
+          api.get('/api/public/planos'),
+        ]);
+        setAssinaturaObrigatoria(configRes.data.assinaturaObrigatoria);
+        setPlanosDisponiveis(planosRes.data);
+      } catch (error) {
+        console.error('Erro ao carregar config:', error);
+      } finally {
+        setConfigLoaded(true);
+      }
+    };
+    loadConfig();
+  }, []);
+
+  const formatCPF = (value: string) => {
+    return value
+      .replace(/\D/g, '')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+      .replace(/(-\d{2})\d+?$/, '$1');
+  };
+
   const handleCNPJChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, ''); // Remove não números
+    let value = e.target.value.replace(/\D/g, '');
     if (value.length > 14) value = value.slice(0, 14);
     
-    // Máscara 00.000.000/0000-00
     if (value.length > 12) {
       value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2}).*/, '$1.$2.$3/$4-$5');
     } else if (value.length > 8) {
@@ -43,11 +92,22 @@ export default function CadastroPage() {
     setCnpj(value);
   };
 
+  // Determina se deve mostrar a step de planos
+  const showPlanoStep = role === 'comerciante' && assinaturaObrigatoria && planosDisponiveis.length > 0;
+
+  // Quantas steps o comerciante tem
+  const totalSteps = role === 'comerciante' ? (showPlanoStep ? 4 : 3) : 2;
+
+  // Verifica se é a última step
+  const isLastStep = step === totalSteps;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Navegação entre steps
     if (step === 1) return setStep(2);
     if (step === 2 && role === 'comerciante') return setStep(3);
-    if (step === 3 && role === 'comerciante') return setStep(4);
+    if (step === 3 && role === 'comerciante' && showPlanoStep) return setStep(4);
 
     if (senha !== confirmarSenha) {
       alert('As senhas não coincidem!');
@@ -57,29 +117,36 @@ export default function CadastroPage() {
     setLoading(true);
     
     try {
-      // 1. Envia os dados verdadeiros para o nosso Banco PostgreSQL!
+      // Se assinatura desligada, comerciante entra como "gratis" automaticamente
+      const planoFinal = (!assinaturaObrigatoria && role === 'comerciante') ? 'gratis' : plano;
+      const guestLocation = localStorage.getItem('@MarketSystem:guestLocation') || '';
+
       const response = await api.post('/api/auth/cadastro', {
         role,
         nome,
+        cpf: cpf.replace(/\D/g, ''),
         email,
         senha,
         telefone,
-        // Só vão ser lidos se for comerciante:
         nomeComercio,
         tipoComercio,
         cnpj,
-        plano
+        plano: planoFinal,
+        guestLocation
       });
 
-      // 2. Salva o passaporte de acesso (JWT) e dados puros do user localmente
       const { token, user } = response.data;
       localStorage.setItem('@MarketSystem:token', token);
       localStorage.setItem('@MarketSystem:user', JSON.stringify(user));
 
-      // 3. Joga o usuário vivo para dentro do Dashboard
-      if (role === 'comerciante') navigate('/comerciante');
-      else if (role === 'entregador') navigate('/entregador');
-      else navigate('/cliente');
+      const redirect = searchParams.get('redirect');
+      if (redirect) {
+        navigate(redirect);
+      } else {
+        if (role === 'comerciante') navigate('/comerciante');
+        else if (role === 'entregador') navigate('/entregador');
+        else navigate('/cliente');
+      }
       
     } catch (error: any) {
       console.error(error);
@@ -88,6 +155,13 @@ export default function CadastroPage() {
       setLoading(false);
     }
   };
+
+  const formatPrice = (value: number) => {
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
+
+  // Steps visíveis para o indicador de progresso
+  const progressSteps = Array.from({ length: totalSteps }, (_, i) => i + 1);
 
   return (
     <div className="auth-page">
@@ -106,14 +180,14 @@ export default function CadastroPage() {
             <p className="auth-subtitle">
               {step === 1 ? 'Como você quer usar o Market System?' :
                step === 2 ? 'Preencha seus dados' :
-               step === 3 ? 'Dados do seu comércio' :
+               step === 3 && role === 'comerciante' ? 'Dados do seu comércio' :
                'Escolha seu plano'}
             </p>
           </div>
 
           {/* Progress */}
           <div className="register-progress">
-            {[1, 2, ...(role === 'comerciante' ? [3, 4] : [])].map(s => (
+            {progressSteps.map(s => (
               <div key={s} className={`progress-step-dot ${step >= s ? 'active' : ''} ${step === s ? 'current' : ''}`} />
             ))}
           </div>
@@ -149,6 +223,14 @@ export default function CadastroPage() {
                   <div className="input-with-icon">
                     <span className="input-icon">👤</span>
                     <input id="nome" type="text" className="input" placeholder="Seu nome" value={nome} onChange={e => setNome(e.target.value)} required />
+                  </div>
+                </div>
+
+                <div className="input-group">
+                  <label htmlFor="cpf">CPF</label>
+                  <div className="input-with-icon">
+                    <span className="input-icon">🆔</span>
+                    <input id="cpf" type="text" className="input" placeholder="000.000.000-00" value={cpf} onChange={e => setCpf(formatCPF(e.target.value))} maxLength={14} required />
                   </div>
                 </div>
 
@@ -190,7 +272,7 @@ export default function CadastroPage() {
             )}
 
             {/* Step 3 — Dados do comércio (só comerciante) */}
-            {step === 3 && (
+            {step === 3 && role === 'comerciante' && (
               <div className="animate-fade-in-up">
                 <div className="input-group">
                   <label htmlFor="nome-comercio">Nome do comércio</label>
@@ -233,24 +315,24 @@ export default function CadastroPage() {
               </div>
             )}
 
-            {/* Step 4 — Escolha de Plano (só comerciante) */}
-            {step === 4 && (
+            {/* Step 4 — Escolha de Plano dinâmico (só comerciante + assinatura ativada) */}
+            {step === 4 && showPlanoStep && (
               <div className="plan-selection animate-fade-in-up">
-                {[
-                  { id: 'gratis', nome: 'GRÁTIS', preco: 'R$ 0,00', features: ['Até 50 itens', '1 PDV', 'Cardápio Digital'] },
-                  { id: 'pro', nome: 'PRO', preco: 'R$ 99,90/mês', features: ['Itens Ilimitados', '3 PDVs', 'Gestão de Estoque'] },
-                  { id: 'enterprise', nome: 'ENTERPRISE', preco: 'R$ 299,90/mês', features: ['Multi-lojas', 'Acesso à API', 'Emissão Fiscal NF-e'] }
-                ].map(p => (
+                {planosDisponiveis.map(p => (
                   <button 
                     key={p.id} 
                     type="button" 
-                    className={`plan-card ${plano === p.id ? 'active' : ''}`}
-                    onClick={() => setPlano(p.id)}
+                    className={`plan-card ${plano === p.slug ? 'active' : ''} ${p.destaque ? 'plan-destaque' : ''}`}
+                    onClick={() => setPlano(p.slug)}
                   >
+                    {p.destaque && <span className="plan-recommended">⭐ Recomendado</span>}
                     <div className="plan-header-card">
-                      <span className="plan-name">{p.nome}</span>
-                      <span className="plan-price">{p.preco}</span>
+                      <span className="plan-name">{p.nome.toUpperCase()}</span>
+                      <span className="plan-price">
+                        {p.preco === 0 ? 'R$ 0,00' : `${formatPrice(p.preco)}/mês`}
+                      </span>
                     </div>
+                    {p.descricao && <p className="plan-desc">{p.descricao}</p>}
                     <ul className="plan-features">
                       {p.features.map((f, i) => <li key={i}>✓ {f}</li>)}
                     </ul>
@@ -274,20 +356,28 @@ export default function CadastroPage() {
               >
                 {loading ? (
                   <span className="btn-loading"><span className="spinner" /> Criando conta...</span>
-                ) : step === 1 ? 'Continuar' :
-                  (step === 2 || step === 3) && role === 'comerciante' ? 'Próximo' :
-                  'Criar conta'}
+                ) : isLastStep ? 'Criar conta' : 'Próximo'}
               </button>
             </div>
           </form>
 
           {/* Login link */}
-          <p className="auth-footer">
-            Já tem uma conta?{' '}
-            <button className="auth-link" onClick={() => navigate('/login')} id="link-login">
-              Faça login
+          <div className="auth-footer" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
+            <p>
+              Já tem uma conta?{' '}
+              <button className="auth-link" onClick={() => navigate('/login')} id="link-login">
+                Faça login
+              </button>
+            </p>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              style={{ padding: '0.4rem 0.8rem', fontSize: '0.9rem' }}
+              onClick={() => navigate('/cliente')}
+            >
+              👀 Continuar como Visitante
             </button>
-          </p>
+          </div>
         </div>
       </div>
     </div>

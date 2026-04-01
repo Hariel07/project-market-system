@@ -42,24 +42,97 @@ enum PaymentMethod {
 // MODELOS GLOBAIS
 // ----------------------------------------------------------------------
 
-model User {
+model PlatformConfig {
+  id                    String   @id @default("singleton")
+  assinaturaObrigatoria Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model SubscriptionPlan {
+  id           String   @id @default(uuid())
+  nome         String   @unique
+  slug         String   @unique
+  preco        Float    @default(0)
+  descricao    String?
+  features     String[]
+  maxItens     Int?
+  maxPdvs      Int?
+  destaque     Boolean  @default(false)
+  ativo        Boolean  @default(true)
+  ordem        Int      @default(0)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  comercios    Commerce[]
+}
+
+// ----------------------------------------------------------------------
+// GESTÃO DE IDENTIDADE (SSO)
+// ----------------------------------------------------------------------
+
+model Account {
   id        String   @id @default(uuid())
-  nome      String
+  cpf       String   @unique
   email     String   @unique
   senha     String   // Bcrypt hash
-  role      Role     @default(CLIENTE)
-  cpf_cnpj  String?  @unique
   telefone  String?
+  ativo     Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  perfis    User[]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  accountId String
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  nome      String
+  role      Role     @default(CLIENTE)
   ativo     Boolean  @default(true)
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relações
+  enderecos      Address[]
   comercioId     String?
   comercio       Commerce?  @relation(fields: [comercioId], references: [id])
   pedidosCliente Order[]    @relation("ClientePedidos")
   entregas       Delivery[] @relation("EntregadorDeliveries")
+}
+
+model Address {
+  id              String   @id @default(uuid())
+  userId          String?
+  comercioId      String?
+  
+  logradouro      String
+  numero          String?
+  complemento     String?
+  bairro          String?
+  cidade          String?
+  estado          String?
+  cep             String?
+  pontoReferencia String?
+  
+  rotulo          String   @default("CASA")
+  icone           String   @default("🏠")
+  
+  lat             Float?
+  lng             Float?
+  
+  isPrincipal     Boolean  @default(false)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comercio        Commerce? @relation(fields: [comercioId], references: [id], onDelete: Cascade)
 }
 
 model Commerce {
@@ -72,14 +145,23 @@ model Commerce {
   ativo       Boolean  @default(false)
   planoAtual  String   @default("GRATIS")
   
+  // Relação com plano de assinatura
+  planoId     String?
+  plano       SubscriptionPlan? @relation(fields: [planoId], references: [id])
+  
   // Endereço e Configs Básicas
   taxaEntrega Float    @default(0.0)
   tempoMedio  String?  // Ex: "30-45 min"
+  
+  // Status de Operação
+  isOpen             Boolean @default(true)
+  horarioAtendimento String? // Ex: "Seg à Sex: 08:00h às 18:00h"
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relações
+  enderecos   Address[]
   usuarios    User[]
   produtos    Product[]
   pedidos     Order[]
@@ -178,3 +260,4 @@ model Delivery {
   pedido        Order    @relation(fields: [pedidoId], references: [id])
   entregador    User?    @relation("EntregadorDeliveries", fields: [entregadorId], references: [id])
 }
+
