@@ -3,11 +3,11 @@ import type { Item, ItemCarrinho } from '../data/mockData';
 
 interface CartContextType {
   items: ItemCarrinho[];
-  comercioId: number | null;
+  comercioId: number | string | null;
   comercioNome: string;
   addItem: (item: Item, quantidade?: number) => void;
-  removeItem: (itemId: number) => void;
-  updateQuantidade: (itemId: number, quantidade: number) => void;
+  removeItem: (itemId: number | string) => void;
+  updateQuantidade: (itemId: number | string, quantidade: number) => void;
   clearCart: () => void;
   totalItems: number;
   subtotal: number;
@@ -17,13 +17,12 @@ const CartContext = createContext<CartContextType | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<ItemCarrinho[]>([]);
-  const [comercioId, setComercioId] = useState<number | null>(null);
+  const [comercioId, setComercioId] = useState<number | string | null>(null);
   const [comercioNome, setComercioNome] = useState('');
 
   const addItem = useCallback((item: Item, quantidade = 1) => {
     setItems(prev => {
-      // Se o carrinho tem itens de outro comércio, limpa
-      if (comercioId !== null && comercioId !== item.comercioId) {
+      if (comercioId !== null && String(comercioId) !== String(item.comercioId)) {
         setComercioId(item.comercioId);
         return [{ item, quantidade }];
       }
@@ -32,10 +31,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setComercioId(item.comercioId);
       }
 
-      const existing = prev.find(ci => ci.item.id === item.id);
+      const existing = prev.find(ci => String(ci.item.id) === String(item.id));
       if (existing) {
         return prev.map(ci =>
-          ci.item.id === item.id
+          String(ci.item.id) === String(item.id)
             ? { ...ci, quantidade: ci.quantidade + quantidade }
             : ci
         );
@@ -44,9 +43,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   }, [comercioId]);
 
-  const removeItem = useCallback((itemId: number) => {
+  const removeItem = useCallback((itemId: number | string) => {
     setItems(prev => {
-      const updated = prev.filter(ci => ci.item.id !== itemId);
+      const updated = prev.filter(ci => String(ci.item.id) !== String(itemId));
       if (updated.length === 0) {
         setComercioId(null);
         setComercioNome('');
@@ -55,14 +54,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const updateQuantidade = useCallback((itemId: number, quantidade: number) => {
+  const updateQuantidade = useCallback((itemId: number | string, quantidade: number) => {
     if (quantidade <= 0) {
       removeItem(itemId);
       return;
     }
     setItems(prev =>
       prev.map(ci =>
-        ci.item.id === itemId ? { ...ci, quantidade } : ci
+        String(ci.item.id) === String(itemId) ? { ...ci, quantidade } : ci
       )
     );
   }, [removeItem]);

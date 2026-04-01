@@ -249,15 +249,31 @@ model Delivery {
   id            String   @id @default(uuid())
   pedidoId      String   @unique
   entregadorId  String?
-  
-  status        String   @default("AGUARDANDO_COLETA") // AGUARDANDO, A_CAMINHO, ENTREGUE
-  taxaRepasse   Float?   // Quanto o entregador ganha
-  
+
+  status        String   @default("AGUARDANDO_COLETA")
+  taxaRepasse   Float?
+  assinatura    String?  // Base64 da assinatura do cliente na entrega
+
   coletadoEm    DateTime?
   entregueEm    DateTime?
 
   // Relações
-  pedido        Order    @relation(fields: [pedidoId], references: [id])
-  entregador    User?    @relation("EntregadorDeliveries", fields: [entregadorId], references: [id])
+  pedido        Order         @relation(fields: [pedidoId], references: [id])
+  entregador    User?         @relation("EntregadorDeliveries", fields: [entregadorId], references: [id])
+  gpsLogs       DeliveryGPS[]
+}
+
+model DeliveryGPS {
+  id          String   @id @default(uuid())
+  deliveryId  String
+  latitude    Float
+  longitude   Float
+  velocidade  Float?
+  precisao    Float?
+  timestamp   DateTime @default(now())
+
+  delivery    Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+
+  @@index([deliveryId])
 }
 

@@ -1,23 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TopBar from '../../shared/components/TopBar';
-import { categoriasMock, comerciosMock, itensMock, pedidosMock, formatPrice, getStatusLabel, getStatusColor } from '../../data/mockData';
+import { categoriasMock, formatPrice } from '../../data/mockData';
+import { api } from '../../lib/api';
 import './ClienteDashboard.css';
+
+interface ComercioAPI {
+  id: string;
+  nomeFantasia: string;
+  segmento: string;
+  logoUrl?: string;
+  taxaEntrega: number;
+  tempoMedio?: string;
+  isOpen: boolean;
+}
 
 export default function ClienteDashboard() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [comercios, setComercios] = useState<ComercioAPI[]>([]);
 
-  const pedidoAtivo = pedidosMock.find(p => !['entregue', 'cancelado'].includes(p.status));
-  const popularItems = itensMock.filter(i => i.avaliacao >= 4.7).slice(0, 6);
-  const promoItems = itensMock.filter(i => i.emPromocao).slice(0, 6);
+  useEffect(() => {
+    api.get('/api/comercios/public')
+      .then((res: any) => setComercios(res.data))
+      .catch(() => setComercios([]));
+  }, []);
+
+  const abertos = comercios.filter(c => c.isOpen).slice(0, 4);
 
   return (
     <div className="cliente-dashboard">
       <TopBar showSearch showCart onSearch={setSearchTerm} />
 
       <main className="page-content">
-        {/* Hero / Greeting */}
+        {/* Hero */}
         <section className="hero-section animate-fade-in-up">
           <div className="container">
             <div className="hero-card">
@@ -41,9 +57,6 @@ export default function ClienteDashboard() {
           </div>
         </section>
 
-        {/* Pedido Ativo Ocultado Temporariamente */}
-
-
         {/* Categorias */}
         <section className="container animate-fade-in-up delay-2">
           <div className="section-header">
@@ -64,7 +77,7 @@ export default function ClienteDashboard() {
           </div>
         </section>
 
-        {/* Mercados Próximos */}
+        {/* Mercados Abertos */}
         <section className="container animate-fade-in-up delay-3">
           <div className="section-header">
             <h2 className="section-title">Perto de você</h2>
@@ -73,67 +86,70 @@ export default function ClienteDashboard() {
             </button>
           </div>
           <div className="stores-scroll">
-            {comerciosMock.filter(c => c.aberto).slice(0, 4).map(store => (
+            {abertos.map(store => (
               <div
                 key={store.id}
                 className="store-card card"
                 onClick={() => navigate(`/cliente/mercado/${store.id}`)}
                 id={`store-${store.id}`}
               >
-                <div className="store-card-logo">{store.logo}</div>
+                <div className="store-card-logo">
+                  {store.logoUrl && store.logoUrl.length <= 4
+                    ? store.logoUrl
+                    : store.logoUrl
+                      ? <img src={store.logoUrl} alt={store.nomeFantasia} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : '🏪'}
+                </div>
                 <div className="store-card-body">
-                  <h3 className="store-card-name">{store.nome}</h3>
+                  <h3 className="store-card-name">{store.nomeFantasia}</h3>
                   <div className="store-card-meta">
-                    <span className="store-rating">⭐ {store.avaliacao}</span>
-                    <span className="store-dot">•</span>
-                    <span>{store.distancia}</span>
+                    <span>{store.segmento}</span>
                   </div>
                   <div className="store-card-delivery">
-                    <span>🕐 {store.tempoEntrega}</span>
+                    <span>🕐 {store.tempoMedio || '??-?? min'}</span>
                     <span className="store-dot">•</span>
                     <span>{store.taxaEntrega === 0 ? '🟢 Grátis' : formatPrice(store.taxaEntrega)}</span>
                   </div>
                 </div>
               </div>
             ))}
+            {abertos.length === 0 && (
+              <p className="text-secondary" style={{ padding: '1rem' }}>Nenhum comércio aberto no momento.</p>
+            )}
           </div>
         </section>
 
-        {/* Promoções */}
-        {promoItems.length > 0 && (
+        {/* Todos os comércios (scroll) */}
+        {comercios.length > 4 && (
           <section className="container animate-fade-in-up delay-4">
             <div className="section-header">
-              <h2 className="section-title">🔥 Ofertas</h2>
+              <h2 className="section-title">Todos os comércios</h2>
               <button className="section-link" onClick={() => navigate('/cliente/mercados')}>
-                Ver mais →
+                Ver todos →
               </button>
             </div>
-            <div className="promo-scroll">
-              {promoItems.map(item => (
+            <div className="stores-scroll">
+              {comercios.slice(4).map(store => (
                 <div
-                  key={item.id}
-                  className="promo-card"
-                  onClick={() => navigate(`/cliente/produto/${item.id}`)}
-                  id={`promo-${item.id}`}
+                  key={store.id}
+                  className={`store-card card ${!store.isOpen ? 'store-closed' : ''}`}
+                  onClick={() => navigate(`/cliente/mercado/${store.id}`)}
+                  id={`store-extra-${store.id}`}
                 >
-                  <div className="promo-card-image">
-                    <span className="promo-card-emoji">
-                      {item.categoriaNome === 'Alimentos' ? '🍚' :
-                       item.categoriaNome === 'Laticínios' ? '🥛' :
-                       item.categoriaNome === 'Hortifruti' ? '🍌' :
-                       item.categoriaNome === 'Combos' ? '🍔' : '📦'}
-                    </span>
-                    {item.promocaoNome && (
-                      <span className="promo-badge">{item.promocaoNome}</span>
-                    )}
+                  <div className="store-card-logo">
+                    {store.logoUrl && store.logoUrl.length <= 4 ? store.logoUrl : '🏪'}
                   </div>
-                  <div className="promo-card-info">
-                    <p className="promo-card-name truncate">{item.nome}</p>
-                    <div className="promo-card-prices">
-                      {item.precoOriginal && (
-                        <span className="promo-old-price">{formatPrice(item.precoOriginal)}</span>
-                      )}
-                      <span className="promo-new-price">{formatPrice(item.preco)}</span>
+                  <div className="store-card-body">
+                    <h3 className="store-card-name">{store.nomeFantasia}</h3>
+                    <div className="store-card-meta">
+                      <span className={store.isOpen ? 'text-success' : 'text-danger'}>
+                        {store.isOpen ? '● Aberto' : '● Fechado'}
+                      </span>
+                    </div>
+                    <div className="store-card-delivery">
+                      <span>🕐 {store.tempoMedio || '??-?? min'}</span>
+                      <span className="store-dot">•</span>
+                      <span>{store.taxaEntrega === 0 ? '🟢 Grátis' : formatPrice(store.taxaEntrega)}</span>
                     </div>
                   </div>
                 </div>
@@ -141,42 +157,6 @@ export default function ClienteDashboard() {
             </div>
           </section>
         )}
-
-        {/* Mais Populares */}
-        <section className="container animate-fade-in-up delay-5">
-          <div className="section-header">
-            <h2 className="section-title">⭐ Mais populares</h2>
-          </div>
-          <div className="popular-grid">
-            {popularItems.map(item => {
-              const emoji = item.categoriaNome === 'Lanches' ? '🍔' :
-                           item.categoriaNome === 'Pães' ? '🍞' :
-                           item.categoriaNome === 'Bebidas' ? '🥤' :
-                           item.categoriaNome === 'Alimentos' ? '🍚' :
-                           item.categoriaNome === 'Acompanhamentos' ? '🍟' : '📦';
-              return (
-                <div
-                  key={item.id}
-                  className="popular-item card"
-                  onClick={() => navigate(`/cliente/produto/${item.id}`)}
-                  id={`popular-${item.id}`}
-                >
-                  <div className="popular-item-img">{emoji}</div>
-                  <div className="card-body">
-                    <p className="popular-item-name truncate">{item.nome}</p>
-                    <p className="popular-item-store text-sm text-secondary">
-                      {comerciosMock.find(c => c.id === item.comercioId)?.nome}
-                    </p>
-                    <div className="popular-item-bottom">
-                      <span className="popular-item-price">{formatPrice(item.preco)}</span>
-                      <span className="popular-item-rating">⭐ {item.avaliacao}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
       </main>
     </div>
   );

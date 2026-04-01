@@ -59,6 +59,24 @@ export async function getMyCommerce(req: Request, res: Response): Promise<void> 
   }
 }
 
+// Listar produtos públicos de um comércio (para vitrine do cliente)
+export async function getProdutosPublicos(req: Request, res: Response): Promise<void> {
+  try {
+    const id = String(req.params.id);
+
+    const produtos = await prisma.product.findMany({
+      where: { comercioId: id, ativo: true },
+      include: { categoria: true },
+      orderBy: [{ categoriaId: 'asc' }, { nome: 'asc' }],
+    });
+
+    res.json(produtos);
+  } catch (error) {
+    console.error('Erro ao buscar produtos do comércio:', error);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+}
+
 export async function updateMyCommerce(req: Request, res: Response): Promise<void> {
   const user = req.user;
   if (!user || !user.comercioId) {

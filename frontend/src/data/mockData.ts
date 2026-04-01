@@ -24,12 +24,12 @@ export interface Categoria {
 }
 
 export interface Item {
-  id: number;
-  comercioId: number;
+  id: number | string;
+  comercioId: number | string;
   nome: string;
   descricao: string;
   tipo: 'simples' | 'composto' | 'servico' | 'combo';
-  categoriaId: number;
+  categoriaId: number | string;
   categoriaNome: string;
   preco: number;
   precoOriginal?: number;

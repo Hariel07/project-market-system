@@ -3,24 +3,39 @@ import { useNavigate } from 'react-router-dom';
 import TopBar from '../../shared/components/TopBar';
 import { useCart } from '../../contexts/CartContext';
 import { formatPrice } from '../../data/mockData';
+import { api } from '../../lib/api';
 import './CheckoutPage.css';
 
 const formasPagamento = [
-  { id: 'pix', icon: '💠', nome: 'PIX', desc: 'Aprovação instantânea' },
-  { id: 'credito', icon: '💳', nome: 'Cartão de Crédito', desc: 'Até 12x sem juros' },
-  { id: 'debito', icon: '💳', nome: 'Cartão de Débito', desc: 'Débito na hora' },
-  { id: 'dinheiro', icon: '💵', nome: 'Dinheiro', desc: 'Pagar na entrega' },
+  { id: 'pix',      icon: '💠', nome: 'PIX',               desc: 'Aprovação instantânea' },
+  { id: 'credito',  icon: '💳', nome: 'Cartão de Crédito', desc: 'Até 12x sem juros' },
+  { id: 'debito',   icon: '💳', nome: 'Cartão de Débito',  desc: 'Débito na hora' },
+  { id: 'dinheiro', icon: '💵', nome: 'Dinheiro',          desc: 'Pagar na entrega' },
 ];
+
+interface Endereco {
+  id: string;
+  logradouro: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  rotulo: string;
+  icone: string;
+  isPrincipal: boolean;
+}
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const { items, subtotal, clearCart } = useCart();
+  const { items, subtotal, clearCart, comercioId } = useCart();
   const [formaPagamento, setFormaPagamento] = useState('pix');
-  const [endereco] = useState('Rua das Flores, 123 - Centro');
+  const [enderecos, setEnderecos] = useState<Endereco[]>([]);
+  const [enderecoSelecionado, setEnderecoSelecionado] = useState<Endereco | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
-  const taxaEntrega = 5.99;
-  const total = subtotal + taxaEntrega;
+  const [comercio, setComercio] = useState<{ taxaEntrega: number } | null>(null);
 
   useEffect(() => {
     const userStr = localStorage.getItem('@MarketSystem:user');
@@ -28,18 +43,76 @@ export default function CheckoutPage() {
 
     if (!localStorage.getItem('@MarketSystem:token') || !user) {
       navigate('/login?redirect=/cliente/checkout');
-    } else if (user.role !== 'CLIENTE') {
-      alert('Apenas clientes podem fazer compras na plataforma. Por favor, ative seu perfil de Cliente!');
-      navigate('/cadastro?role=cliente&redirect=/cliente/checkout');
+      return;
     }
-  }, [navigate]);
+    if (user.role !== 'CLIENTE') {
+      alert('Apenas clientes podem fazer compras.');
+      navigate('/cadastro?role=cliente&redirect=/cliente/checkout');
+      return;
+    }
 
-  const handleConfirm = () => {
+    // Buscar endereços do usuário
+    api.get('/api/perfil/enderecos').then((res: any) => {
+      const lista: Endereco[] = res.data || [];
+      setEnderecos(lista);
+      const principal = lista.find(e => e.isPrincipal) ?? lista[0] ?? null;
+      setEnderecoSelecionado(principal);
+    }).catch(() => setEnderecos([]));
+
+    // Buscar taxa de entrega do comércio
+    if (comercioId) {
+      api.get('/api/comercios/public').then((res: any) => {
+        const c = res.data.find((x: any) => String(x.id) === String(comercioId));
+        if (c) setComercio({ taxaEntrega: c.taxaEntrega ?? 0 });
+      }).catch(() => {});
+    }
+  }, [navigate, comercioId]);
+
+  const taxaEntrega = comercio?.taxaEntrega ?? 0;
+  const total = subtotal + taxaEntrega;
+
+  const handleConfirm = async () => {
+    if (!enderecoSelecionado) {
+      setErro('Selecione um endereço de entrega.');
+      return;
+    }
+    if (!comercioId) {
+      setErro('Carrinho sem comércio associado. Volte e adicione produtos.');
+      return;
+    }
+
     setProcessing(true);
-    setTimeout(() => {
+    setErro(null);
+
+    const enderecoStr = [
+      enderecoSelecionado.logradouro,
+      enderecoSelecionado.numero,
+      enderecoSelecionado.complemento,
+      enderecoSelecionado.bairro,
+      enderecoSelecionado.cidade,
+      enderecoSelecionado.estado,
+    ].filter(Boolean).join(', ');
+
+    const payload = {
+      comercioId: String(comercioId),
+      formaPagamento,
+      enderecoEntrega: enderecoStr,
+      itens: items.map(({ item, quantidade }) => ({
+        produtoId: String(item.id),
+        quantidade,
+        precoUnitario: item.preco,
+      })),
+    };
+
+    try {
+      const res: any = await api.post('/api/pedidos', payload);
       clearCart();
-      navigate('/cliente/pedido/1');
-    }, 2000);
+      navigate(`/cliente/pedido/${res.data.id}`);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'Erro ao criar pedido. Tente novamente.';
+      setErro(msg);
+      setProcessing(false);
+    }
   };
 
   if (items.length === 0 && !processing) {
@@ -56,21 +129,53 @@ export default function CheckoutPage() {
           {/* Endereço */}
           <section className="checkout-section animate-fade-in-up">
             <h2 className="checkout-section-title">📍 Endereço de entrega</h2>
-            <div className="address-card">
-              <div className="address-info">
-                <p className="address-main">{endereco}</p>
-                <p className="address-complement">Bloco A, Apt 42</p>
+            {enderecos.length === 0 ? (
+              <div className="address-card">
+                <p className="text-secondary">Nenhum endereço cadastrado.</p>
+                <button
+                  className="btn btn-outline btn-sm mt-2"
+                  onClick={() => navigate('/cliente/enderecos/novo')}
+                >
+                  + Adicionar endereço
+                </button>
               </div>
-              <button className="btn btn-ghost text-primary text-sm">Alterar</button>
-            </div>
+            ) : (
+              <div className="checkout-addresses">
+                {enderecos.map(end => (
+                  <div
+                    key={end.id}
+                    className={`address-card clickable ${enderecoSelecionado?.id === end.id ? 'selected' : ''}`}
+                    onClick={() => setEnderecoSelecionado(end)}
+                  >
+                    <div className="address-info">
+                      <p className="address-label">{end.icone} {end.rotulo}</p>
+                      <p className="address-main">
+                        {end.logradouro}{end.numero ? `, ${end.numero}` : ''}
+                        {end.complemento ? ` — ${end.complemento}` : ''}
+                      </p>
+                      <p className="address-secondary text-secondary text-sm">
+                        {[end.bairro, end.cidade, end.estado].filter(Boolean).join(', ')}
+                      </p>
+                    </div>
+                    <span className="address-radio">{enderecoSelecionado?.id === end.id ? '●' : '○'}</span>
+                  </div>
+                ))}
+                <button
+                  className="btn btn-ghost btn-sm text-primary mt-1"
+                  onClick={() => navigate('/cliente/enderecos/novo')}
+                >
+                  + Novo endereço
+                </button>
+              </div>
+            )}
           </section>
 
-          {/* Resumo dos itens */}
+          {/* Itens */}
           <section className="checkout-section animate-fade-in-up delay-1">
             <h2 className="checkout-section-title">🛒 Itens do pedido</h2>
             <div className="checkout-items-list">
               {items.map(({ item, quantidade }) => (
-                <div key={item.id} className="checkout-item-row">
+                <div key={String(item.id)} className="checkout-item-row">
                   <span className="checkout-item-qty">{quantidade}×</span>
                   <span className="checkout-item-name">{item.nome}</span>
                   <span className="checkout-item-price">{formatPrice(item.preco * quantidade)}</span>
@@ -79,7 +184,7 @@ export default function CheckoutPage() {
             </div>
           </section>
 
-          {/* Forma de Pagamento */}
+          {/* Pagamento */}
           <section className="checkout-section animate-fade-in-up delay-2">
             <h2 className="checkout-section-title">💳 Forma de pagamento</h2>
             <div className="payment-options">
@@ -101,7 +206,7 @@ export default function CheckoutPage() {
             </div>
           </section>
 
-          {/* Summary */}
+          {/* Resumo */}
           <section className="checkout-section animate-fade-in-up delay-3">
             <div className="checkout-summary">
               <div className="summary-row">
@@ -110,7 +215,7 @@ export default function CheckoutPage() {
               </div>
               <div className="summary-row">
                 <span>Taxa de entrega</span>
-                <span>{formatPrice(taxaEntrega)}</span>
+                <span>{taxaEntrega === 0 ? 'Grátis' : formatPrice(taxaEntrega)}</span>
               </div>
               <div className="summary-row summary-total">
                 <span>Total</span>
@@ -118,15 +223,21 @@ export default function CheckoutPage() {
               </div>
             </div>
           </section>
+
+          {erro && (
+            <div className="checkout-section" style={{ color: 'var(--color-danger)', textAlign: 'center', padding: '0.5rem' }}>
+              {erro}
+            </div>
+          )}
         </div>
 
-        {/* Confirm bar */}
+        {/* Botão confirmar */}
         <div className="confirm-bar">
           <div className="container">
             <button
               className={`btn btn-primary btn-lg btn-block ${processing ? 'processing' : ''}`}
               onClick={handleConfirm}
-              disabled={processing}
+              disabled={processing || enderecos.length === 0}
               id="btn-confirm-order"
             >
               {processing ? (

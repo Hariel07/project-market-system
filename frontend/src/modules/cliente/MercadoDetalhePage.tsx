@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import TopBar from '../../shared/components/TopBar';
 import { useCart } from '../../contexts/CartContext';
-import { itensMock, formatPrice } from '../../data/mockData';
+import { formatPrice, type Item } from '../../data/mockData';
 import { api } from '../../lib/api';
 import './MercadoDetalhePage.css';
 
@@ -12,49 +12,66 @@ export default function MercadoDetalhePage() {
   const { addItem } = useCart();
   const [search, setSearch] = useState('');
   const [selectedCat, setSelectedCat] = useState('');
-  
+
   const [comercio, setComercio] = useState<any>(null);
+  const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchComercio() {
+    if (!id) return;
+
+    async function fetchTudo() {
       try {
-        const { data } = await api.get('/api/comercios/public');
-        const found = data.find((c: any) => c.id === id);
+        const [resComercio, resProdutos] = await Promise.all([
+          api.get('/api/comercios/public'),
+          api.get(`/api/comercios/${id}/produtos`),
+        ]);
+
+        const found = resComercio.data.find((c: any) => c.id === id);
         if (found) {
           setComercio({
             ...found,
             nome: found.nomeFantasia,
-            logo: found.logoUrl ? <img src={found.logoUrl} alt={found.nomeFantasia} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '🏪',
             tempoEntrega: found.tempoMedio || '?? min',
-            distancia: '2.5 km',
-            avaliacao: 4.8
           });
         }
+
+        // Mapear produtos da API para o formato Item do carrinho
+        const produtosAPI: Item[] = resProdutos.data.map((p: any) => ({
+          id: p.id,
+          comercioId: p.comercioId,
+          nome: p.nome,
+          descricao: p.descricao ?? '',
+          tipo: 'simples' as const,
+          categoriaId: p.categoriaId ?? '',
+          categoriaNome: p.categoria?.nome ?? 'Geral',
+          preco: p.precoPromocional ?? p.precoVenda,
+          precoOriginal: p.precoPromocional ? p.precoVenda : undefined,
+          imagem: p.imagemUrl ?? '',
+          unidadeMedida: p.unidade ?? 'UN',
+          avaliacao: 4.8,
+          avaliacoes: 0,
+          emPromocao: !!p.precoPromocional,
+          estoque: p.estoque ?? 0,
+        }));
+
+        setItems(produtosAPI);
       } catch (e) {
-        console.error('Error fetching commerce details', e);
+        console.error('Erro ao carregar dados do comércio:', e);
       } finally {
         setLoading(false);
       }
     }
-    fetchComercio();
+
+    fetchTudo();
   }, [id]);
 
-  const items = itensMock; // For now, items remain mocked as requested until Catalog is fully migrated
-
-  const categorias = useMemo(() => {
-    const cats = [...new Set(items.map(i => i.categoriaNome))];
-    return cats;
-  }, [items]);
+  const categorias = useMemo(() => [...new Set(items.map(i => i.categoriaNome))], [items]);
 
   const filteredItems = useMemo(() => {
     let result = items;
-    if (search) {
-      result = result.filter(i => i.nome.toLowerCase().includes(search.toLowerCase()));
-    }
-    if (selectedCat) {
-      result = result.filter(i => i.categoriaNome === selectedCat);
-    }
+    if (search) result = result.filter(i => i.nome.toLowerCase().includes(search.toLowerCase()));
+    if (selectedCat) result = result.filter(i => i.categoriaNome === selectedCat);
     return result;
   }, [items, search, selectedCat]);
 
@@ -73,7 +90,13 @@ export default function MercadoDetalhePage() {
         <section className="store-hero animate-fade-in-up">
           <div className="container">
             <div className="store-hero-card">
-              <div className="store-hero-logo">{comercio.logo}</div>
+              <div className="store-hero-logo">
+                {comercio.logoUrl && comercio.logoUrl.length <= 4
+                  ? comercio.logoUrl
+                  : comercio.logoUrl
+                    ? <img src={comercio.logoUrl} alt={comercio.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : '🏪'}
+              </div>
               <div className="store-hero-info">
                 <h1 className="store-hero-name">{comercio.nome}</h1>
                 <p className="store-hero-segment">{comercio.segmento}</p>

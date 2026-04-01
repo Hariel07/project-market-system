@@ -1,11 +1,12 @@
 import { Router } from 'express';
-import { getPublicComercios, getMyCommerce, updateMyCommerce } from '../controllers/comercios.controller';
+import { getPublicComercios, getProdutosPublicos, getMyCommerce, updateMyCommerce } from '../controllers/comercios.controller';
 import { authMiddleware } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-// Rota pública para a vitrine
+// Rotas públicas (vitrine do cliente)
 router.get('/public', getPublicComercios);
+router.get('/:id/produtos', getProdutosPublicos);
 
 // Rotas do painel (logadas)
 router.get('/me', authMiddleware, getMyCommerce);

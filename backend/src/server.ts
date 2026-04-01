@@ -8,6 +8,8 @@ import planosRoutes from './routes/planos.routes';
 import configRoutes from './routes/config.routes';
 import { perfilRoutes } from './routes/perfil.routes';
 import comerciosRoutes from './routes/comercios.routes';
+import entregasRoutes from './routes/entregas.routes';
+import pedidosRoutes from './routes/pedidos.routes';
 
 dotenv.config();
 
@@ -27,6 +29,8 @@ app.use('/api/perfil', perfilRoutes);
 app.use('/api/categorias', categoriasRoutes);
 app.use('/api/produtos', produtosRoutes);
 app.use('/api/comercios', comerciosRoutes);
+app.use('/api/entregas', entregasRoutes);
+app.use('/api/pedidos', pedidosRoutes);
 
 // Rotas de Planos e Config (públicas + admin)
 app.use('/api', planosRoutes);

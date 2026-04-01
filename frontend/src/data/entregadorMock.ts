@@ -12,6 +12,10 @@ export interface OportunidadeEntrega {
   valor: number;
   tempoEstimado: number; // em min
   expiraEm: number; // segundos para sumir a oferta
+  latColeta?: number;
+  lngColeta?: number;
+  latEntrega?: number;
+  lngEntrega?: number;
 }
 
 export interface HistoricoCorrida {
@@ -43,6 +47,10 @@ export const oportunidadesMock: OportunidadeEntrega[] = [
     valor: 12.50,
     tempoEstimado: 25,
     expiraEm: 45,
+    latColeta: -23.5617,
+    lngColeta: -46.6560,
+    latEntrega: -23.5533,
+    lngEntrega: -46.6573,
   },
   {
     id: 402,
@@ -54,6 +62,10 @@ export const oportunidadesMock: OportunidadeEntrega[] = [
     valor: 18.00,
     tempoEstimado: 35,
     expiraEm: 12,
+    latColeta: -23.5708,
+    lngColeta: -46.6433,
+    latEntrega: -23.5855,
+    lngEntrega: -46.6417,
   },
   {
     id: 403,
@@ -65,6 +77,10 @@ export const oportunidadesMock: OportunidadeEntrega[] = [
     valor: 8.50,
     tempoEstimado: 15,
     expiraEm: 5,
+    latColeta: -23.5816,
+    lngColeta: -46.6833,
+    latEntrega: -23.5858,
+    lngEntrega: -46.6800,
   }
 ];
 
