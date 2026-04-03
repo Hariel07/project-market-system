@@ -4,18 +4,24 @@ import EntregadorLayout from './EntregadorLayout';
 import { entregadorStatsMock, oportunidadesMock } from '../../data/entregadorMock';
 import { formatPrice } from '../../data/mockData';
 import { api } from '../../lib/api';
+import { useAuthProtected, useAuthUser } from '../../lib/useAuth';
 import { Entrega, OportunidadeEntrega } from '../../types/entrega';
 import './EntregadorDashboard.css';
 
 export default function EntregadorDashboard() {
   const navigate = useNavigate();
+  
+  // ✅ PROTEÇÃO: Validar autenticação e role ENTREGADOR
+  useAuthProtected(['ENTREGADOR']);
+  const { userId: entregadorId } = useAuthUser();
+
   const [isOnline, setIsOnline] = useState(false);
-  const [oportunidades, setOportunidades] = useState(oportunidadesMock);
+  const [oportunidades, setOportunidades] = useState<OportunidadeEntrega[]>(oportunidadesMock);
   const [entregasAtivas, setEntregasAtivas] = useState<Entrega[]>([]);
   const [loading, setLoading] = useState(false);
+  const [erroOportunidades, setErroOportunidades] = useState<string | null>(null);
 
-  const stats = entregadorStatsMock;
-  const entregadorId = localStorage.getItem('userId') || 'demo-entregador';
+  const [stats, setStats] = useState(entregadorStatsMock);
 
   const handleAceitarCorrida = async (opp: OportunidadeEntrega) => {
     const entregaId = opp.id;
@@ -33,6 +39,8 @@ export default function EntregadorDashboard() {
     if (!isOnline) return;
 
     setLoading(true);
+    setErroOportunidades(null);
+    
     api.get('/api/entregas/oportunidades')
       .then((res: any) => {
         // Transformar entregas da API em oportunidades
@@ -52,24 +60,38 @@ export default function EntregadorDashboard() {
           latEntrega: -23.5533,
           lngEntrega: -46.6573,
         }));
-        setOportunidades(oportunidadesAPI.length > 0 ? oportunidadesAPI : oportunidadesMock);
+        
+        if (oportunidadesAPI.length === 0) {
+          // Se nenhuma entrega real, mostrar mock
+          setOportunidades(oportunidadesMock);
+          setErroOportunidades('Usando dados de demonstração');
+        } else {
+          setOportunidades(oportunidadesAPI);
+        }
       })
       .catch((err: any) => {
         console.error('Erro ao carregar oportunidades:', err);
+        // Fallback para mock
         setOportunidades(oportunidadesMock);
+        setErroOportunidades('Usando dados de demonstração (API indisponível)');
       })
       .finally(() => setLoading(false));
   }, [isOnline]);
 
   // Carregar minhas entregas ativas
   useEffect(() => {
-    if (!isOnline) return;
+    if (!isOnline || !entregadorId) return;
 
-    const entregadorId = localStorage.getItem('userId') || 'demo-entregador';
     api.get(`/api/entregas/entregador/${entregadorId}`)
-      .then((res: any) => setEntregasAtivas(res.data || []))
-      .catch((err: any) => console.error('Erro ao carregar entregas ativas:', err));
-  }, [isOnline]);
+      .then((res: any) => {
+        setEntregasAtivas(res.data || []);
+        console.log('✅ Entregas ativas carregadas:', res.data?.length || 0);
+      })
+      .catch((err: any) => {
+        console.error('Erro ao carregar entregas ativas:', err);
+        setEntregasAtivas([]); // Sem fallback aqui, entregas são críticas
+      });
+  }, [isOnline, entregadorId]);
 
   return (
     <EntregadorLayout title="Início">
@@ -127,6 +149,21 @@ export default function EntregadorDashboard() {
             <span className="radar-icon">🛵</span>
             <div className="hotzone" style={{ top: '20%', left: '30%' }}>🔥 Alta demanda</div>
             <div className="hotzone" style={{ bottom: '30%', right: '20%' }}>🔥 Moderada</div>
+          </div>
+        )}
+
+        {/* Aviso de Dados de Demonstração */}
+        {erroOportunidades && (
+          <div style={{
+            backgroundColor: '#FEF3C7',
+            borderLeft: '4px solid #FBBF24',
+            padding: '12px 16px',
+            borderRadius: '6px',
+            marginBottom: '16px',
+            fontSize: '14px',
+            color: '#92400E',
+          }}>
+            ⚠️ {erroOportunidades}
           </div>
         )}
 

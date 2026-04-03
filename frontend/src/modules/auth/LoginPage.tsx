@@ -1,29 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../lib/api';
+import { useAppName } from '../../lib/useAppName';
 import './AuthPages.css';
-
-// Contas de teste atualizadas para o novo formato de Conta Única
-const DEMO_ACCOUNTS: Record<string, { cpf: string; senha: string; label: string; desc: string; icon: string }> = {
-  master: { 
-    cpf: '111.111.111-11', 
-    senha: '123456', 
-    label: 'Conta Mestre', 
-    desc: 'Múltiplos perfis',
-    icon: '🌟'
-  },
-  solo: { 
-    cpf: '222.222.222-22', 
-    senha: '123456', 
-    label: 'Conta Solo', 
-    desc: 'Apenas Cliente',
-    icon: '👤'
-  },
-};
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const nomeApp = useAppName();
   
   const [cpf, setCpf] = useState('');
   const [senha, setSenha] = useState('');
@@ -77,6 +61,10 @@ export default function LoginPage() {
               tempToken: response.data.tempToken, 
               perfilId: clientProfile.id 
             });
+            localStorage.setItem('token', resSel.data.token);
+            localStorage.setItem('userId', resSel.data.user.id);
+            localStorage.setItem('userRole', resSel.data.user.role);
+            localStorage.setItem('userName', resSel.data.user.nome);
             localStorage.setItem('@MarketSystem:token', resSel.data.token);
             localStorage.setItem('@MarketSystem:user', JSON.stringify(resSel.data.user));
             navigate(redirect);
@@ -101,6 +89,11 @@ export default function LoginPage() {
           return;
         }
 
+        // Salvar token e dados do usuário no localStorage
+        localStorage.setItem('token', token);
+        localStorage.setItem('userId', user.id);
+        localStorage.setItem('userRole', user.role);
+        localStorage.setItem('userName', user.nome);
         localStorage.setItem('@MarketSystem:token', token);
         localStorage.setItem('@MarketSystem:user', JSON.stringify(user));
 
@@ -121,6 +114,10 @@ export default function LoginPage() {
       const response = await api.post('/api/auth/select-profile', { tempToken, perfilId });
       const { token, user } = response.data;
 
+      localStorage.setItem('token', token);
+      localStorage.setItem('userId', user.id);
+      localStorage.setItem('userRole', user.role);
+      localStorage.setItem('userName', user.nome);
       localStorage.setItem('@MarketSystem:token', token);
       localStorage.setItem('@MarketSystem:user', JSON.stringify(user));
 
@@ -135,14 +132,6 @@ export default function LoginPage() {
       setSenha('');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDemoFill = (key: string) => {
-    const account = DEMO_ACCOUNTS[key];
-    if (account) {
-      setCpf(formatCPF(account.cpf));
-      setSenha(account.senha);
     }
   };
 
@@ -217,7 +206,7 @@ export default function LoginPage() {
         <div className="auth-card animate-fade-in-up">
           <div className="auth-header">
             <div className="auth-logo">🛒</div>
-            <h1 className="auth-title">Market System</h1>
+            <h1 className="auth-title">{nomeApp}</h1>
             <p className="auth-subtitle">Entre na sua conta centralizada</p>
           </div>
 
@@ -293,16 +282,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="auth-divider">
-            <span>contas de teste</span>
-          </div>
-
-          <div className="demo-hints" style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            <p><strong>Mestre (Lojas e Cliente):</strong> CPF 111.111.111-11 | Senha 123456</p>
-            <p><strong>Solo (Apenas Cliente):</strong> CPF 222.222.222-22 | Senha 123456</p>
-          </div>
-
-          <p className="auth-footer" style={{ marginTop: '1.5rem' }}>
+          <p className="auth-footer">
             Não tem uma conta?{' '}
             <button 
               className="auth-link" 

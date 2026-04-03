@@ -256,137 +256,176 @@ export default function AdminPlanos() {
           <div className="modal-overlay" onClick={() => setShowModal(false)}>
             <div className="modal-content plano-modal animate-fade-in-up" onClick={e => e.stopPropagation()}>
               <div className="modal-header">
-                <h2>{editingPlan ? '✏️ Editar Plano' : '➕ Novo Plano'}</h2>
+                <div className="modal-header-info">
+                  <h2>{editingPlan ? '✏️ Editar Plano' : '➕ Novo Plano'}</h2>
+                  {editingPlan && (
+                    <div className="modal-current-plan">
+                      <p className="modal-plan-label">Plano atual:</p>
+                      <p className="modal-plan-name">{editingPlan.nome}</p>
+                      <p className="modal-plan-meta">Código: {editingPlan.slug} • Preço: {formatPrice(editingPlan.preco)}</p>
+                    </div>
+                  )}
+                </div>
                 <button className="modal-close" onClick={() => setShowModal(false)}>✕</button>
               </div>
 
               <div className="modal-body">
-                <div className="form-row">
-                  <div className="input-group">
-                    <label>Nome do plano</label>
-                    <input
-                      type="text"
-                      className="input"
-                      placeholder="Ex: Básico"
-                      value={form.nome}
-                      onChange={e => setForm({ ...form, nome: e.target.value })}
-                    />
-                  </div>
-                  <div className="input-group">
-                    <label>Slug (URL-friendly)</label>
-                    <input
-                      type="text"
-                      className="input"
-                      placeholder="ex: basico"
-                      value={form.slug}
-                      onChange={e => setForm({ ...form, slug: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="input-group">
-                    <label>Preço mensal (R$)</label>
-                    <input
-                      type="number"
-                      className="input"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      value={form.preco}
-                      onChange={e => setForm({ ...form, preco: parseFloat(e.target.value) || 0 })}
-                    />
-                  </div>
-                  <div className="input-group">
-                    <label>Ordem de exibição</label>
-                    <input
-                      type="number"
-                      className="input"
-                      min="0"
-                      value={form.ordem}
-                      onChange={e => setForm({ ...form, ordem: parseInt(e.target.value) || 0 })}
-                    />
-                  </div>
-                </div>
-
-                <div className="input-group">
-                  <label>Descrição</label>
-                  <textarea
-                    className="input textarea"
-                    placeholder="Descrição curta do plano..."
-                    value={form.descricao || ''}
-                    onChange={e => setForm({ ...form, descricao: e.target.value })}
-                    rows={2}
-                  />
-                </div>
-
-                <div className="form-row">
-                  <div className="input-group">
-                    <label>Máx. Itens <span className="optional">(vazio = ilimitado)</span></label>
-                    <input
-                      type="number"
-                      className="input"
-                      min="0"
-                      placeholder="Ilimitado"
-                      value={form.maxItens ?? ''}
-                      onChange={e => setForm({ ...form, maxItens: e.target.value ? parseInt(e.target.value) : null })}
-                    />
-                  </div>
-                  <div className="input-group">
-                    <label>Máx. PDVs <span className="optional">(vazio = ilimitado)</span></label>
-                    <input
-                      type="number"
-                      className="input"
-                      min="0"
-                      placeholder="Ilimitado"
-                      value={form.maxPdvs ?? ''}
-                      onChange={e => setForm({ ...form, maxPdvs: e.target.value ? parseInt(e.target.value) : null })}
-                    />
-                  </div>
-                </div>
-
-                {/* Features */}
-                <div className="input-group">
-                  <label>Features / Benefícios</label>
-                  <div className="features-editor">
-                    {form.features.map((f, i) => (
-                      <div key={i} className="feature-tag">
-                        <span>✓ {f}</span>
-                        <button className="feature-remove" onClick={() => removeFeature(i)}>✕</button>
-                      </div>
-                    ))}
-                    <div className="feature-input-row">
+                {/* Seção: Informações Básicas */}
+                <div className="form-section">
+                  <h3 className="form-section-title">📋 Informações Básicas</h3>
+                  <div className="form-row">
+                    <div className="input-group">
+                      <label>Nome do plano <span className="required">*</span></label>
                       <input
                         type="text"
                         className="input"
-                        placeholder="Ex: Relatórios avançados"
-                        value={newFeature}
-                        onChange={e => setNewFeature(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addFeature())}
+                        placeholder="Ex: Básico, Profissional, Premium"
+                        value={form.nome}
+                        onChange={e => setForm({ ...form, nome: e.target.value })}
                       />
-                      <button className="btn btn-outline btn-sm" onClick={addFeature} type="button">+ Adicionar</button>
+                      <small className="field-help">Este é o nome visível aos clientes</small>
+                    </div>
+                    <div className="input-group">
+                      <label>Código/Slug <span className="required">*</span></label>
+                      <input
+                        type="text"
+                        className="input"
+                        placeholder="ex: basico, pro, premium"
+                        value={form.slug}
+                        onChange={e => setForm({ ...form, slug: e.target.value })}
+                      />
+                      <small className="field-help">Identificador único (sem espaços)</small>
+                    </div>
+                  </div>
+
+                  <div className="input-group">
+                    <label>Descrição</label>
+                    <textarea
+                      className="input textarea"
+                      placeholder="Descrição curta do plano para os clientes..."
+                      value={form.descricao || ''}
+                      onChange={e => setForm({ ...form, descricao: e.target.value })}
+                      rows={2}
+                    />
+                    <small className="field-help">Aparece no card do plano (opcional)</small>
+                  </div>
+                </div>
+
+                {/* Seção: Preço e Visibilidade */}
+                <div className="form-section">
+                  <h3 className="form-section-title">💰 Preço e Visibilidade</h3>
+                  <div className="form-row">
+                    <div className="input-group">
+                      <label>Preço mensal <span className="required">*</span></label>
+                      <div className="input-with-icon">
+                        <span className="input-prefix">R$</span>
+                        <input
+                          type="number"
+                          className="input"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={form.preco}
+                          onChange={e => setForm({ ...form, preco: parseFloat(e.target.value) || 0 })}
+                        />
+                      </div>
+                      <small className="field-help">Use 0 para plano gratuito</small>
+                    </div>
+                    <div className="input-group">
+                      <label>Ordem de exibição</label>
+                      <input
+                        type="number"
+                        className="input"
+                        min="0"
+                        value={form.ordem}
+                        onChange={e => setForm({ ...form, ordem: parseInt(e.target.value) || 0 })}
+                      />
+                      <small className="field-help">Ordem que aparece na listagem (0, 1, 2...)</small>
+                    </div>
+                  </div>
+                </div>
+                <div className="form-section">
+                  <h3 className="form-section-title">📦 Limites e Restrições</h3>
+                  <div className="form-row">
+                    <div className="input-group">
+                      <label>Máx. Itens do Catálogo</label>
+                      <input
+                        type="number"
+                        className="input"
+                        min="0"
+                        placeholder="Deixar vazio = ilimitado"
+                        value={form.maxItens ?? ''}
+                        onChange={e => setForm({ ...form, maxItens: e.target.value ? parseInt(e.target.value) : null })}
+                      />
+                      <small className="field-help">Quantos produtos podem cadastrar</small>
+                    </div>
+                    <div className="input-group">
+                      <label>Máx. Pontos de Venda (PDVs)</label>
+                      <input
+                        type="number"
+                        className="input"
+                        min="0"
+                        placeholder="Deixar vazio = ilimitado"
+                        value={form.maxPdvs ?? ''}
+                        onChange={e => setForm({ ...form, maxPdvs: e.target.value ? parseInt(e.target.value) : null })}
+                      />
+                      <small className="field-help">Quantas lojas/filiais podem ter</small>
                     </div>
                   </div>
                 </div>
 
-                {/* Checkboxes */}
-                <div className="form-row checkbox-row">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={form.destaque}
-                      onChange={e => setForm({ ...form, destaque: e.target.checked })}
-                    />
-                    <span>⭐ Plano em destaque (recomendado)</span>
-                  </label>
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={form.ativo}
-                      onChange={e => setForm({ ...form, ativo: e.target.checked })}
-                    />
-                    <span>✅ Plano ativo</span>
-                  </label>
+                {/* Seção: Benefícios */}
+                <div className="form-section">
+                  <h3 className="form-section-title">⭐ Benefícios/Features</h3>
+                  <p className="section-description">Liste os principais diferenciais deste plano para os clientes</p>
+                  <div className="input-group">
+                    <div className="features-editor">
+                      {form.features.length > 0 && (
+                        <div className="features-list">
+                          {form.features.map((f, i) => (
+                            <div key={i} className="feature-tag">
+                              <span>✓ {f}</span>
+                              <button className="feature-remove" onClick={() => removeFeature(i)} title="Remover">✕</button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="feature-input-row">
+                        <input
+                          type="text"
+                          className="input"
+                          placeholder="Ex: Relatórios avançados, Dashboard, API acesso..."
+                          value={newFeature}
+                          onChange={e => setNewFeature(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addFeature())}
+                        />
+                        <button className="btn btn-outline btn-sm" onClick={addFeature} type="button">+ Adicionar</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Seção: Status e Destaque */}
+                <div className="form-section">
+                  <h3 className="form-section-title">🎯 Status e Destaques</h3>
+                  <div className="form-row checkbox-row">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={form.destaque}
+                        onChange={e => setForm({ ...form, destaque: e.target.checked })}
+                      />
+                      <span>⭐ Destacar este plano como "Recomendado"</span>
+                    </label>
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={form.ativo}
+                        onChange={e => setForm({ ...form, ativo: e.target.checked })}
+                      />
+                      <span>✅ Plano ativo (disponível para novos clientes)</span>
+                    </label>
+                  </div>
                 </div>
               </div>
 

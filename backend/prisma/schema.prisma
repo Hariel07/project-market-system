@@ -38,12 +38,24 @@ enum PaymentMethod {
   DINHEIRO
 }
 
+enum TipoMovimentoCaixa {
+  ABERTURA
+  VENDA
+  DINHEIRO_ENTRADA
+  SANGRIA
+  SUPRIMENTO
+  DEVOLUCAO
+  AJUSTE
+  FECHAMENTO
+}
+
 // ----------------------------------------------------------------------
 // MODELOS GLOBAIS
 // ----------------------------------------------------------------------
 
 model PlatformConfig {
   id                    String   @id @default("singleton")
+  nomeApp               String   @default("Market System")
   assinaturaObrigatoria Boolean  @default(false)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
@@ -104,6 +116,14 @@ model User {
   comercio       Commerce?  @relation(fields: [comercioId], references: [id])
   pedidosCliente Order[]    @relation("ClientePedidos")
   entregas       Delivery[] @relation("EntregadorDeliveries")
+  chatsEntregador Chat[] @relation("EntregadorChats")
+  chatsCliente   Chat[] @relation("ClienteChats")
+  mensagensChat  ChatMessage[]
+  ratingsEntregador Rating[] @relation("EntregadorRatings")
+  ratingsCliente Rating[] @relation("ClienteRatings")
+  notificacoes   Notification[]
+  aberturasChaixa AberturaCaixa[]
+  movimentosCaixa MovimentoCaixa[]
 }
 
 model Address {
@@ -237,30 +257,36 @@ model OrderItem {
   id          String   @id @default(uuid())
   pedidoId    String
   produtoId   String
-  
   quantidade  Float
   precoUnitario Float
   
-  pedido      Order    @relation(fields: [pedidoId], references: [id])
+  createdAt   DateTime @default(now())
+  
+  pedido      Order    @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
   produto     Product  @relation(fields: [produtoId], references: [id])
 }
 
 model Delivery {
-  id            String   @id @default(uuid())
-  pedidoId      String   @unique
-  entregadorId  String?
+  id              String   @id @default(uuid())
+  pedidoId        String   @unique
+  entregadorId    String?
+  
+  status          String   @default("AGUARDANDO_COLETA")
+  taxaRepasse     Float?
+  assinatura      String?  // Base64 da assinatura do cliente na entrega
 
-  status        String   @default("AGUARDANDO_COLETA")
-  taxaRepasse   Float?
-  assinatura    String?  // Base64 da assinatura do cliente na entrega
-
-  coletadoEm    DateTime?
-  entregueEm    DateTime?
+  coletadoEm      DateTime?
+  entregueEm      DateTime?
 
   // Relações
-  pedido        Order         @relation(fields: [pedidoId], references: [id])
-  entregador    User?         @relation("EntregadorDeliveries", fields: [entregadorId], references: [id])
-  gpsLogs       DeliveryGPS[]
+  pedido          Order         @relation(fields: [pedidoId], references: [id])
+  entregador      User?         @relation("EntregadorDeliveries", fields: [entregadorId], references: [id])
+  gpsLogs         DeliveryGPS[]
+  chat            Chat?
+  rating          Rating?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model DeliveryGPS {
@@ -275,5 +301,141 @@ model DeliveryGPS {
   delivery    Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
 
   @@index([deliveryId])
+}
+
+// CHAT E COMUNICAÇÃO
+model Chat {
+  id                String   @id @default(uuid())
+  entregaId         String   @unique
+  entregadorId      String
+  clienteId         String
+  
+  ultimaMensagem    String?
+  ultimaAtividadeEm DateTime?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  entrega           Delivery @relation(fields: [entregaId], references: [id], onDelete: Cascade)
+  entregador        User     @relation("EntregadorChats", fields: [entregadorId], references: [id])
+  cliente           User     @relation("ClienteChats", fields: [clienteId], references: [id])
+  mensagens         ChatMessage[]
+  
+  @@index([entregadorId])
+  @@index([clienteId])
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  chatId    String
+  enviahoPor String   // "entregador" | "cliente"
+  userId    String
+  
+  conteudo  String
+  lido      Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+  
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  usuario   User     @relation(fields: [userId], references: [id])
+  
+  @@index([chatId])
+  @@index([userId])
+}
+
+// NOTIFICAÇÕES
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  tipo      String   // "nova_entrega", "perto_destino", "mensagem", "rating"
+  titulo    String
+  corpo     String
+  icone     String?
+  
+  entregaId String?
+  dados     String?  // JSON com dados adicionais
+  
+  lido      Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+  
+  usuario   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([lido])
+}
+
+// RATINGS E AVALIAÇÕES
+model Rating {
+  id            String   @id @default(uuid())
+  entregaId     String   @unique
+  entregadorId  String
+  clienteId     String
+  
+  estrelas      Int      // 1-5
+  comentario    String?
+  respostaEntregador String?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  entrega       Delivery @relation(fields: [entregaId], references: [id], onDelete: Cascade)
+  entregador    User     @relation("EntregadorRatings", fields: [entregadorId], references: [id])
+  cliente       User     @relation("ClienteRatings", fields: [clienteId], references: [id])
+}
+
+// MOVIMENTO DE CAIXA
+model AberturaCaixa {
+  id              String   @id @default(uuid())
+  comercioId      String
+  pdvId           String?  // Opcional: se for PDV específico, senão é caixa geral
+  
+  status          String   @default("ABERTA")  // ABERTA, FECHADA
+  saldoInicial    Float    @default(0.0)
+  saldoFinal      Float?
+  
+  responsavelId   String
+  responsavel     User     @relation(fields: [responsavelId], references: [id])
+  
+  dataAbertura    DateTime @default(now())
+  dataFechamento  DateTime?
+  
+  observacoes     String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relações
+  comercio        String   // Apenas para referência
+  movimentos      MovimentoCaixa[]
+  
+  @@index([comercioId])
+  @@index([status])
+}
+
+model MovimentoCaixa {
+  id              String   @id @default(uuid())
+  comercioId      String
+  aberturaCaixaId String?
+  pdvId           String?  // Opcional: PDV específico
+  
+  tipo            TipoMovimentoCaixa
+  valor           Float    // Positivo = entrada, Negativo = saída
+  descricao       String
+  
+  responsavelId   String
+  responsavel     User     @relation(fields: [responsavelId], references: [id])
+  
+  referencia      String?  // ID relacionado (pedido, nf, etc)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relações
+  aberturaCaixa   AberturaCaixa? @relation(fields: [aberturaCaixaId], references: [id], onDelete: SetNull)
+  
+  @@index([comercioId])
+  @@index([tipo])
+  @@index([aberturaCaixaId])
 }
 

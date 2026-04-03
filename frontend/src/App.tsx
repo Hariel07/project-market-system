@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { CartProvider } from './contexts/CartContext';
 import BottomNav from './shared/components/BottomNav';
+import { NotificationCenter } from './shared/components/NotificationCenter';
 
 // Auth
 import LoginPage from './modules/auth/LoginPage';
@@ -33,7 +34,12 @@ import ComerciantePerfilConfig from './modules/comerciante/ComerciantePerfilConf
 import EntregadorDashboard from './modules/entregador/EntregadorDashboard';
 import EntregadorRota from './modules/entregador/EntregadorRota';
 import EntregadorHistorico from './modules/entregador/EntregadorHistorico';
+import EntregadorGanhos from './modules/entregador/EntregadorGanhos';
 import EntregadorConfig from './modules/entregador/EntregadorConfig';
+import EditarPerfilPage from './modules/entregador/EditarPerfilPage';
+import ContaBancariaPage from './modules/entregador/ContaBancariaPage';
+import PreferenciasPage from './modules/entregador/PreferenciasPage';
+import SuportePage from './modules/entregador/SuportePage';
 
 // Admin
 import AdminDashboard from './modules/admin/AdminDashboard';
@@ -83,8 +89,12 @@ function AppRoutes() {
         <Route path="/entregador" element={<EntregadorDashboard />} />
         <Route path="/entregador/rota/:id" element={<EntregadorRota />} />
         <Route path="/entregador/historico" element={<EntregadorHistorico />} />
-        <Route path="/entregador/ganhos" element={<EntregadorHistorico />} />
+        <Route path="/entregador/ganhos" element={<EntregadorGanhos />} />
         <Route path="/entregador/config" element={<EntregadorConfig />} />
+        <Route path="/entregador/editar-perfil" element={<EditarPerfilPage />} />
+        <Route path="/entregador/conta-bancaria" element={<ContaBancariaPage />} />
+        <Route path="/entregador/preferencias" element={<PreferenciasPage />} />
+        <Route path="/entregador/suporte" element={<SuportePage />} />
 
         {/* Admin Platform */}
         <Route path="/admin" element={<AdminDashboard />} />
@@ -110,6 +120,9 @@ export default function App() {
     <BrowserRouter>
       <CartProvider>
         <div className="app-layout">
+          <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100 }}>
+            <NotificationCenter />
+          </div>
           <AppRoutes />
         </div>
       </CartProvider>

@@ -10,6 +10,9 @@ import { perfilRoutes } from './routes/perfil.routes';
 import comerciosRoutes from './routes/comercios.routes';
 import entregasRoutes from './routes/entregas.routes';
 import pedidosRoutes from './routes/pedidos.routes';
+import chatRoutes from './routes/chat.routes';
+import notificationRoutes from './routes/notification.routes';
+import ratingRoutes from './routes/rating.routes';
 
 dotenv.config();
 
@@ -31,6 +34,9 @@ app.use('/api/produtos', produtosRoutes);
 app.use('/api/comercios', comerciosRoutes);
 app.use('/api/entregas', entregasRoutes);
 app.use('/api/pedidos', pedidosRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/notificacoes', notificationRoutes);
+app.use('/api/avaliacoes', ratingRoutes);
 
 // Rotas de Planos e Config (públicas + admin)
 app.use('/api', planosRoutes);

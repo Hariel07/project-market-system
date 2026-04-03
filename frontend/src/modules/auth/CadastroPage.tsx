@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../lib/api';
+import { useAppName } from '../../lib/useAppName';
 import './AuthPages.css';
 
 const roles = [
@@ -24,6 +25,7 @@ interface PlanData {
 export default function CadastroPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const nomeApp = useAppName();
   
   const initialRole = searchParams.get('role') || '';
 
@@ -178,7 +180,7 @@ export default function CadastroPage() {
             <div className="auth-logo">🛒</div>
             <h1 className="auth-title">Criar Conta</h1>
             <p className="auth-subtitle">
-              {step === 1 ? 'Como você quer usar o Market System?' :
+              {step === 1 ? `Como você quer usar o ${nomeApp}?` :
                step === 2 ? 'Preencha seus dados' :
                step === 3 && role === 'comerciante' ? 'Dados do seu comércio' :
                'Escolha seu plano'}

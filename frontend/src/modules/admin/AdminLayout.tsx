@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAppName } from '../../lib/useAppName';
 import './AdminLayout.css';
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 export default function AdminLayout({ title, children }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
+  const nomeApp = useAppName();
 
   const navItems = [
     { icon: '🌐', label: 'Visão Global', path: '/admin' },
@@ -26,7 +28,7 @@ export default function AdminLayout({ title, children }: Props) {
         <div className="admin-sidebar-header">
           <div className="admin-logo-badge">👨‍💻</div>
           <div className="admin-logo-text">
-            <h2>Market System</h2>
+            <h2>{nomeApp}</h2>
             <span className="admin-logo-sub">Platform Admin</span>
           </div>
         </div>

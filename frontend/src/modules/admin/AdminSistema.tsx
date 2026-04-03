@@ -1,10 +1,130 @@
+import { useState, useEffect } from 'react';
+import { api } from '../../lib/api';
 import AdminLayout from './AdminLayout';
 import './AdminSistema.css';
 
 export default function AdminSistema() {
+  const [nomeApp, setNomeApp] = useState('');
+  const [nomeAppTemp, setNomeAppTemp] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [mensagem, setMensagem] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null);
+
+  // Carregar configurações
+  useEffect(() => {
+    const carregarConfigurações = async () => {
+      setLoading(true);
+      try {
+        // Tentar carregar do backend
+        const res = await api.get('/api/config/sistema');
+        setNomeApp(res.data.nomeApp || 'Market System');
+      } catch (err) {
+        // Fallback: usar localStorage
+        const savedName = localStorage.getItem('nomeApp') || 'Market System';
+        setNomeApp(savedName);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    carregarConfigurações();
+  }, []);
+
+  // Sincronizar campo temporário com estado principal
+  useEffect(() => {
+    setNomeAppTemp(nomeApp);
+  }, [nomeApp]);
+
+  const handleSalvarNome = async () => {
+    if (!nomeAppTemp.trim()) {
+      setMensagem({ tipo: 'erro', texto: 'O nome do site não pode estar vazio!' });
+      return;
+    }
+
+    setSalvando(true);
+    setMensagem(null);
+
+    try {
+      // Tentar salvar no backend
+      await api.post('/api/config/sistema', { nomeApp: nomeAppTemp });
+      setNomeApp(nomeAppTemp);
+      localStorage.setItem('nomeApp', nomeAppTemp);
+      setMensagem({ tipo: 'sucesso', texto: '✅ Nome do site atualizado com sucesso!' });
+      
+      // Recarregar a página após 2 segundos para aplicar mudanças
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } catch (err: any) {
+      // Fallback: salvar apenas no localStorage
+      setNomeApp(nomeAppTemp);
+      localStorage.setItem('nomeApp', nomeAppTemp);
+      setMensagem({ tipo: 'sucesso', texto: '✅ Nome do site atualizado localmente!' });
+      
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } finally {
+      setSalvando(false);
+    }
+  };
+
   return (
     <AdminLayout title="Configurações do Sistema">
       <div className="admin-sistema animate-fade-in-up">
+        
+        {/* Configurações Gerais */}
+        <div className="admin-sys-card">
+          <div className="sys-card-header">
+            <h3>⚙️ Configurações Gerais</h3>
+            <span className="badge badge-info">Essencial</span>
+          </div>
+          <p className="sys-desc">Personalize informações básicas que aparecem em todo o sistema.</p>
+          
+          <div className="config-general">
+            <div className="form-group">
+              <label htmlFor="nomeApp" className="form-label">Nome do Site/Aplicação</label>
+              <div className="input-with-preview">
+                <input
+                  id="nomeApp"
+                  type="text"
+                  className="input sys-input"
+                  value={nomeAppTemp}
+                  onChange={(e) => setNomeAppTemp(e.target.value)}
+                  placeholder="ex: Market System"
+                  disabled={salvando}
+                />
+                <div className="preview-info">
+                  <span className="preview-label">Atual: <strong>{nomeApp}</strong></span>
+                </div>
+              </div>
+              <p className="input-hint">Este nome aparecerá em: Logo, titulo da página, headers, footers e emails.</p>
+            </div>
+
+            {mensagem && (
+              <div className={`alert alert-${mensagem.tipo}`} style={{ marginTop: '16px' }}>
+                {mensagem.texto}
+              </div>
+            )}
+
+            <div className="form-actions" style={{ marginTop: '20px', display: 'flex', gap: '12px' }}>
+              <button
+                className="btn btn-primary"
+                onClick={handleSalvarNome}
+                disabled={salvando || nomeAppTemp === nomeApp}
+              >
+                {salvando ? '💾 Salvando...' : '💾 Salvar Alterações'}
+              </button>
+              <button
+                className="btn btn-outline"
+                onClick={() => setNomeAppTemp(nomeApp)}
+                disabled={salvando || nomeAppTemp === nomeApp}
+              >
+                ↶ Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
         
         {/* API & Webhooks */}
         <div className="admin-sys-card">

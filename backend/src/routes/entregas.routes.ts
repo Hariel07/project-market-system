@@ -8,6 +8,7 @@ import {
   confirmarColeta,
   confirmarEntrega,
   minhasEntregas,
+  obterHistoricoEntregas,
 } from '../controllers/entregas.controller';
 import { authMiddleware } from '../middlewares/auth.middleware';
 import { roleMiddleware } from '../middlewares/role.middleware';
@@ -18,6 +19,7 @@ router.use(authMiddleware);
 
 // Rotas de leitura — entregador e admin podem acessar
 router.get('/oportunidades', roleMiddleware('ENTREGADOR', 'ADMIN'), listarOportunidades);
+router.get('/historico', roleMiddleware('ENTREGADOR', 'ADMIN'), obterHistoricoEntregas);
 router.get('/entregador/:entregadorId', roleMiddleware('ENTREGADOR', 'ADMIN'), minhasEntregas);
 router.get('/pedido/:pedidoId', roleMiddleware('ENTREGADOR', 'ADMIN'), buscarEntregaPorPedido);
 

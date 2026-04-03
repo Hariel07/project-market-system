@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAppName } from '../../lib/useAppName';
 import './EntregadorLayout.css';
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 export default function EntregadorLayout({ title, hideHeader = false, children }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
+  const nomeApp = useAppName();
 
   const isRotaDetail = location.pathname.includes('/entregador/rota/');
 
@@ -27,7 +29,7 @@ export default function EntregadorLayout({ title, hideHeader = false, children }
       {!hideHeader && !isRotaDetail && (
         <header className="entregador-header">
           <div className="entregador-header-inner">
-            <h1 className="entregador-title">{title || 'Market System Entregador'}</h1>
+            <h1 className="entregador-title">{title || `${nomeApp} Entregador`}</h1>
             <div className="entregador-actions">
               <button className="entregador-btn-icon">🔔</button>
             </div>

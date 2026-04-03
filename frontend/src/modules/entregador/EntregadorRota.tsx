@@ -4,8 +4,12 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, Circle } from
 import 'leaflet/dist/leaflet.css';
 import * as L from 'leaflet';
 import EntregadorLayout from './EntregadorLayout';
+import SignaturePad from '../../shared/components/SignaturePad';
+import { ChatModal } from '../../shared/components/ChatModal';
+import { RatingModal } from '../../shared/components/RatingModal';
 import { formatPrice } from '../../data/mockData';
 import { api } from '../../lib/api';
+import { useAuthProtected, useAuthUser } from '../../lib/useAuth';
 import { Entrega } from '../../types/entrega';
 import './EntregadorRota.css';
 
@@ -47,6 +51,10 @@ export default function EntregadorRota() {
   const { id } = useParams(); // pedidoId (UUID)
   const navigate = useNavigate();
 
+  // ✅ PROTEÇÃO: Validar autenticação e role ENTREGADOR
+  useAuthProtected(['ENTREGADOR']);
+  const { userId: entregadorId } = useAuthUser();
+
   const [entrega, setEntrega] = useState<Entrega | null>(null);
   const [loadingEntrega, setLoadingEntrega] = useState(true);
   const [erroEntrega, setErroEntrega] = useState<string | null>(null);
@@ -67,6 +75,14 @@ export default function EntregadorRota() {
   // Etapas da corrida
   const [etapa, setEtapa] = useState<1 | 2 | 3 | 4>(1);
   const [loading, setLoading] = useState(false);
+
+  // Assinatura e comprovante na Etapa 4
+  const [mostrarAssinatura, setMostrarAssinatura] = useState(false);
+  const [assinatura, setAssinatura] = useState<string | null>(null);
+
+  // Chat e Rating
+  const [showChat, setShowChat] = useState(false);
+  const [showRating, setShowRating] = useState(false);
 
   // Histórico de posições para traçar a rota
   const [rotaPercorrida, setRotaPercorrida] = useState<[number, number][]>([currentPos]);
@@ -173,22 +189,50 @@ export default function EntregadorRota() {
     if (!entrega) return;
     setLoading(true);
     try {
+      // Etapa 1: Chegou na coleta → confirma coleta com API
       if (etapa === 1) {
-        await api.post(`/api/entregas/${entrega.id}/coleta`, {});
+        // ✅ Etapa 1 → Etapa 2: Confirma coleta via API
+        const res = await api.post(`/api/entregas/${entrega.id}/coleta`, {});
+        console.log('✅ Coleta confirmada:', res.data);
         setEtapa(2);
-      } else if (etapa === 2) {
+        setGpsAtivo(false); // Para GPS, aguardando confirmação do vendedor
+      } 
+      // Etapa 2: Confirmou coleta com vendedor → vai para cliente
+      else if (etapa === 2) {
+        // ✅ Etapa 2 → Etapa 3: Sai para entregar
+        console.log('✅ Saindo da coleta, indo para cliente');
         setEtapa(3);
-        setGpsAtivo(true);
-      } else if (etapa === 3) {
+        setGpsAtivo(true); // Ativa GPS novamente para ir até cliente
+      } 
+      // Etapa 3: Chegou no cliente → confirma entrega
+      else if (etapa === 3) {
+        // ✅ Etapa 3 → Etapa 4: Chegou no cliente
+        console.log('✅ Chegou no cliente');
         setGpsAtivo(false);
         setEtapa(4);
-      } else if (etapa === 4) {
-        await api.post(`/api/entregas/${entrega.id}/entregar`, {});
+      } 
+      // Etapa 4: Finaliza entrega com assinatura
+      else if (etapa === 4) {
+        // ✅ Se não tem assinatura → Mostrar modal
+        if (!assinatura) {
+          setLoading(false);
+          setMostrarAssinatura(true);
+          return;
+        }
+
+        // ✅ Tem assinatura → Enviar para API
+        const res = await api.post(`/api/entregas/${entrega.id}/entregar`, {
+          assinatura, // Base64 da assinatura
+        });
+        console.log('✅ Entrega confirmada:', res.data);
+        
+        // Mostrar tela de sucesso
         navigate('/entregador', { state: { entregueComSucesso: true } });
       }
     } catch (error) {
-      console.error('Erro:', error);
-      setGpsError('Erro ao atualizar status da entrega');
+      console.error('❌ Erro ao atualizar etapa:', error);
+      const errorMsg = (error as any)?.response?.data?.error || 'Erro ao atualizar status da entrega';
+      setGpsError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -196,19 +240,33 @@ export default function EntregadorRota() {
 
   const getButtonText = () => {
     switch (etapa) {
-      case 1: return gpsAtivo ? `Navegando (${distanciaAtual.toFixed(2)}km)` : 'Iniciar Navegacao';
-      case 2: return 'Confirmar Coleta de Pedido';
-      case 3: return gpsAtivo ? `Navegando (${distanciaAtual.toFixed(2)}km)` : 'Iniciar Navegacao para Cliente';
-      case 4: return 'Finalizar Entrega';
+      case 1:
+        return gpsAtivo ? `📍 Navegando (${distanciaAtual.toFixed(2)}km)` : '🗺️ Iniciar Navegação até Coleta';
+      
+      case 2:
+        return '✅ Confirmar que Retirei o Pedido';
+      
+      case 3:
+        return gpsAtivo ? `📍 Navegando (${distanciaAtual.toFixed(2)}km)` : '🗺️ Iniciar Navegação para Cliente';
+      
+      case 4:
+        return '🎉 Finalizar Entrega';
     }
   };
 
   const getMapTitle = () => {
     switch (etapa) {
-      case 1: return `Navegando para: ${entrega?.pedido.comercio.nomeFantasia ?? '...'}`;
-      case 2: return 'Na Coleta';
-      case 3: return 'Navegando para o Cliente';
-      case 4: return 'No Cliente';
+      case 1:
+        return `🏬 Indo para: ${entrega?.pedido.comercio.nomeFantasia ?? '...'}`;
+      
+      case 2:
+        return `📦 Coletando pedido. Confirme com o vendedor`;
+      
+      case 3:
+        return `👤 Indo para ${entrega?.pedido.cliente.nome.split(' ')[0] ?? 'Cliente'}`;
+      
+      case 4:
+        return `🏠 Chegou na entrega`;
     }
   };
 
@@ -246,6 +304,38 @@ export default function EntregadorRota() {
   return (
     <EntregadorLayout title={getMapTitle()} hideHeader={true}>
       <div className="rota-full-container animate-fade-in-up">
+        
+        {/* 🔐 Modal de Assinatura */}
+        {mostrarAssinatura && (
+          <div className="modal-overlay" style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'flex-end',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          }}>
+            <div className="modal-content" style={{
+              width: '100%',
+              backgroundColor: 'white',
+              borderRadius: '16px 16px 0 0',
+              padding: '20px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              animation: 'slideUp 0.3s ease-out',
+            }}>
+              <SignaturePad
+                onSave={(sig) => {
+                  setAssinatura(sig);
+                  setMostrarAssinatura(false);
+                  // Depois que salva a assinatura, continuar com handleNextStep
+                  setTimeout(() => handleNextStep(), 100);
+                }}
+                onCancel={() => setMostrarAssinatura(false)}
+              />
+            </div>
+          </div>
+        )}
 
         <div className="rota-map-view">
           <MapContainer
@@ -349,8 +439,15 @@ export default function EntregadorRota() {
             )}
 
             {etapa === 2 && (
-              <div className="order-check-inf">
-                <strong>Pedido:</strong> #{entrega.pedidoId.slice(-6).toUpperCase()} — Confirme com o vendedor
+              <div className="order-check-inf" style={{
+                backgroundColor: '#FFF3CD',
+                border: '2px solid #FFC107',
+                borderRadius: '8px',
+                padding: '12px 16px',
+                marginBottom: '12px',
+              }}>
+                <span style={{ fontSize: '18px', marginRight: '8px' }}>⚠️</span>
+                <strong>Na Coleta:</strong> Confirme o pedido #{entrega.pedidoId.slice(-6).toUpperCase()} com o vendedor antes de prosseguir
               </div>
             )}
 
@@ -370,36 +467,110 @@ export default function EntregadorRota() {
           </div>
 
           <div className="sheet-actions">
-            <button
-              className={`btn btn-lg btn-block ${etapa === 2 || etapa === 4 ? 'btn-accent' : 'btn-primary'} btn-swipe-effect`}
-              onClick={etapa === 1 || etapa === 3 ? handleStartNavigation : handleNextStep}
-              disabled={loading}
-            >
-              {loading ? '...' : getButtonText()}
-            </button>
+            {/* Etapa 1 e 3: Iniciar navegação */}
+            {(etapa === 1 || etapa === 3) && !gpsAtivo && (
+              <button
+                className="btn btn-lg btn-block btn-primary btn-swipe-effect"
+                onClick={handleStartNavigation}
+                disabled={loading}
+              >
+                {getButtonText()}
+              </button>
+            )}
 
-            {gpsAtivo && (etapa === 1 || etapa === 3) && (
+            {/* Etapa 1 e 3: GPS ativo - parar navegação */}
+            {(etapa === 1 || etapa === 3) && gpsAtivo && (
               <>
+                <button
+                  className="btn btn-lg btn-block btn-primary btn-swipe-effect"
+                  onClick={handleNextStep}
+                  disabled={loading}
+                >
+                  {loading ? '⏳ Processando...' : getButtonText()}
+                </button>
                 <p className="text-center text-xs mt-2 text-secondary">
-                  Aproxime-se do destino para auto-confirmar
+                  ℹ️ Aproxime-se do destino para auto-confirmar
                 </p>
                 <button
                   className="btn btn-sm btn-outline btn-block mt-2"
                   onClick={() => setGpsAtivo(false)}
                 >
-                  Parar Navegação
+                  ⏹️ Parar Navegação
                 </button>
               </>
             )}
 
+            {/* Etapa 2: Confirmar coleta */}
+            {etapa === 2 && (
+              <>
+                <button
+                  className="btn btn-lg btn-block btn-accent btn-swipe-effect"
+                  onClick={handleNextStep}
+                  disabled={loading}
+                >
+                  {loading ? '⏳ Processando...' : getButtonText()}
+                </button>
+                <p className="text-center text-xs mt-2 text-secondary">
+                  ✅ Confirmar que você retirou o pedido
+                </p>
+              </>
+            )}
+
+            {/* Etapa 4: Finalizar entrega */}
             {etapa === 4 && (
-              <p className="text-center text-xs mt-2 text-secondary">
-                Pressione confirmar apenas após o cliente receber
-              </p>
+              <>
+                <button
+                  className="btn btn-lg btn-block btn-accent btn-swipe-effect"
+                  onClick={handleNextStep}
+                  disabled={loading}
+                >
+                  {loading ? '⏳ Processando...' : getButtonText()}
+                </button>
+                <p className="text-center text-xs mt-2 text-secondary">
+                  ✅ Confirmar apenas após o cliente receber
+                </p>
+              </>
+            )}
+
+            {/* Chat (disponível em etapas 3 e 4) */}
+            {(etapa === 3 || etapa === 4) && (
+              <button
+                className="btn btn-sm btn-outline btn-block mt-2"
+                onClick={() => setShowChat(true)}
+              >
+                💬 Chat com Cliente
+              </button>
+            )}
+
+            {/* Rating (apenas na etapa 4 após entrega) */}
+            {etapa === 4 && (
+              <button
+                className="btn btn-sm btn-outline btn-block mt-2"
+                onClick={() => setShowRating(true)}
+              >
+                ⭐ Deixar Avaliação
+              </button>
             )}
           </div>
         </div>
       </div>
+
+      {/* Chat Modal */}
+      <ChatModal
+        entregaId={entrega.id}
+        isOpen={showChat}
+        onClose={() => setShowChat(false)}
+        clienteNome={nomeCliente}
+      />
+
+      {/* Rating Modal */}
+      <RatingModal
+        entregaId={entrega.id}
+        entregadorNome={nomeComercio}
+        isOpen={showRating}
+        onClose={() => setShowRating(false)}
+        onSubmit={() => console.log('✅ Avaliação enviada com sucesso!')}
+      />
     </EntregadorLayout>
   );
 }
