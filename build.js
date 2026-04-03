@@ -4,7 +4,7 @@
  * Build Script Unificado — Frontend + Backend
  * 
  * Executa em ordem:
- * 1. Prisma Generate (skip se sem DATABASE_URL — é ok, roda no runtime)
+ * 1. Prisma Generate
  * 2. Build do Frontend (Vite) → frontend/dist
  * 3. Copy frontend/dist → backend/public
  * 4. Build do Backend (TypeScript) → backend/dist
@@ -27,69 +27,68 @@ const publicDir = path.join(backendDir, 'public');
 console.log('\n📦 === BUILD UNIFICADO ===\n');
 
 try {
+  // ========================================
+  // 0. Generate Prisma Client
+  // ========================================
   console.log('⚙️  [0/4] Generating Prisma Client...');
   console.log(`   📍 ${backendDir}`);
-
-  // Agora removemos o try-catch silencioso para que o erro apareça
+  
   execSync('npm install && npx prisma generate', {
     cwd: backendDir,
     stdio: 'inherit'
   });
-
+  
   console.log('✅ Prisma Client generated!\n');
-} catch (error) {
-  console.error('❌ Prisma generation FAILED!');
-  throw error; // Re-throw para parar o build
-}
 
-// ========================================
-// 1. Build Frontend
-// ========================================
-console.log('🔨 [1/4] Building Frontend...');
-console.log(`   📍 ${frontendDir}`);
+  // ========================================
+  // 1. Build Frontend
+  // ========================================
+  console.log('🔨 [1/4] Building Frontend...');
+  console.log(`   📍 ${frontendDir}`);
+  
+  execSync('npm install && npm run build', {
+    cwd: frontendDir,
+    stdio: 'inherit'
+  });
+  
+  console.log('✅ Frontend built successfully!\n');
 
-execSync('npm install && npm run build', {
-  cwd: frontendDir,
-  stdio: 'inherit'
-});
+  // ========================================
+  // 2. Copy Frontend para Backend/public
+  // ========================================
+  console.log('📋 [2/4] Copying Frontend dist to Backend/public...');
+  
+  const frontendDist = path.join(frontendDir, 'dist');
+  
+  // Deleta public anterior se existe
+  if (fs.existsSync(publicDir)) {
+    console.log(`   🗑️  Removing ${publicDir}`);
+    fs.rmSync(publicDir, { recursive: true, force: true });
+  }
+  
+  // Cria public e copia
+  console.log(`   📂 Creating ${publicDir}`);
+  fs.mkdirSync(publicDir, { recursive: true });
+  
+  console.log(`   📥 Copying ${frontendDist} → ${publicDir}`);
+  fs.cpSync(frontendDist, publicDir, { recursive: true });
+  
+  console.log('✅ Frontend copied successfully!\n');
 
-console.log('✅ Frontend built successfully!\n');
+  // ========================================
+  // 3. Build Backend
+  // ========================================
+  console.log('🔨 [3/4] Building Backend TypeScript...');
+  console.log(`   📍 ${backendDir}`);
+  
+  // IMPORTANTE: Instalar dependências do backend e gerar prisma client de novo para o build TS
+  execSync('npm install && npx prisma generate && npm run build', {
+    cwd: backendDir,
+    stdio: 'inherit'
+  });
+  
+  console.log('✅ Backend built successfully!\n');
 
-// ========================================
-// 2. Copy Frontend para Backend/public
-// ========================================
-console.log('📋 [2/4] Copying Frontend dist to Backend/public...');
-
-const frontendDist = path.join(frontendDir, 'dist');
-
-// Deleta public anterior se existe
-if (fs.existsSync(publicDir)) {
-  console.log(`   🗑️  Removing ${publicDir}`);
-  fs.rmSync(publicDir, { recursive: true, force: true });
-}
-
-// Cria public e copia
-console.log(`   📂 Creating ${publicDir}`);
-fs.mkdirSync(publicDir, { recursive: true });
-
-console.log(`   📥 Copying ${frontendDist} → ${publicDir}`);
-fs.cpSync(frontendDist, publicDir, { recursive: true });
-
-console.log('✅ Frontend copied successfully!\n');
-
-// ========================================
-// 3. Build Backend
-// ========================================
-console.log('🔨 [3/4] Building Backend TypeScript...');
-console.log(`   📍 ${backendDir}`);
-
-// IMPORTANTE: Instalar dependências do backend e gerar prisma client de novo
-execSync('npm install && npx prisma generate && npm run build', {
-  cwd: backendDir,
-  stdio: 'inherit'
-});
-
-console.log('✅ Backend built successfully!\n');
   // ========================================
   // FIM
   // ========================================
