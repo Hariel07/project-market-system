@@ -92,7 +92,8 @@ try {
   console.log('🔨 [3/4] Building Backend TypeScript...');
   console.log(`   📍 ${backendDir}`);
   
-  execSync('npm run build', {
+  // IMPORTANTE: Instalar dependências do backend também
+  execSync('npm install && npm run build', {
     cwd: backendDir,
     stdio: 'inherit'
   });
