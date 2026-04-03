@@ -456,7 +456,7 @@ export async function obterHistoricoEntregas(req: Request, res: Response) {
     // Calcular estatísticas
     const stats = {
       totalEntregas: entregas.length,
-      ganhoTotal: entregas.reduce((acc, curr) => acc + (curr.pedido?.valorTotal || 0), 0),
+      ganhoTotal: entregas.reduce((acc: number, curr: any) => acc + (curr.pedido?.valorTotal || 0), 0),
       kmTotal: entregas.length * 5,  // Aproximado por enquanto
       mediaAvaliacao: 4.8,  // Mock por enquanto
     };

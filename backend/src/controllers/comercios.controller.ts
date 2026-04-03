@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
-import { Role } from '@prisma/client';
 
 export async function getPublicComercios(req: Request, res: Response): Promise<void> {
   try {
@@ -28,7 +27,7 @@ export async function getPublicComercios(req: Request, res: Response): Promise<v
     });
 
     // Ordenar no JS: Open = true (1), false (0)
-    const sortedComercios = comercios.sort((a, b) => {
+    const sortedComercios = comercios.sort((a: any, b: any) => {
       if (a.isOpen && !b.isOpen) return -1;
       if (!a.isOpen && b.isOpen) return 1;
       return a.nomeFantasia.localeCompare(b.nomeFantasia);
@@ -49,59 +48,82 @@ export async function getMyCommerce(req: Request, res: Response): Promise<void> 
   }
 
   try {
-    const comercio = await prisma.commerce.findUnique({
-      where: { id: user.comercioId }
-    });
-    res.json(comercio);
-  } catch (error) {
-    console.error('Erro ao buscar o comércio:', error);
-    res.status(500).json({ error: 'Erro interno' });
-  }
-}
-
-// Listar produtos públicos de um comércio (para vitrine do cliente)
-export async function getProdutosPublicos(req: Request, res: Response): Promise<void> {
-  try {
-    const id = String(req.params.id);
-
-    const produtos = await prisma.product.findMany({
-      where: { comercioId: id, ativo: true },
-      include: { categoria: true },
-      orderBy: [{ categoriaId: 'asc' }, { nome: 'asc' }],
+    const commerce = await prisma.commerce.findUnique({
+      where: { id: user.comercioId },
+      include: {
+        plano: true,
+        enderecos: true,
+      }
     });
 
-    res.json(produtos);
+    if (!commerce) {
+      res.status(404).json({ error: 'Comércio não encontrado.' });
+      return;
+    }
+
+    res.json(commerce);
   } catch (error) {
-    console.error('Erro ao buscar produtos do comércio:', error);
+    console.error('Erro ao buscar meu comércio:', error);
     res.status(500).json({ error: 'Erro interno' });
   }
 }
 
 export async function updateMyCommerce(req: Request, res: Response): Promise<void> {
   const user = req.user;
+  const { nomeFantasia, segmento, logoUrl, taxaEntrega, tempoMedio, horarioAtendimento, isOpen } = req.body;
+
   if (!user || !user.comercioId) {
-    res.status(403).json({ error: 'Você não possui um comércio associado.' });
+    res.status(403).json({ error: 'Não autorizado.' });
     return;
   }
 
-  const { nomeFantasia, segmento, taxaEntrega, tempoMedio, logoUrl, isOpen, horarioAtendimento } = req.body;
-
   try {
-    const comercioAtualizado = await prisma.commerce.update({
+    const updated = await prisma.commerce.update({
       where: { id: user.comercioId },
       data: {
         nomeFantasia,
         segmento,
-        taxaEntrega: typeof taxaEntrega === 'number' ? taxaEntrega : undefined,
-        tempoMedio,
         logoUrl,
-        isOpen: typeof isOpen === 'boolean' ? isOpen : undefined,
-        horarioAtendimento
+        taxaEntrega: parseFloat(taxaEntrega),
+        tempoMedio,
+        horarioAtendimento,
+        isOpen
       }
     });
-    res.json(comercioAtualizado);
+
+    res.json(updated);
   } catch (error) {
-    console.error('Erro ao atualizar o comércio:', error);
-    res.status(500).json({ error: 'Erro ao atualizar configurações do comércio.' });
+    console.error('Erro ao atualizar comércio:', error);
+    res.status(500).json({ error: 'Erro ao atualizar' });
+  }
+}
+
+export async function getComercioById(req: Request, res: Response): Promise<void> {
+  const { id } = req.params;
+
+  try {
+    const commerce = await prisma.commerce.findUnique({
+      where: { id },
+      include: {
+        categorias: {
+          include: {
+            produtos: {
+              where: { ativo: true }
+            }
+          }
+        },
+        enderecos: true
+      }
+    });
+
+    if (!commerce) {
+      res.status(404).json({ error: 'Comércio não encontrado' });
+      return;
+    }
+
+    res.json(commerce);
+  } catch (error) {
+    console.error('Erro ao buscar comércio por ID:', error);
+    res.status(500).json({ error: 'Erro interno' });
   }
 }

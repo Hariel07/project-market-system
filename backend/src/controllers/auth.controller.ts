@@ -18,15 +18,16 @@ export const register = async (req: Request, res: Response) => {
     if (!account) {
       const existingEmail = await prisma.account.findUnique({ where: { email } });
       if (existingEmail) {
-        res.status(400).json({ error: 'E-mail já está associado a outra conta.' });
+        res.status(400).json({ error: 'E-mail já cadastrado em outra conta.' });
         return;
       }
+
       account = await prisma.account.create({
-        data: { cpf, email, senha: hashedPassword, telefone }
+        data: { cpf, email, senha: hashedPassword, telefone, ativo: true }
       });
     } else {
-      const isMatch = await bcrypt.compare(senha, account.senha);
-      if (!isMatch) {
+      const isPasswordValid = await bcrypt.compare(senha, account.senha);
+      if (!isPasswordValid) {
          res.status(401).json({ error: 'Este CPF já existe, mas a senha está incorreta para adicionar perfil.' });
          return;
       }
@@ -54,8 +55,8 @@ export const register = async (req: Request, res: Response) => {
           razaoSocial: nomeComercio,
           nomeFantasia: nomeComercio,
           cnpj: cnpj || '00000000000000',
-          segmento: tipoComercio,
-          planoAtual: plano?.toUpperCase() || 'GRATIS',
+          segmento: tipoComercio || 'Geral',
+          planoAtual: plano || 'gratis',
           ativo: true,
           usuarios: {
             create: {
@@ -68,10 +69,10 @@ export const register = async (req: Request, res: Response) => {
         },
         include: { usuarios: true }
       });
-      
+
       const createdUser = commercelessUser.usuarios[0];
       const token = jwt.sign({ id: createdUser.id, role: createdUser.role, comercioId: commercelessUser.id, accountId: account.id }, JWT_SECRET, { expiresIn: '7d' });
-      
+
       const mergedUser = { ...createdUser, email: account.email, telefone: account.telefone, cpf: account.cpf };
       res.status(201).json({ status: 'SUCCESS', user: mergedUser, commerce: commercelessUser, token });
       return;
@@ -90,10 +91,8 @@ export const register = async (req: Request, res: Response) => {
               logradouro: guestLocation,
               bairro: 'Pendente',
               cidade: 'Pendente',
-              estado: 'XX',
-              cep: '00000-000',
-              pontoReferencia: '⚠️ Favor atualizar este endereço no seu Perfil',
               isPrincipal: true,
+              rotulo: 'ENTREGA'
             }
           }
         } : {})
@@ -102,27 +101,21 @@ export const register = async (req: Request, res: Response) => {
 
     const token = jwt.sign({ id: createdUser.id, role: createdUser.role, accountId: account.id }, JWT_SECRET, { expiresIn: '7d' });
     const mergedUser = { ...createdUser, email: account.email, telefone: account.telefone, cpf: account.cpf };
-    
+
     res.status(201).json({ status: 'SUCCESS', user: mergedUser, token });
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).json({ error: 'Erro interno ao criar conta.' });
+    res.status(500).json({ error: 'Erro ao criar conta.' });
   }
-}
+};
 
-
-export async function login(req: Request, res: Response): Promise<void> {
+export const login = async (req: Request, res: Response) => {
   const { cpf, senha } = req.body;
 
   try {
-    // 1. Find Account
-    const account = await prisma.account.findUnique({ 
+    const account = await prisma.account.findUnique({
       where: { cpf },
-      include: {
-        perfis: {
-          include: { comercio: true }
-        }
-      }
+      include: { perfis: { include: { comercio: true } } }
     });
 
     if (!account) {
@@ -130,16 +123,14 @@ export async function login(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // 2. Compare password
-    const isMatch = await bcrypt.compare(senha, account.senha);
-    if (!isMatch) {
+    const isPasswordValid = await bcrypt.compare(senha, account.senha);
+    if (!isPasswordValid) {
       res.status(401).json({ error: 'Senha incorreta.' });
       return;
     }
 
-    // 3. Evaluate Profiles
     if (account.perfis.length === 0) {
-      res.status(400).json({ error: 'Conta não possui perfis ativos.' });
+      res.status(200).json({ status: 'NO_PROFILE', accountId: account.id });
       return;
     }
 
@@ -150,30 +141,34 @@ export async function login(req: Request, res: Response): Promise<void> {
         JWT_SECRET,
         { expiresIn: '7d' }
       );
-      
+
       const mergedUser = { ...user, email: account.email, telefone: account.telefone, cpf: account.cpf };
       res.json({ status: 'SUCCESS', user: mergedUser, token });
-      return;
+    } else {
+      const perfisFormatados = account.perfis.map((p: any) => ({
+        id: p.id,
+        nome: p.nome,
+        role: p.role,
+        comercio: p.comercio
+      }));
+
+      res.json({
+        status: 'SELECT_PROFILE',
+        tempToken: jwt.sign({ accountId: account.id }, JWT_SECRET, { expiresIn: '15m' }),
+        perfis: perfisFormatados
+      });
     }
-
-    const tempToken = jwt.sign({ accountId: account.id }, JWT_SECRET, { expiresIn: '15m' });
-    
-    res.json({
-      status: 'SELECT_PROFILE',
-      tempToken,
-      perfis: account.perfis
-    });
-
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Erro interno no servidor.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro no servidor.' });
   }
-}
+};
 
-export async function selectProfile(req: Request, res: Response): Promise<void> {
+export const selectProfile = async (req: Request, res: Response) => {
   const { tempToken, perfilId } = req.body;
+
   try {
-    const decoded: any = jwt.verify(tempToken, JWT_SECRET);
+    const decoded = jwt.verify(tempToken, JWT_SECRET) as { accountId: string };
     if (!decoded.accountId) {
       res.status(401).json({ error: 'Token inválido' });
       return;
@@ -189,7 +184,7 @@ export async function selectProfile(req: Request, res: Response): Promise<void> 
       return;
     }
 
-    const user = account.perfis.find(p => p.id === perfilId);
+    const user = account.perfis.find((p: any) => p.id === perfilId);
     if (!user) {
       res.status(404).json({ error: 'Perfil não pertence a esta conta' });
       return;
