@@ -4,7 +4,7 @@
  * Build Script Unificado — Frontend + Backend
  * 
  * Executa em ordem:
- * 1. Install + Prisma Generate do Backend
+ * 1. Prisma Generate (skip se sem DATABASE_URL — é ok, roda no runtime)
  * 2. Build do Frontend (Vite) → frontend/dist
  * 3. Copy frontend/dist → backend/public
  * 4. Build do Backend (TypeScript) → backend/dist
@@ -28,17 +28,28 @@ console.log('\n📦 === BUILD UNIFICADO ===\n');
 
 try {
   // ========================================
-  // 0. Generate Prisma Client
+  // 0. Generate Prisma Client (optional)
   // ========================================
-  console.log('⚙️  [0/4] Generating Prisma Client...');
-  console.log(`   📍 ${backendDir}`);
+  const hasDatabaseUrl = !!process.env.DATABASE_URL;
   
-  execSync('npm install && npx prisma generate', {
-    cwd: backendDir,
-    stdio: 'inherit'
-  });
-  
-  console.log('✅ Prisma Client generated!\n');
+  if (hasDatabaseUrl) {
+    console.log('⚙️  [0/4] Generating Prisma Client...');
+    console.log(`   📍 ${backendDir}`);
+    
+    try {
+      execSync('npm install && npx prisma generate', {
+        cwd: backendDir,
+        stdio: 'inherit'
+      });
+      
+      console.log('✅ Prisma Client generated!\n');
+    } catch (error) {
+      console.log('⚠️  Prisma generation skipped (will be generated at runtime)\n');
+    }
+  } else {
+    console.log('⏭️  [0/4] Skipping Prisma generate (DATABASE_URL not set)\n');
+    console.log('   ℹ️  Prisma Client will be generated at runtime\n');
+  }
 
   // ========================================
   // 1. Build Frontend
