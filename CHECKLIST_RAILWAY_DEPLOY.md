@@ -11,7 +11,7 @@
 ### Passo 1: Verificar se o código compila
 - [x] Backend compila: `npm run build` OK
 - [x] Frontend compila: `npm run build` OK
-- [ ] Git está atualizado: `git status` limpo
+- [x] Git está atualizado: `git status` limpo
 - [ ] `.env` **NÃO está** commitado (segurança)
 
 **Checagem rápida:**
@@ -32,11 +32,11 @@ npm run build
 ### **FASE 1: Criar Conta e Projeto**
 
 #### Passo 2: Criar conta no Railway
-- [ ] Acesse https://railway.app
-- [ ] Clique **"Sign Up"** (ou **"Login"** se já teve conta)
-- [ ] Escolha: **"Continue with GitHub"**
-- [ ] Autorize Railway acessar seu GitHub
-- [ ] Você será redirecionado ao Railway Dashboard
+- [x] Acesse https://railway.app
+- [x] Clique **"Sign Up"** (ou **"Login"** se já teve conta)
+- [x] Escolha: **"Continue with GitHub"**
+- [x] Autorize Railway acessar seu GitHub
+- [x] Você será redirecionado ao Railway Dashboard
 
 #### Passo 3: Criar novo projeto
 - [ ] No Dashboard, clique **"+ New Project"**
