@@ -4,9 +4,10 @@
  * Build Script Unificado — Frontend + Backend
  * 
  * Executa em ordem:
- * 1. Build do Frontend (Vite) → frontend/dist
- * 2. Copy frontend/dist → backend/public (cross-platform)
- * 3. Build do Backend (TypeScript) → backend/dist
+ * 1. Install + Prisma Generate do Backend
+ * 2. Build do Frontend (Vite) → frontend/dist
+ * 3. Copy frontend/dist → backend/public
+ * 4. Build do Backend (TypeScript) → backend/dist
  * 
  * Usage: node build.js
  */
@@ -27,9 +28,22 @@ console.log('\n📦 === BUILD UNIFICADO ===\n');
 
 try {
   // ========================================
+  // 0. Generate Prisma Client
+  // ========================================
+  console.log('⚙️  [0/4] Generating Prisma Client...');
+  console.log(`   📍 ${backendDir}`);
+  
+  execSync('npm install && npx prisma generate', {
+    cwd: backendDir,
+    stdio: 'inherit'
+  });
+  
+  console.log('✅ Prisma Client generated!\n');
+
+  // ========================================
   // 1. Build Frontend
   // ========================================
-  console.log('🔨 [1/3] Building Frontend...');
+  console.log('🔨 [1/4] Building Frontend...');
   console.log(`   📍 ${frontendDir}`);
   
   execSync('npm install && npm run build', {
@@ -42,7 +56,7 @@ try {
   // ========================================
   // 2. Copy Frontend para Backend/public
   // ========================================
-  console.log('📋 [2/3] Copying Frontend dist to Backend/public...');
+  console.log('📋 [2/4] Copying Frontend dist to Backend/public...');
   
   const frontendDist = path.join(frontendDir, 'dist');
   
@@ -64,10 +78,10 @@ try {
   // ========================================
   // 3. Build Backend
   // ========================================
-  console.log('🔨 [3/3] Building Backend...');
+  console.log('🔨 [3/4] Building Backend TypeScript...');
   console.log(`   📍 ${backendDir}`);
   
-  execSync('npm install && npm run build', {
+  execSync('npm run build', {
     cwd: backendDir,
     stdio: 'inherit'
   });

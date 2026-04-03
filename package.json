@@ -8,9 +8,9 @@
     "build": "node build.js",
     "build:frontend": "cd frontend && npm install && npm run build",
     "build:backend": "cd backend && npm install && npm run build",
-    "postbuild": "node script-copy-frontend.js",
+    "postinstall": "npm run build",
     "copy:frontend": "node script-copy-frontend.js",
-    "start": "npm run build && node backend/dist/server.js",
+    "start": "node backend/dist/server.js",
     "dev": "concurrently \"cd frontend && npm run dev\" \"cd backend && npm run dev\"",
     "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install"
   },
