@@ -5,12 +5,12 @@
   "main": "backend/dist/server.js",
   "type": "module",
   "scripts": {
-    "build": "npm run build:frontend && npm run build:backend",
+    "build": "node build.js",
     "build:frontend": "cd frontend && npm install && npm run build",
     "build:backend": "cd backend && npm install && npm run build",
-    "postbuild": "npm run copy:frontend",
-    "copy:frontend": "xcopy frontend\\dist backend\\public /E /I /Y",
-    "start": "cd backend && npm run start",
+    "postbuild": "node script-copy-frontend.js",
+    "copy:frontend": "node script-copy-frontend.js",
+    "start": "npm run build && node backend/dist/server.js",
     "dev": "concurrently \"cd frontend && npm run dev\" \"cd backend && npm run dev\"",
     "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install"
   },
@@ -18,3 +18,4 @@
     "concurrently": "^8.2.2"
   }
 }
+

@@ -39,9 +39,9 @@ npm run build
 - [x] Você será redirecionado ao Railway Dashboard
 
 #### Passo 3: Criar novo projeto
-- [ ] No Dashboard, clique **"+ New Project"**
-- [ ] Selecione **"Deploy from GitHub"**
-- [ ] Selecione o repositório **"project-market-system"**
+- [x] No Dashboard, clique **"+ New Project"**
+- [x] Selecione **"Deploy from GitHub"**
+- [x] Selecione o repositório **"project-market-system"**
 - [ ] Branch: **"main"** (ou seu branch padrão)
 - [ ] Clique **"Create"**
 

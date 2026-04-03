@@ -5,7 +5,7 @@
  * 
  * Executa em ordem:
  * 1. Build do Frontend (Vite) → frontend/dist
- * 2. Copy frontend/dist → backend/public
+ * 2. Copy frontend/dist → backend/public (cross-platform)
  * 3. Build do Backend (TypeScript) → backend/dist
  * 
  * Usage: node build.js
@@ -82,7 +82,7 @@ try {
   console.log('\n📦 Estrutura final:');
   console.log(`   backend/dist/          → código compilado`);
   console.log(`   backend/public/        → frontend estático`);
-  console.log(`\n🚀 Para rodar: npm start\n`);
+  console.log(`\n🚀 Para rodar: node backend/dist/server.js\n`);
 
 } catch (error) {
   console.error('\n❌ BUILD FALHOU!');
