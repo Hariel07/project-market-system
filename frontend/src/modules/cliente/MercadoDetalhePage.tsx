@@ -27,7 +27,8 @@ export default function MercadoDetalhePage() {
           api.get(`/api/comercios/${id}/produtos`),
         ]);
 
-        const found = resComercio.data.find((c: any) => c.id === id);
+        const comerciosData = Array.isArray(resComercio.data) ? resComercio.data : [];
+        const found = comerciosData.find((c: any) => c.id === id);
         if (found) {
           setComercio({
             ...found,
@@ -37,7 +38,8 @@ export default function MercadoDetalhePage() {
         }
 
         // Mapear produtos da API para o formato Item do carrinho
-        const produtosAPI: Item[] = resProdutos.data.map((p: any) => ({
+        const produtosData = Array.isArray(resProdutos.data) ? resProdutos.data : [];
+        const produtosAPI: Item[] = produtosData.map((p: any) => ({
           id: p.id,
           comercioId: p.comercioId,
           nome: p.nome,

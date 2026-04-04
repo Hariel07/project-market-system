@@ -23,9 +23,10 @@ export default function MercadosPage() {
   const fetchComercios = async () => {
     try {
       const { data } = await api.get('/api/comercios/public');
-      setRealComercios(data);
+      setRealComercios(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Erro ao buscar lojas:', error);
+      setRealComercios([]);
     } finally {
       setLoading(false);
     }

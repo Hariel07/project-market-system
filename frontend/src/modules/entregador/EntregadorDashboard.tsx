@@ -44,7 +44,8 @@ export default function EntregadorDashboard() {
     api.get('/api/entregas/oportunidades')
       .then((res: any) => {
         // Transformar entregas da API em oportunidades
-        const oportunidadesAPI = res.data.map((pedido: any) => ({
+        const data = Array.isArray(res.data) ? res.data : [];
+        const oportunidadesAPI = data.map((pedido: any) => ({
           id: pedido.entrega?.id || pedido.id,
           pedidoId: pedido.id,
           restaurante: pedido.comercio.nomeFantasia,
@@ -84,8 +85,8 @@ export default function EntregadorDashboard() {
 
     api.get(`/api/entregas/entregador/${entregadorId}`)
       .then((res: any) => {
-        setEntregasAtivas(res.data || []);
-        console.log('✅ Entregas ativas carregadas:', res.data?.length || 0);
+        setEntregasAtivas(Array.isArray(res.data) ? res.data : []);
+        console.log('✅ Entregas ativas carregadas:', Array.isArray(res.data) ? res.data.length : 0);
       })
       .catch((err: any) => {
         console.error('Erro ao carregar entregas ativas:', err);

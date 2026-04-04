@@ -53,7 +53,7 @@ export default function CheckoutPage() {
 
     // Buscar endereços do usuário
     api.get('/api/perfil/enderecos').then((res: any) => {
-      const lista: Endereco[] = res.data || [];
+      const lista: Endereco[] = Array.isArray(res.data) ? res.data : [];
       setEnderecos(lista);
       const principal = lista.find(e => e.isPrincipal) ?? lista[0] ?? null;
       setEnderecoSelecionado(principal);
@@ -62,7 +62,8 @@ export default function CheckoutPage() {
     // Buscar taxa de entrega do comércio
     if (comercioId) {
       api.get('/api/comercios/public').then((res: any) => {
-        const c = res.data.find((x: any) => String(x.id) === String(comercioId));
+        const data = Array.isArray(res.data) ? res.data : [];
+        const c = data.find((x: any) => String(x.id) === String(comercioId));
         if (c) setComercio({ taxaEntrega: c.taxaEntrega ?? 0 });
       }).catch(() => {});
     }

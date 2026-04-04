@@ -28,9 +28,10 @@ export default function EnderecosPage() {
     try {
       setLoading(true);
       const res = await api.get('/api/perfil/enderecos');
-      setEnderecos(res.data);
+      setEnderecos(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error('Erro ao buscar endereços:', error);
+      setEnderecos([]);
     } finally {
       setLoading(false);
     }

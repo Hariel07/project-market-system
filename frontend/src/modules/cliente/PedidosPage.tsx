@@ -61,7 +61,7 @@ export default function PedidosPage() {
     }
 
     api.get('/api/pedidos/meus')
-      .then((res: any) => setPedidos(res.data || []))
+      .then((res: any) => setPedidos(Array.isArray(res.data) ? res.data : []))
       .catch(() => setPedidos([]))
       .finally(() => setLoading(false));
   }, [navigate]);

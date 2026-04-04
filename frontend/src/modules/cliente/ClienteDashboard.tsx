@@ -22,7 +22,7 @@ export default function ClienteDashboard() {
 
   useEffect(() => {
     api.get('/api/comercios/public')
-      .then((res: any) => setComercios(res.data))
+      .then((res: any) => setComercios(Array.isArray(res.data) ? res.data : []))
       .catch(() => setComercios([]));
   }, []);
 

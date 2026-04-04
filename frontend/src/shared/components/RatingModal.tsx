@@ -34,7 +34,7 @@ export function RatingModal({
     try {
       setLoading(true);
       setError('');
-      await api.post('/avaliacoes', {
+      await api.post('/api/avaliacoes', {
         entregaId,
         estrelas,
         comentario: comentario || undefined,

@@ -31,9 +31,10 @@ export default function ComercianteEstoque() {
     try {
       setLoading(true);
       const response = await api.get('/api/produtos');
-      setProdutos(response.data);
+      setProdutos(Array.isArray(response.data) ? response.data : []);
     } catch (error: any) {
       console.error('Erro ao buscar produtos:', error);
+      setProdutos([]);
       if (error.response?.status === 401) {
         alert('Sessão expirada. Faça login novamente.');
         navigate('/login');

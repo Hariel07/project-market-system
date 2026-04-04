@@ -58,7 +58,7 @@ export default function ComercianteItemForm() {
       // Busca categorias reais do comércio
       try {
         const catResponse = await api.get('/api/categorias');
-        setCategorias(catResponse.data);
+        setCategorias(Array.isArray(catResponse.data) ? catResponse.data : []);
       } catch (err: any) {
         // Se não tem categorias, segue sem elas
         console.warn('Nenhuma categoria encontrada ou erro:', err.response?.data?.error);
