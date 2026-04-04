@@ -139,7 +139,7 @@ export async function deletarPlano(req: Request, res: Response): Promise<void> {
     res.json({
       message: 'Plano desativado com sucesso.',
       plano,
-      comerciosAfetados: (plano as any)._count.comercios,
+      comerciosAfetados: (plano as any)._count?.comercios || 0,
     });
   } catch (error: any) {
     if (error.code === 'P2025') {
