@@ -36,7 +36,7 @@ const publicPath = path.join(__dirname, '..', 'public');
 app.use(express.static(publicPath));
 
 // SPA Fallback: Redireciona requisições não-API para index.html
-app.get('(.*)', (req, res, next) => {
+app.get('/:path*', (req, res, next) => {
   // Se começar com /api, deixa chegar nas rotas da API
   if (req.path.startsWith('/api')) {
     return next();
