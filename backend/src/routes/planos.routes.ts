@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import { authMiddleware } from '../middlewares/auth.middleware';
-import { roleMiddleware } from '../middlewares/role.middleware';
+import { authMiddleware } from '../middlewares/auth.middleware.js';
+import { roleMiddleware } from '../middlewares/role.middleware.js';
 import {
   listarPlanos,
   listarPlanosPublicos,
   criarPlano,
   atualizarPlano,
   deletarPlano,
-} from '../controllers/planos.controller';
+} from '../controllers/planos.controller.js';
 
 const router = Router();
 

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { prisma } from '../lib/prisma';
+import { prisma } from '../lib/prisma.js';
 
 // ============================================================
 // CRUD de Planos de Assinatura — Apenas Admin

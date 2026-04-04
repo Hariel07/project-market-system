@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import { authMiddleware } from '../middlewares/auth.middleware';
-import { roleMiddleware } from '../middlewares/role.middleware';
+import { authMiddleware } from '../middlewares/auth.middleware.js';
+import { roleMiddleware } from '../middlewares/role.middleware.js';
 import {
   listarProdutos,
   buscarProduto,
   criarProduto,
   atualizarProduto,
   deletarProduto,
-} from '../controllers/produtos.controller';
+} from '../controllers/produtos.controller.js';
 
 const router = Router();
 

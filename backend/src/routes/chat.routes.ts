@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authMiddleware } from "../middlewares/auth.middleware";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 import {
   obterOuCriarChat,
   obterMensagens,
@@ -7,7 +7,7 @@ import {
   marcarComoLido,
   listarChatsEntregador,
   listarChatsCliente,
-} from "../controllers/chat.controller";
+} from "../controllers/chat.controller.js";
 
 const router = Router();
 

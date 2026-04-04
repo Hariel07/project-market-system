@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { prisma } from '../lib/prisma';
-import { AuthPayload } from '../middlewares/auth.middleware';
+import { prisma } from '../lib/prisma.js';
+import { AuthPayload } from '../middlewares/auth.middleware.js';
 
 export const updateProfile = async (req: Request, res: Response): Promise<void> => {
   try {

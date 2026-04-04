@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { prisma } from "../lib/prisma";
+import { prisma } from "../lib/prisma.js";
 
 // Obter ou criar Chat para uma entrega
 export async function obterOuCriarChat(req: Request, res: Response) {

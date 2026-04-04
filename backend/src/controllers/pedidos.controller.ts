@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { prisma } from '../lib/prisma';
+import { prisma } from '../lib/prisma.js';
 import { PaymentMethod } from '@prisma/client';
 
 const metodoPagtoMap: Record<string, PaymentMethod> = {

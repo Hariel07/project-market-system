@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { updateProfile, getAddresses, createAddress, updateAddress, setPrincipalAddress, deleteAddress } from '../controllers/perfil.controller';
-import { authMiddleware } from '../middlewares/auth.middleware';
+import { updateProfile, getAddresses, createAddress, updateAddress, setPrincipalAddress, deleteAddress } from '../controllers/perfil.controller.js';
+import { authMiddleware } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 

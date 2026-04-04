@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { authMiddleware } from '../middlewares/auth.middleware';
-import { roleMiddleware } from '../middlewares/role.middleware';
-import { getConfig, updateConfig, getPublicConfig, getConfigSistema, updateConfigSistema } from '../controllers/config.controller';
+import { authMiddleware } from '../middlewares/auth.middleware.js';
+import { roleMiddleware } from '../middlewares/role.middleware.js';
+import { getConfig, updateConfig, getPublicConfig, getConfigSistema, updateConfigSistema } from '../controllers/config.controller.js';
 
 const router = Router();
 

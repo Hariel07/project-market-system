@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { getPublicComercios, getProdutosPublicos, getMyCommerce, updateMyCommerce } from '../controllers/comercios.controller';
-import { authMiddleware } from '../middlewares/auth.middleware';
+import { getPublicComercios, getProdutosPublicos, getMyCommerce, updateMyCommerce } from '../controllers/comercios.controller.js';
+import { authMiddleware } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 

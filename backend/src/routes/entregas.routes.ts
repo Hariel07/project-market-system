@@ -9,9 +9,9 @@ import {
   confirmarEntrega,
   minhasEntregas,
   obterHistoricoEntregas,
-} from '../controllers/entregas.controller';
-import { authMiddleware } from '../middlewares/auth.middleware';
-import { roleMiddleware } from '../middlewares/role.middleware';
+} from '../controllers/entregas.controller.js';
+import { authMiddleware } from '../middlewares/auth.middleware.js';
+import { roleMiddleware } from '../middlewares/role.middleware.js';
 
 const router = Router();
 

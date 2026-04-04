@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authMiddleware } from "../middlewares/auth.middleware";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 import {
   criarNotificacao,
   obterNotificacoes,
@@ -8,7 +8,7 @@ import {
   marcarComoLida,
   marcarTodasComoLida,
   deletarNotificacao,
-} from "../controllers/notification.controller";
+} from "../controllers/notification.controller.js";
 
 const router = Router();
 
