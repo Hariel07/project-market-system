@@ -35,18 +35,6 @@ app.use(express.json());
 const publicPath = path.join(__dirname, '..', 'public');
 app.use(express.static(publicPath));
 
-// SPA Fallback: Redireciona requisições não-API para index.html
-app.get('/:path*', (req, res, next) => {
-  // Se começar com /api, deixa chegar nas rotas da API
-  if (req.path.startsWith('/api')) {
-    return next();
-  }
-  // Caso contrário, serve o index.html (para React Router funcionar)
-  res.sendFile(path.join(publicPath, 'index.html'), (err) => {
-    if (err) next();
-  });
-});
-
 app.get('/api/status', (req, res) => {
   res.json({ status: 'Online', message: 'Market System API rodando perfeitamente!' });
 });
@@ -68,6 +56,17 @@ app.use('/api/avaliacoes', ratingRoutes);
 // Rotas de Planos e Config (públicas + admin)
 app.use('/api', planosRoutes);
 app.use('/api', configRoutes);
+
+// ========================================
+// SPA FALLBACK (Sempre por último)
+// ========================================
+// Redireciona qualquer requisição que não seja API para o Frontend
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ error: 'Rota de API não encontrada' });
+  }
+  res.sendFile(path.join(publicPath, 'index.html'));
+});
 
 // ========================================
 // SERVIDOR HTTP
