@@ -62,10 +62,10 @@ export async function criarPlano(req: Request, res: Response): Promise<void> {
     const plano = await prisma.subscriptionPlan.create({
       data: {
         nome,
-        slug: slug || nome.toLowerCase().replace(/\s+/g, '-').normalize('NFD').replace(/[\u0300-\u036f]/g, ''),
+        slug: (slug as string) || (nome as string).toLowerCase().replace(/\s+/g, '-').normalize('NFD').replace(/[\u0300-\u036f]/g, ''),
         preco: preco || 0,
-        descricao,
-        features: features || [],
+        descricao: descricao as string,
+        features: (features as string[]) || [],
         maxItens: maxItens || null,
         maxPdvs: maxPdvs || null,
         destaque: destaque || false,
@@ -95,16 +95,16 @@ export async function atualizarPlano(req: Request, res: Response): Promise<void>
     const plano = await prisma.subscriptionPlan.update({
       where: { id: id as string },
       data: {
-        ...(nome !== undefined && { nome }),
-        ...(slug !== undefined && { slug }),
-        ...(preco !== undefined && { preco }),
-        ...(descricao !== undefined && { descricao }),
+        ...(nome !== undefined && { nome: nome as string }),
+        ...(slug !== undefined && { slug: slug as string }),
+        ...(preco !== undefined && { preco: Number(preco) }),
+        ...(descricao !== undefined && { descricao: descricao as string }),
         ...(features !== undefined && { features: features as string[] }),
-        ...(maxItens !== undefined && { maxItens }),
-        ...(maxPdvs !== undefined && { maxPdvs }),
-        ...(destaque !== undefined && { destaque }),
-        ...(ativo !== undefined && { ativo }),
-        ...(ordem !== undefined && { ordem }),
+        ...(maxItens !== undefined && { maxItens: Number(maxItens) }),
+        ...(maxPdvs !== undefined && { maxPdvs: Number(maxPdvs) }),
+        ...(destaque !== undefined && { destaque: Boolean(destaque) }),
+        ...(ativo !== undefined && { ativo: Boolean(ativo) }),
+        ...(ordem !== undefined && { ordem: Number(ordem) }),
       },
     });
     res.json(plano);
