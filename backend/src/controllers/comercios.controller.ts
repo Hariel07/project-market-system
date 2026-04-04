@@ -104,7 +104,7 @@ export async function getProdutosPublicos(req: Request, res: Response): Promise<
   try {
     const produtos = await prisma.product.findMany({
       where: { 
-        comercioId: id,
+        comercioId: id as string,
         ativo: true 
       },
       include: {
@@ -127,7 +127,7 @@ export async function getComercioById(req: Request, res: Response): Promise<void
 
   try {
     const commerce = await prisma.commerce.findUnique({
-      where: { id },
+      where: { id: id as string },
       include: {
         categorias: {
           include: {
