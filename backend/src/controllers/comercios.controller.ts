@@ -98,6 +98,30 @@ export async function updateMyCommerce(req: Request, res: Response): Promise<voi
   }
 }
 
+export async function getProdutosPublicos(req: Request, res: Response): Promise<void> {
+  const { id } = req.params;
+
+  try {
+    const produtos = await prisma.product.findMany({
+      where: { 
+        comercioId: id,
+        ativo: true 
+      },
+      include: {
+        categoria: true
+      },
+      orderBy: {
+        nome: 'asc'
+      }
+    });
+
+    res.json(produtos);
+  } catch (error) {
+    console.error('Erro ao buscar produtos públicos:', error);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+}
+
 export async function getComercioById(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
 
