@@ -234,8 +234,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            </div>
-
             <div className="input-group">
               <label htmlFor="senha">Senha</label>
               <div className="input-with-icon">
