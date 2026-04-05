@@ -1,9 +1,16 @@
 import axios from 'axios';
 
 const getBaseURL = () => {
-  const url = import.meta.env.VITE_API_URL || 'http://localhost:3333';
+  const envUrl = import.meta.env.VITE_API_URL;
+  
+  // Se estamos no Railway/Produção e a URL não foi definida,
+  // ou se ela é apenas "/api", usamos string vazia para caminhos relativos
+  if (!envUrl || envUrl === '/api') {
+    return '';
+  }
+
   // Se a URL termina com /api, removemos para não duplicar com as chamadas no código
-  return url.endsWith('/api') ? url.slice(0, -4) : url;
+  return envUrl.endsWith('/api') ? envUrl.slice(0, -4) : envUrl;
 };
 
 export const api = axios.create({

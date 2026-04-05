@@ -288,6 +288,7 @@ export default function CadastroPage() {
                     <span className="input-icon">🆔</span>
                     <input 
                       id="cpf" 
+                      name="username"
                       type="text" 
                       className="input" 
                       placeholder="000.000.000-00" 
@@ -312,6 +313,7 @@ export default function CadastroPage() {
                     <span className="input-icon">🔒</span>
                     <input 
                       id="reg-senha" 
+                      name="password"
                       type="password" 
                       className="input" 
                       placeholder={accountExists ? 'Digite sua senha' : 'Mínimo 8 caracteres'} 
