@@ -18,6 +18,21 @@ export default function LoginPage() {
   const [selectMode, setSelectMode] = useState(false);
   const [perfis, setPerfis] = useState<any[]>([]);
   const [tempToken, setTempToken] = useState('');
+  const [restoreData, setRestoreAllData] = useState<any>(null);
+
+  const handleRestore = async (restoreAll: boolean, profileId?: string) => {
+    setLoading(true);
+    try {
+      const res = await api.post('auth/restore-account', { tempToken, restoreAll, profileId });
+      alert(res.data.message);
+      window.location.reload();
+    } catch (error) {
+      alert('Erro ao restaurar. Tente logar novamente.');
+      setRestoreAllData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatCPF = (value: string) => {
     return value
