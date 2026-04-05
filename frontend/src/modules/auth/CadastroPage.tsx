@@ -192,6 +192,12 @@ export default function CadastroPage() {
       });
 
       const { token, user, isSetup } = response.data;
+      
+      // Atualiza localStorage (todas as variações usadas no sistema para evitar bugs de cache)
+      localStorage.setItem('token', token);
+      localStorage.setItem('userId', user.id);
+      localStorage.setItem('userRole', user.role);
+      localStorage.setItem('userName', user.nomeCompleto || user.nome);
       localStorage.setItem('@MarketSystem:token', token);
       localStorage.setItem('@MarketSystem:user', JSON.stringify(user));
 
