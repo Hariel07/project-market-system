@@ -1,16 +1,27 @@
 import axios from 'axios';
 
 const getBaseURL = () => {
-  const envUrl = import.meta.env.VITE_API_URL;
+  let url = import.meta.env.VITE_API_URL || '';
   
-  // Se estamos no Railway/Produção e a URL não foi definida,
-  // ou se ela é apenas "/api", usamos string vazia para caminhos relativos
-  if (!envUrl || envUrl === '/api') {
-    return '';
+  if (!url || url === '/api') return '';
+
+  // Remove espaços em branco
+  url = url.trim();
+
+  // Se não começa com http, e não é um caminho relativo, assume https (Produção)
+  if (url && !url.startsWith('http') && !url.startsWith('/')) {
+    url = `https://${url}`;
   }
 
-  // Se a URL termina com /api, removemos para não duplicar com as chamadas no código
-  return envUrl.endsWith('/api') ? envUrl.slice(0, -4) : envUrl;
+  // Remove a barra final se existir
+  if (url.endsWith('/')) url = url.slice(0, -1);
+
+  // Se a URL termina com /api, removemos para não duplicar com as chamadas no código (ex: /api/auth/login)
+  if (url.endsWith('/api')) {
+    url = url.slice(0, -4);
+  }
+
+  return url;
 };
 
 export const api = axios.create({

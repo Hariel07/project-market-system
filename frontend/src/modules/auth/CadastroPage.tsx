@@ -260,7 +260,7 @@ export default function CadastroPage() {
 
           <form className="auth-form" onSubmit={handleSubmit}>
             {step === 1 && (
-              <div className="role-selection animate-fade-in-up">
+              <div key="step1" className="role-selection animate-fade-in-up">
                 {roles.map(r => (
                   <button
                     key={r.id}
@@ -281,7 +281,7 @@ export default function CadastroPage() {
             )}
 
             {step === 2 && (
-              <div className="animate-fade-in-up">
+              <div key="step2" className="animate-fade-in-up">
                 <div className="input-group">
                   <label htmlFor="cpf">CPF</label>
                   <div className="input-with-icon">
@@ -339,7 +339,7 @@ export default function CadastroPage() {
                       <label htmlFor="nome">Nome completo</label>
                       <div className="input-with-icon">
                         <span className="input-icon">👤</span>
-                        <input id="nome" type="text" className="input" value={nome} onChange={e => setNome(e.target.value)} required disabled={passwordValidated} />
+                        <input id="nome" name="name" type="text" className="input" value={nome} onChange={e => setNome(e.target.value)} autoComplete="name" required disabled={passwordValidated} />
                       </div>
                     </div>
 
@@ -347,7 +347,7 @@ export default function CadastroPage() {
                       <label htmlFor="dataNasc">Data de Nascimento</label>
                       <div className="input-with-icon">
                         <span className="input-icon">📅</span>
-                        <input id="dataNasc" type="date" className="input" value={dataNascimento} onChange={e => setDataNascimento(e.target.value)} required disabled={passwordValidated} />
+                        <input id="dataNasc" name="bday" type="date" className="input" value={dataNascimento} onChange={e => setDataNascimento(e.target.value)} autoComplete="bday" required disabled={passwordValidated} />
                       </div>
                     </div>
 
@@ -355,7 +355,7 @@ export default function CadastroPage() {
                       <label htmlFor="reg-email">E-mail</label>
                       <div className="input-with-icon">
                         <span className="input-icon">✉️</span>
-                        <input id="reg-email" type="email" className="input" value={email} onChange={e => setEmail(e.target.value)} required disabled={accountExists} />
+                        <input id="reg-email" name="email" type="email" className="input" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" required disabled={accountExists} />
                       </div>
                     </div>
 
@@ -363,7 +363,7 @@ export default function CadastroPage() {
                       <label htmlFor="telefone">Telefone</label>
                       <div className="input-with-icon">
                         <span className="input-icon">📱</span>
-                        <input id="telefone" type="tel" className="input" value={telefone} onChange={e => setTelefone(e.target.value)} required disabled={passwordValidated} />
+                        <input id="telefone" name="tel" type="tel" className="input" value={telefone} onChange={e => setTelefone(e.target.value)} autoComplete="tel" required disabled={passwordValidated} />
                       </div>
                     </div>
 
@@ -372,7 +372,7 @@ export default function CadastroPage() {
                         <label htmlFor="confirmar-senha">Confirmar senha</label>
                         <div className="input-with-icon">
                           <span className="input-icon">🔒</span>
-                          <input id="confirmar-senha" type="password" className="input" placeholder="Repita a senha" value={confirmarSenha} onChange={e => setConfirmarSenha(e.target.value)} required />
+                          <input id="confirmar-senha" name="confirm-password" type="password" className="input" placeholder="Repita a senha" value={confirmarSenha} onChange={e => setConfirmarSenha(e.target.value)} autoComplete="new-password" required />
                         </div>
                         {confirmarSenha && senha !== confirmarSenha && (
                           <span className="input-error">As senhas não coincidem</span>
@@ -385,12 +385,12 @@ export default function CadastroPage() {
             )}
 
             {step === 3 && role === 'comerciante' && (
-              <div className="animate-fade-in-up">
+              <div key="step3" className="animate-fade-in-up">
                 <div className="input-group">
                   <label htmlFor="nome-comercio">Nome do comércio</label>
                   <div className="input-with-icon">
                     <span className="input-icon">🏪</span>
-                    <input id="nome-comercio" type="text" className="input" placeholder="Ex: Mercado Bom Preço" value={nomeComercio} onChange={e => setNomeComercio(e.target.value)} required />
+                    <input id="nome-comercio" name="organization" type="text" className="input" placeholder="Ex: Mercado Bom Preço" value={nomeComercio} onChange={e => setNomeComercio(e.target.value)} autoComplete="organization" required />
                   </div>
                 </div>
 
