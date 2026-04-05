@@ -1,7 +1,13 @@
 import axios from 'axios';
 
+const getBaseURL = () => {
+  const url = import.meta.env.VITE_API_URL || 'http://localhost:3333';
+  // Se a URL termina com /api, removemos para não duplicar com as chamadas no código
+  return url.endsWith('/api') ? url.slice(0, -4) : url;
+};
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3333',
+  baseURL: getBaseURL(),
 });
 
 // Interceptor para adicionar o Token JWT em todas as requisições autenticadas Futuramente

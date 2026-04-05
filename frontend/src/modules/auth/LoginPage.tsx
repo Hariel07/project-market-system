@@ -227,11 +227,13 @@ export default function LoginPage() {
                   className="input"
                   placeholder="000.000.000-00"
                   value={cpf}
-                  onChange={e => setCpf(formatCPF(e.target.value))}
-                  maxLength={14}
+                  onChange={e => setCpf(e.target.value)}
+                  autoComplete="username"
                   required
                 />
               </div>
+            </div>
+
             </div>
 
             <div className="input-group">

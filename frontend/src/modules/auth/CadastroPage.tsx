@@ -286,7 +286,18 @@ export default function CadastroPage() {
                   <label htmlFor="cpf">CPF</label>
                   <div className="input-with-icon">
                     <span className="input-icon">🆔</span>
-                    <input id="cpf" type="text" className="input" placeholder="000.000.000-00" value={cpf} onChange={e => handleCpfChange(e.target.value)} maxLength={14} required disabled={passwordValidated} />
+                    <input 
+                      id="cpf" 
+                      type="text" 
+                      className="input" 
+                      placeholder="000.000.000-00" 
+                      value={cpf} 
+                      onChange={e => handleCpfChange(e.target.value)} 
+                      maxLength={14} 
+                      autoComplete="username"
+                      required 
+                      disabled={passwordValidated} 
+                    />
                   </div>
                   {accountExists && !passwordValidated && (
                     <span className="text-xs text-blue-dark font-bold mt-1 block">
@@ -299,7 +310,18 @@ export default function CadastroPage() {
                   <label htmlFor="reg-senha">{accountExists ? 'Sua senha atual' : 'Crie uma senha'}</label>
                   <div className="input-with-icon">
                     <span className="input-icon">🔒</span>
-                    <input id="reg-senha" type="password" className="input" placeholder={accountExists ? 'Digite sua senha' : 'Mínimo 8 caracteres'} value={senha} onChange={e => setSenha(e.target.value)} required minLength={8} disabled={passwordValidated} />
+                    <input 
+                      id="reg-senha" 
+                      type="password" 
+                      className="input" 
+                      placeholder={accountExists ? 'Digite sua senha' : 'Mínimo 8 caracteres'} 
+                      value={senha} 
+                      onChange={e => setSenha(e.target.value)} 
+                      autoComplete={accountExists ? "current-password" : "new-password"}
+                      required 
+                      minLength={8} 
+                      disabled={passwordValidated} 
+                    />
                   </div>
                 </div>
 
