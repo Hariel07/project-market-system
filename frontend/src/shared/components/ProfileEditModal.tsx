@@ -16,6 +16,26 @@ export default function ProfileEditModal({ isOpen, onClose, user, onSave }: Prof
     telefone: ''
   });
   const [loading, setLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<'profile' | 'account' | null>(null);
+  const [deletePassword, setDeletePassword] = useState('');
+
+  const handleDeleteAction = async () => {
+    if (!deletePassword) return alert('Por favor, digite sua senha para confirmar.');
+    setLoading(true);
+    try {
+      const endpoint = showDeleteConfirm === 'account' ? 'perfil/account' : 'perfil/me';
+      const res = await api.delete(endpoint, { data: { senha: deletePassword } });
+      
+      alert(res.data.message);
+      // Logout imediato após marcar para exclusão
+      localStorage.clear();
+      window.location.href = '/login';
+    } catch (error: any) {
+      alert(error.response?.data?.error || 'Erro ao processar exclusão.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (user) {
