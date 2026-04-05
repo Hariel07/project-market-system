@@ -49,6 +49,23 @@ export default function LoginPage() {
       const plainCpf = cpf.replace(/\D/g, ''); // Limpa pontuação
       const response = await api.post('auth/login', { cpf: plainCpf, senha });
       
+      const { status, tempToken: tToken, deletedAt, perfis: pList } = response.data;
+
+      if (status === 'ACCOUNT_DELETED') {
+        setTempToken(tToken);
+        setRestoreAllData({ type: 'account', date: deletedAt });
+        setLoading(false);
+        return;
+      }
+
+      if (status === 'PROFILES_DELETED') {
+        setTempToken(tToken);
+        setPerfis(pList);
+        setRestoreAllData({ type: 'profiles' });
+        setLoading(false);
+        return;
+      }
+
       const redirect = searchParams.get('redirect');
       const isBuying = redirect && redirect.includes('/cliente');
 
@@ -363,5 +380,8 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+  </div>
   );
 }
