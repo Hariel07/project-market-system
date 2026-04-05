@@ -66,22 +66,12 @@ try {
     fs.rmSync(publicDir, { recursive: true, force: true });
   }
   
-  // Garante que dist existe
-  if (!fs.existsSync(frontendDist)) {
-    throw new Error('Frontend build dist folder not found!');
-  }
-
   // Cria public e copia
   console.log(`   📂 Creating ${publicDir}`);
   fs.mkdirSync(publicDir, { recursive: true });
   
   console.log(`   📥 Copying ${frontendDist} → ${publicDir}`);
-  // Usar shell command para cópia recursiva mais confiável em Linux/Railway
-  if (process.platform === 'win32') {
-    fs.cpSync(frontendDist, publicDir, { recursive: true });
-  } else {
-    execSync(`cp -R ${frontendDist}/* ${publicDir}/`);
-  }
+  fs.cpSync(frontendDist, publicDir, { recursive: true });
   
   console.log('✅ Frontend copied successfully!\n');
 
