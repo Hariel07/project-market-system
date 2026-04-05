@@ -286,8 +286,9 @@ export const login = async (req: Request, res: Response) => {
         }))
       });
     }
-  } catch (err) {
-    res.status(500).json({ error: 'Erro no login.' });
+  } catch (err: any) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Erro no login: ' + err.message });
   }
 };
 

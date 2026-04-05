@@ -34,6 +34,18 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 // Bloqueio Global de Manutenção
 app.use(maintenanceMiddleware);
 
+// Logger para depuração (Railway)
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    if (req.path.startsWith('/api')) {
+      console.log(`[API] ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`);
+    }
+  });
+  next();
+});
+
 // ========================================
 // SERVIR ARQUIVOS ESTÁTICOS DO FRONTEND
 // ========================================
