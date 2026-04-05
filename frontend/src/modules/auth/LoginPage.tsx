@@ -227,7 +227,8 @@ export default function LoginPage() {
                   className="input"
                   placeholder="000.000.000-00"
                   value={cpf}
-                  onChange={e => setCpf(e.target.value)}
+                  onChange={e => setCpf(formatCPF(e.target.value))}
+                  maxLength={14}
                   autoComplete="username"
                   required
                 />
