@@ -34,7 +34,7 @@ export default function ProfileSwitcherModal({ isOpen, onClose }: Props) {
   const loadProfiles = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/api/auth/my-profiles');
+      const { data } = await api.get('auth/my-profiles');
       setProfiles(data);
     } catch (error) {
       console.error('Erro ao carregar perfis:', error);

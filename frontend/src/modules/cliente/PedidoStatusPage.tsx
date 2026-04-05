@@ -62,7 +62,7 @@ export default function PedidoStatusPage() {
 
   useEffect(() => {
     if (!id) return;
-    api.get(`/api/pedidos/${id}`)
+    api.get(`/pedidos/${id}`)
       .then((res: any) => setPedido(res.data))
       .catch(() => setPedido(null))
       .finally(() => setLoading(false));

@@ -16,7 +16,7 @@ export function useAppName(): string {
     const carregarNome = async () => {
       try {
         // Usa a rota pública para que todos vejam o nome correto
-        const res = await api.get('/api/config/public');
+        const res = await api.get('config/public');
         const nome = res.data.nomeApp || 'Market System';
         setNomeApp(nome);
         localStorage.setItem('nomeApp', nome);
@@ -43,7 +43,7 @@ export function useAppConfig(): AppConfig {
     const carregarConfig = async () => {
       try {
         // Cache buster para garantir que pegamos o status real da manutenção
-        const res = await api.get(`/api/config/public?t=${Date.now()}`);
+        const res = await api.get(`/config/public?t=${Date.now()}`);
         setConfig({
           nomeApp: res.data.nomeApp || 'Market System',
           logoUrl: res.data.logoUrl || null,

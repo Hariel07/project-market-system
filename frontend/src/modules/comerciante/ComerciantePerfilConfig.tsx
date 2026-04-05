@@ -25,7 +25,7 @@ export default function ComerciantePerfilConfig() {
 
   const fetchPerfil = async () => {
     try {
-      const { data } = await api.get('/api/comercios/me');
+      const { data } = await api.get('comercios/me');
       setForm({
         nomeFantasia: data.nomeFantasia || '',
         segmento: data.segmento || '',
@@ -48,7 +48,7 @@ export default function ComerciantePerfilConfig() {
 
     try {
       // Background save to prevent the user from having to click "Save Profile" for a simple toggle
-      await api.put('/api/comercios/me', {
+      await api.put('comercios/me', {
         ...updatedForm,
         taxaEntrega: Number(updatedForm.taxaEntrega)
       });
@@ -64,7 +64,7 @@ export default function ComerciantePerfilConfig() {
     e.preventDefault();
     setSaving(true);
     try {
-      await api.put('/api/comercios/me', {
+      await api.put('comercios/me', {
         ...form,
         taxaEntrega: Number(form.taxaEntrega)
       });

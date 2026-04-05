@@ -54,8 +54,8 @@ export default function AdminPlanos() {
     setLoading(true);
     try {
       const [planosRes, configRes] = await Promise.all([
-        api.get('/api/admin/planos'),
-        api.get('/api/admin/config'),
+        api.get('admin/planos'),
+        api.get('admin/config'),
       ]);
       setPlanos(planosRes.data);
       setConfig(configRes.data);
@@ -70,7 +70,7 @@ export default function AdminPlanos() {
   const handleToggleAssinatura = async () => {
     const novoValor = !config.assinaturaObrigatoria;
     try {
-      await api.put('/api/admin/config', { assinaturaObrigatoria: novoValor });
+      await api.put('admin/config', { assinaturaObrigatoria: novoValor });
       setConfig({ ...config, assinaturaObrigatoria: novoValor });
     } catch (error) {
       console.error('Erro ao atualizar config:', error);
@@ -114,9 +114,9 @@ export default function AdminPlanos() {
     setSaving(true);
     try {
       if (editingPlan) {
-        await api.put(`/api/admin/planos/${editingPlan.id}`, form);
+        await api.put(`/admin/planos/${editingPlan.id}`, form);
       } else {
-        await api.post('/api/admin/planos', form);
+        await api.post('admin/planos', form);
       }
       setShowModal(false);
       loadData();
@@ -130,7 +130,7 @@ export default function AdminPlanos() {
   // Soft-delete (desativar)
   const handleToggleAtivo = async (plan: Plan) => {
     try {
-      await api.put(`/api/admin/planos/${plan.id}`, { ativo: !plan.ativo });
+      await api.put(`/admin/planos/${plan.id}`, { ativo: !plan.ativo });
       loadData();
     } catch (error) {
       console.error('Erro ao alterar status:', error);

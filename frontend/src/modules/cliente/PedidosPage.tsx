@@ -60,7 +60,7 @@ export default function PedidosPage() {
       return;
     }
 
-    api.get('/api/pedidos/meus')
+    api.get('pedidos/meus')
       .then((res: any) => setPedidos(Array.isArray(res.data) ? res.data : []))
       .catch(() => setPedidos([]))
       .finally(() => setLoading(false));

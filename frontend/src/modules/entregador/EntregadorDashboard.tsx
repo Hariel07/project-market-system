@@ -37,7 +37,7 @@ export default function EntregadorDashboard() {
   const handleAceitarCorrida = async (opp: OportunidadeEntrega) => {
     const entregaId = opp.id;
     try {
-      await api.post(`/api/entregas/${entregaId}/aceitar`, { entregadorId });
+      await api.post(`/entregas/${entregaId}/aceitar`, { entregadorId });
       navigate(`/entregador/rota/${opp.pedidoId || entregaId}`);
     } catch (err: any) {
       const msg = err?.response?.data?.error || 'Erro ao aceitar corrida';
@@ -52,7 +52,7 @@ export default function EntregadorDashboard() {
     setLoading(true);
     setErroOportunidades(null);
     
-    api.get('/api/entregas/oportunidades')
+    api.get('entregas/oportunidades')
       .then((res: any) => {
         // Transformar entregas da API em oportunidades
         const data = Array.isArray(res.data) ? res.data : [];
@@ -94,7 +94,7 @@ export default function EntregadorDashboard() {
   useEffect(() => {
     if (!isOnline || !entregadorId) return;
 
-    api.get(`/api/entregas/entregador/${entregadorId}`)
+    api.get(`/entregas/entregador/${entregadorId}`)
       .then((res: any) => {
         setEntregasAtivas(Array.isArray(res.data) ? res.data : []);
         console.log('✅ Entregas ativas carregadas:', Array.isArray(res.data) ? res.data.length : 0);
@@ -251,7 +251,7 @@ export default function EntregadorDashboard() {
                     <div className="ent-opp-actions">
                       <button
                         className="btn btn-ghost btn-sm text-danger"
-                        onClick={() => api.post(`/api/entregas/${opp.id}/rejeitar`, {}).catch(() => null)}
+                        onClick={() => api.post(`/entregas/${opp.id}/rejeitar`, {}).catch(() => null)}
                       >
                         Recusar
                       </button>

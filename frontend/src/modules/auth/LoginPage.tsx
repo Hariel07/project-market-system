@@ -47,7 +47,7 @@ export default function LoginPage() {
 
     try {
       const plainCpf = cpf.replace(/\D/g, ''); // Limpa pontuação
-      const response = await api.post('/api/auth/login', { cpf: plainCpf, senha });
+      const response = await api.post('auth/login', { cpf: plainCpf, senha });
       
       const redirect = searchParams.get('redirect');
       const isBuying = redirect && redirect.includes('/cliente');
@@ -57,7 +57,7 @@ export default function LoginPage() {
           const clientProfile = response.data.perfis.find((p: any) => p.role === 'CLIENTE');
           if (clientProfile) {
             // Auto login no perfil do cliente
-            const resSel = await api.post('/api/auth/select-profile', { 
+            const resSel = await api.post('auth/select-profile', { 
               tempToken: response.data.tempToken, 
               perfilId: clientProfile.id 
             });

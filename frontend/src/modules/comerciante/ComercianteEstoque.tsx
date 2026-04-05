@@ -30,7 +30,7 @@ export default function ComercianteEstoque() {
   const fetchProdutos = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/produtos');
+      const response = await api.get('produtos');
       setProdutos(Array.isArray(response.data) ? response.data : []);
     } catch (error: any) {
       console.error('Erro ao buscar produtos:', error);
@@ -84,7 +84,7 @@ export default function ComercianteEstoque() {
     try {
       setSavingEntrada(true);
       const novoEstoque = produto.estoque + Number(entradaQty);
-      await api.put(`/api/produtos/${entradaItem}`, { estoque: novoEstoque });
+      await api.put(`/produtos/${entradaItem}`, { estoque: novoEstoque });
       
       // Atualiza local
       setProdutos(prev => prev.map(p => p.id === entradaItem ? { ...p, estoque: novoEstoque } : p));

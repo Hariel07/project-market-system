@@ -52,7 +52,7 @@ export default function CheckoutPage() {
     }
 
     // Buscar endereços do usuário
-    api.get('/api/perfil/enderecos').then((res: any) => {
+    api.get('perfil/enderecos').then((res: any) => {
       const lista: Endereco[] = Array.isArray(res.data) ? res.data : [];
       setEnderecos(lista);
       const principal = lista.find(e => e.isPrincipal) ?? lista[0] ?? null;
@@ -61,7 +61,7 @@ export default function CheckoutPage() {
 
     // Buscar taxa de entrega do comércio
     if (comercioId) {
-      api.get('/api/comercios/public').then((res: any) => {
+      api.get('comercios/public').then((res: any) => {
         const data = Array.isArray(res.data) ? res.data : [];
         const c = data.find((x: any) => String(x.id) === String(comercioId));
         if (c) setComercio({ taxaEntrega: c.taxaEntrega ?? 0 });
@@ -106,7 +106,7 @@ export default function CheckoutPage() {
     };
 
     try {
-      const res: any = await api.post('/api/pedidos', payload);
+      const res: any = await api.post('pedidos', payload);
       clearCart();
       navigate(`/cliente/pedido/${res.data.id}`);
     } catch (err: any) {

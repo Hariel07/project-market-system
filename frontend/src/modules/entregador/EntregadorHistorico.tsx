@@ -119,7 +119,7 @@ export default function EntregadorHistorico() {
           return;
         }
 
-        const response = await api.get('/api/entregas/historico');
+        const response = await api.get('entregas/historico');
         setEntregas(response.data.entregas);
         setUsingMockData(false);
       } catch (error) {

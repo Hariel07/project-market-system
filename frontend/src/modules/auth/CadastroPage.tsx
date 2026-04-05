@@ -59,9 +59,9 @@ export default function CadastroPage() {
     const loadConfig = async () => {
       try {
         const [configRes, planosRes, setupRes] = await Promise.all([
-          api.get('/api/config/public'),
-          api.get('/api/public/planos'),
-          api.get('/api/config/setup-check').catch(() => ({ data: { isSetupMode: false } })),
+          api.get('config/public'),
+          api.get('public/planos'),
+          api.get('config/setup-check').catch(() => ({ data: { isSetupMode: false } })),
         ]);
         setAssinaturaObrigatoria(configRes.data.assinaturaObrigatoria);
         setPlanosDisponiveis(planosRes.data);
@@ -96,7 +96,7 @@ export default function CadastroPage() {
     if (formatted.length === 14) {
       try {
         const rawCpf = formatted.replace(/\D/g, '');
-        const res = await api.get(`/api/auth/check-cpf/${rawCpf}`);
+        const res = await api.get(`/auth/check-cpf/${rawCpf}`);
         setAccountExists(res.data.exists);
         setPasswordValidated(false); // Reseta validação ao mudar CPF
       } catch (err) {
@@ -113,7 +113,7 @@ export default function CadastroPage() {
     setLoading(true);
     try {
       const rawCpf = cpf.replace(/\D/g, '');
-      const res = await api.post('/api/auth/validate-password', { cpf: rawCpf, senha });
+      const res = await api.post('auth/validate-password', { cpf: rawCpf, senha });
       
       if (res.data.success) {
         const { nome, email, telefone, dataNascimento } = res.data.data;

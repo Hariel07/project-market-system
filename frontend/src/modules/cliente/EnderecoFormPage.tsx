@@ -95,7 +95,7 @@ export default function EnderecoFormPage() {
   const loadAddress = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/api/perfil/enderecos');
+      const res = await api.get('perfil/enderecos');
       const address = res.data.find((end: any) => end.id === id);
       if (address) {
         setForm({
@@ -213,9 +213,9 @@ export default function EnderecoFormPage() {
       };
 
       if (isEditing) {
-        await api.put(`/api/perfil/enderecos/${id}`, payload);
+        await api.put(`/perfil/enderecos/${id}`, payload);
       } else {
-        await api.post('/api/perfil/enderecos', payload);
+        await api.post('perfil/enderecos', payload);
       }
       navigate('/cliente/enderecos');
     } catch (error: any) {

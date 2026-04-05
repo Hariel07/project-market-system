@@ -32,7 +32,7 @@ export default function EntregadorConfig() {
   useEffect(() => {
     if (!userId) return;
 
-    api.get(`/api/perfil/${userId}`)
+    api.get(`/perfil/${userId}`)
       .then((res: any) => {
         setPerfil(res.data);
         setErro(null);

@@ -23,8 +23,8 @@ export default function MercadoDetalhePage() {
     async function fetchTudo() {
       try {
         const [resComercio, resProdutos] = await Promise.all([
-          api.get('/api/comercios/public'),
-          api.get(`/api/comercios/${id}/produtos`),
+          api.get('comercios/public'),
+          api.get(`/comercios/${id}/produtos`),
         ]);
 
         const comerciosData = Array.isArray(resComercio.data) ? resComercio.data : [];

@@ -21,7 +21,7 @@ export default function ClienteDashboard() {
   const [comercios, setComercios] = useState<ComercioAPI[]>([]);
 
   useEffect(() => {
-    api.get('/api/comercios/public')
+    api.get('comercios/public')
       .then((res: any) => setComercios(Array.isArray(res.data) ? res.data : []))
       .catch(() => setComercios([]));
   }, []);

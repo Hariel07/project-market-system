@@ -30,8 +30,8 @@ export function NotificationCenter() {
     try {
       setLoading(true);
       const [respNotificacoes, respCount] = await Promise.all([
-        api.get('/api/notificacoes'),
-        api.get('/api/notificacoes/nao-lidas/count'),
+        api.get('notificacoes'),
+        api.get('notificacoes/nao-lidas/count'),
       ]);
       setNotificacoes(Array.isArray(respNotificacoes.data) ? respNotificacoes.data : []);
       setCountNaoLidas(respCount.data.count);
@@ -54,7 +54,7 @@ export function NotificationCenter() {
 
   const marcarComoLida = async (id: string) => {
     try {
-      await api.put(`/api/notificacoes/${id}/lido`);
+      await api.put(`/notificacoes/${id}/lido`);
       setNotificacoes(
         notificacoes.map((n) => (n.id === id ? { ...n, lido: true } : n))
       );
@@ -66,7 +66,7 @@ export function NotificationCenter() {
 
   const marcarTodasComoLida = async () => {
     try {
-      await api.put('/api/notificacoes/', {});
+      await api.put('notificacoes/', {});
       setNotificacoes(notificacoes.map((n) => ({ ...n, lido: true })));
       setCountNaoLidas(0);
     } catch (erro) {
@@ -76,7 +76,7 @@ export function NotificationCenter() {
 
   const deletarNotificacao = async (id: string) => {
     try {
-      await api.delete(`/api/notificacoes/${id}`);
+      await api.delete(`/notificacoes/${id}`);
       setNotificacoes(notificacoes.filter((n) => n.id !== id));
     } catch (erro) {
       console.error('Erro ao deletar notificação:', erro);

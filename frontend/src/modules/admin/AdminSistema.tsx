@@ -18,7 +18,7 @@ export default function AdminSistema() {
     const carregarConfigurações = async () => {
       setLoading(true);
       try {
-        const res = await api.get('/api/config/sistema');
+        const res = await api.get('config/sistema');
         setNomeApp(res.data.nomeApp || 'Market System');
         setLogoUrl(res.data.logoUrl || '');
         setLogoUrlTemp(res.data.logoUrl || '');
@@ -46,7 +46,7 @@ export default function AdminSistema() {
     setMensagem(null);
 
     try {
-      await api.post('/api/config/sistema', { 
+      await api.post('config/sistema', { 
         nomeApp: nomeAppTemp,
         logoUrl: logoUrlTemp,
         modoManutencao // Envia o status atual
@@ -70,7 +70,7 @@ export default function AdminSistema() {
 
     setSalvando(true);
     try {
-      await api.post('/api/config/sistema', { modoManutencao: novoStatus });
+      await api.post('config/sistema', { modoManutencao: novoStatus });
       setModoManutencao(novoStatus);
       // Feedback imediato e recarregamento para limpar caches de middleware
       alert(`✅ Modo Manutenção ${novoStatus ? 'ATIVADO' : 'DESATIVADO'} com sucesso!`);
@@ -300,7 +300,7 @@ export default function AdminSistema() {
                   if (!senha) return;
 
                   try {
-                    await api.post('/api/admin/system/factory-reset', { senha });
+                    await api.post('admin/system/factory-reset', { senha });
                     alert('🔥 Sistema reinicializado! O banco de dados está limpo.');
                     localStorage.clear();
                     window.location.href = '/cadastro';

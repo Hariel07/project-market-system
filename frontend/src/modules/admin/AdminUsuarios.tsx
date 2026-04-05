@@ -18,7 +18,7 @@ export default function AdminUsuarios() {
     setLoading(true);
     try {
       // Adicionado timestamp para evitar cache do navegador
-      const res = await api.get(`/api/admin/users?t=${Date.now()}`);
+      const res = await api.get(`/admin/users?t=${Date.now()}`);
       console.log('Dados recebidos:', res.data);
       setUsuarios(res.data);
     } catch (err: any) {
@@ -31,7 +31,7 @@ export default function AdminUsuarios() {
 
   const handleSeeDetails = async (userId: string) => {
     try {
-      const res = await api.get(`/api/admin/users/${userId}/details`);
+      const res = await api.get(`/admin/users/${userId}/details`);
       setSelectedUser(res.data);
     } catch (err) {
       alert('Erro ao buscar detalhes do usuário.');

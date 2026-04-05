@@ -41,7 +41,7 @@ export default function AdminDashboard() {
     setLoadingFake(true);
     setMsg('');
     try {
-      await api.post('/api/admin/fake-data/create');
+      await api.post('admin/fake-data/create');
       setMsg('✅ Contas fake criadas com sucesso!');
       window.location.reload();
     } catch (err) {
@@ -56,7 +56,7 @@ export default function AdminDashboard() {
     setLoadingFake(true);
     setMsg('');
     try {
-      await api.delete('/api/admin/fake-data/cleanup');
+      await api.delete('admin/fake-data/cleanup');
       setMsg('✅ Contas fake removidas!');
       window.location.reload();
     } catch (err) {

@@ -31,7 +31,7 @@ export function ChatModal({ entregaId, isOpen, onClose, clienteNome }: ChatModal
     const abrirChat = async () => {
       try {
         setLoading(true);
-        const response = await api.get(`/api/chat/entrega/${entregaId}`);
+        const response = await api.get(`/chat/entrega/${entregaId}`);
         setChatId(response.data.id);
         setMensagens(Array.isArray(response.data.mensagens) ? response.data.mensagens : []);
       } catch (erro) {
@@ -51,7 +51,7 @@ export function ChatModal({ entregaId, isOpen, onClose, clienteNome }: ChatModal
 
     const interval = setInterval(async () => {
       try {
-        const response = await api.get(`/api/chat/${chatId}/mensagens`);
+        const response = await api.get(`/chat/${chatId}/mensagens`);
         setMensagens(Array.isArray(response.data) ? response.data : []);
       } catch (erro) {
         console.error('Erro ao carregar mensagens:', erro);
@@ -66,7 +66,7 @@ export function ChatModal({ entregaId, isOpen, onClose, clienteNome }: ChatModal
     if (!novaMensagem.trim() || !chatId) return;
 
     try {
-      const response = await api.post(`/api/chat/${chatId}/mensagens`, {
+      const response = await api.post(`/chat/${chatId}/mensagens`, {
         conteudo: novaMensagem,
       });
       setMensagens([...mensagens, response.data]);

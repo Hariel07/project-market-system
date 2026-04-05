@@ -91,7 +91,7 @@ export default function EntregadorRota() {
   useEffect(() => {
     if (!id) return;
 
-    api.get(`/api/entregas/pedido/${id}`)
+    api.get(`/entregas/pedido/${id}`)
       .then((res: any) => {
         const data: Entrega = res.data;
         setEntrega(data);
@@ -155,7 +155,7 @@ export default function EntregadorRota() {
         setDistanciaAtual(parseFloat(dist.toFixed(2)));
 
         if (entrega?.id) {
-          api.post(`/api/entregas/${entrega.id}/gps`, {
+          api.post(`/entregas/${entrega.id}/gps`, {
             latitude,
             longitude,
             velocidade: speed,
@@ -192,7 +192,7 @@ export default function EntregadorRota() {
       // Etapa 1: Chegou na coleta → confirma coleta com API
       if (etapa === 1) {
         // ✅ Etapa 1 → Etapa 2: Confirma coleta via API
-        const res = await api.post(`/api/entregas/${entrega.id}/coleta`, {});
+        const res = await api.post(`/entregas/${entrega.id}/coleta`, {});
         console.log('✅ Coleta confirmada:', res.data);
         setEtapa(2);
         setGpsAtivo(false); // Para GPS, aguardando confirmação do vendedor
@@ -221,7 +221,7 @@ export default function EntregadorRota() {
         }
 
         // ✅ Tem assinatura → Enviar para API
-        const res = await api.post(`/api/entregas/${entrega.id}/entregar`, {
+        const res = await api.post(`/entregas/${entrega.id}/entregar`, {
           assinatura, // Base64 da assinatura
         });
         console.log('✅ Entrega confirmada:', res.data);

@@ -57,7 +57,7 @@ export default function ComercianteItemForm() {
 
       // Busca categorias reais do comércio
       try {
-        const catResponse = await api.get('/api/categorias');
+        const catResponse = await api.get('categorias');
         setCategorias(Array.isArray(catResponse.data) ? catResponse.data : []);
       } catch (err: any) {
         // Se não tem categorias, segue sem elas
@@ -67,7 +67,7 @@ export default function ComercianteItemForm() {
 
       // Se editando, busca dados do produto
       if (isEditing) {
-        const prodResponse = await api.get(`/api/produtos/${id}`);
+        const prodResponse = await api.get(`/produtos/${id}`);
         const prod: ProdutoAPI = prodResponse.data;
         setNome(prod.nome);
         setDescricao(prod.descricao || '');
@@ -120,9 +120,9 @@ export default function ComercianteItemForm() {
 
     try {
       if (isEditing) {
-        await api.put(`/api/produtos/${id}`, payload);
+        await api.put(`/produtos/${id}`, payload);
       } else {
-        await api.post('/api/produtos', payload);
+        await api.post('produtos', payload);
       }
       navigate('/comerciante/catalogo');
     } catch (error: any) {

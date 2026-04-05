@@ -33,7 +33,7 @@ export default function ProfileEditModal({ isOpen, onClose, user, onSave }: Prof
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await api.patch('/api/perfil/me', {
+      const response = await api.patch('perfil/me', {
         nomeCompleto: form.nomeCompleto,
         telefone: form.telefone
       });

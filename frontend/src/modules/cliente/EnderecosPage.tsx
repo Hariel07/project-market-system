@@ -27,7 +27,7 @@ export default function EnderecosPage() {
   const fetchEnderecos = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/api/perfil/enderecos');
+      const res = await api.get('perfil/enderecos');
       setEnderecos(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error('Erro ao buscar endereços:', error);
@@ -44,7 +44,7 @@ export default function EnderecosPage() {
   const handleSetPrincipal = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await api.put(`/api/perfil/enderecos/${id}/principal`);
+      await api.put(`/perfil/enderecos/${id}/principal`);
       fetchEnderecos();
     } catch (error) {
       alert('Erro ao alterar endereço principal.');
@@ -55,7 +55,7 @@ export default function EnderecosPage() {
     e.stopPropagation();
     if (!window.confirm('Tem certeza que deseja excluir este endereço?')) return;
     try {
-      await api.delete(`/api/perfil/enderecos/${id}`);
+      await api.delete(`/perfil/enderecos/${id}`);
       fetchEnderecos();
     } catch (error) {
       alert('Erro ao excluir endereço.');

@@ -36,7 +36,7 @@ export default function ComercianteCatalogo() {
   const fetchProdutos = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/produtos');
+      const response = await api.get('produtos');
       setProdutos(Array.isArray(response.data) ? response.data : []);
     } catch (error: any) {
       console.error('Erro ao buscar produtos:', error);
@@ -64,7 +64,7 @@ export default function ComercianteCatalogo() {
     if (!confirm(`Tem certeza que deseja excluir "${nome}"?`)) return;
     try {
       setDeletingId(id);
-      await api.delete(`/api/produtos/${id}`);
+      await api.delete(`/produtos/${id}`);
       setProdutos(prev => prev.filter(p => p.id !== id));
     } catch (error: any) {
       console.error('Erro ao excluir produto:', error);
