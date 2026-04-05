@@ -136,6 +136,57 @@ export default function LoginPage() {
   };
 
   // ------------------------------------------------------------------
+  // TELA DE RESTAURAÇÃO
+  // ------------------------------------------------------------------
+  if (restoreData) {
+    return (
+      <div className="auth-page">
+        <div className="auth-bg">
+          <div className="auth-bg-circle circle-1" />
+          <div className="auth-bg-circle circle-2" />
+          <div className="auth-bg-circle circle-3" />
+        </div>
+        <div className="auth-container">
+          <div className="auth-card animate-fade-in-up">
+            <div className="auth-header">
+              <div className="auth-logo">🩹</div>
+              <h1 className="auth-title">Restaurar Conta</h1>
+              <p className="auth-subtitle">Sua conta está marcada para exclusão.</p>
+            </div>
+
+            <div style={{ marginTop: '1.5rem', background: '#fffbeb', padding: '1.5rem', borderRadius: '24px', border: '1px solid #fef3c7' }}>
+              <p style={{ fontSize: '0.9rem', color: '#92400e', margin: 0, textAlign: 'center', lineHeight: 1.5 }}>
+                {restoreData.type === 'account' 
+                  ? `Esta conta master foi agendada para exclusão em ${new Date(restoreData.date).toLocaleDateString()}. Você ainda pode restaurá-la com todos os seus perfis agora.`
+                  : 'Sua conta master está ativa, mas todos os seus perfis de acesso foram excluídos. Deseja restaurar algum perfil para entrar?'}
+              </p>
+            </div>
+
+            <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {restoreData.type === 'account' ? (
+                <button className="btn btn-primary btn-lg btn-block" onClick={() => handleRestore(true)} disabled={loading}>
+                  {loading ? 'Restaurando...' : '🚀 Reativar Minha Conta Agora'}
+                </button>
+              ) : (
+                perfis.map(p => (
+                  <button key={p.id} className="demo-btn" onClick={() => handleRestore(false, p.id)} disabled={loading}>
+                    <span className="demo-icon">🔄</span>
+                    <span className="demo-label">Restaurar perfil {p.role}</span>
+                  </button>
+                ))
+              )}
+            </div>
+
+            <button className="btn btn-ghost btn-block" style={{ marginTop: '1.5rem' }} onClick={() => setRestoreAllData(null)}>
+              Cancelar e Sair
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ------------------------------------------------------------------
   // TELA DE SELEÇÃO DE PERFIL
   // ------------------------------------------------------------------
   if (selectMode) {

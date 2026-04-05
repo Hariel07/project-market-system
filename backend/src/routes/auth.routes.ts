@@ -10,8 +10,9 @@ router.post('/select-profile', selectProfile);
 router.get('/check-cpf/:cpf', checkCpf);
 router.post('/validate-password', validateAccountPassword);
 
-// Novas rotas para troca rápida de perfil
+// Novas rotas para troca rápida de perfil e restauração
 router.get('/my-profiles', authMiddleware, listMyProfiles);
 router.post('/switch-profile', authMiddleware, switchProfile);
+router.post('/restore-account', restoreAccount);
 
 export default router;

@@ -253,13 +253,34 @@ export const login = async (req: Request, res: Response) => {
       return;
     }
 
+    // 🚩 CHECK SOFT DELETE
+    if (account.isDeleted) {
+      return res.json({ 
+        status: 'ACCOUNT_DELETED', 
+        deletedAt: account.deletedAt,
+        tempToken: jwt.sign({ accountId: account.id }, JWT_SECRET, { expiresIn: '15m' })
+      });
+    }
+
     if (account.perfis.length === 0) {
       res.status(200).json({ status: 'NO_PROFILE', accountId: account.id });
       return;
     }
 
-    if (account.perfis.length === 1) {
-      const user = account.perfis[0];
+    // Filtra perfis não deletados para o login normal
+    const availableProfiles = account.perfis.filter(p => !p.isDeleted);
+
+    if (availableProfiles.length === 0 && account.perfis.length > 0) {
+       // Todos os perfis deletados mas conta ativa? Retorna lista para restauração
+       return res.json({
+         status: 'PROFILES_DELETED',
+         perfis: account.perfis.map(p => ({ id: p.id, role: p.role, deletedAt: p.deletedAt })),
+         tempToken: jwt.sign({ accountId: account.id }, JWT_SECRET, { expiresIn: '15m' })
+       });
+    }
+
+    if (availableProfiles.length === 1) {
+      const user = availableProfiles[0];
       const token = jwt.sign(
         { id: user.id, role: user.role, comercioId: user.comercioId, accountId: account.id },
         JWT_SECRET,
@@ -278,7 +299,7 @@ export const login = async (req: Request, res: Response) => {
       res.json({
         status: 'SELECT_PROFILE',
         tempToken: jwt.sign({ accountId: account.id }, JWT_SECRET, { expiresIn: '15m' }),
-        perfis: account.perfis.map((p: any) => ({
+        perfis: availableProfiles.map((p: any) => ({
           id: p.id,
           nome: p.nome,
           role: p.role,
@@ -289,6 +310,44 @@ export const login = async (req: Request, res: Response) => {
   } catch (err: any) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Erro no login: ' + err.message });
+  }
+};
+
+/**
+ * Restaura uma conta ou perfil que estava marcado para exclusão
+ */
+export const restoreAccount = async (req: Request, res: Response) => {
+  const { tempToken, restoreAll, profileId } = req.body;
+
+  try {
+    const decoded = jwt.verify(tempToken, JWT_SECRET) as { accountId: string };
+    const accountId = decoded.accountId;
+
+    if (restoreAll) {
+      await prisma.$transaction([
+        prisma.account.update({
+          where: { id: accountId },
+          data: { isDeleted: false, deletedAt: null, ativo: true }
+        }),
+        prisma.user.updateMany({
+          where: { accountId },
+          data: { isDeleted: false, deletedAt: null, ativo: true }
+        })
+      ]);
+      return res.json({ message: 'Conta e perfis restaurados com sucesso! Faça login novamente.' });
+    }
+
+    if (profileId) {
+      await prisma.user.update({
+        where: { id: profileId },
+        data: { isDeleted: false, deletedAt: null, ativo: true }
+      });
+      return res.json({ message: 'Perfil restaurado com sucesso!' });
+    }
+
+    res.status(400).json({ error: 'Solicitação de restauração inválida.' });
+  } catch (error) {
+    res.status(401).json({ error: 'Sessão de restauração expirada.' });
   }
 };
 

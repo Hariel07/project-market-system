@@ -92,3 +92,108 @@ export const updateMyProfile = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Erro ao atualizar perfil.' });
   }
 };
+
+/**
+ * DELETE /api/perfil/account
+ * Marca a CONTA e TODOS os perfis para exclusão (Soft Delete)
+ */
+export const deleteMyAccount = async (req: Request, res: Response) => {
+  const accountId = req.user?.accountId;
+  const { senha } = req.body;
+
+  try {
+    const account = await prisma.account.findUnique({
+      where: { id: accountId },
+      include: { perfis: true }
+    });
+
+    if (!account) return res.status(404).json({ error: 'Conta não encontrada.' });
+
+    // 1. Validar Senha
+    const isPasswordValid = await bcrypt.compare(senha, account.senha);
+    if (!isPasswordValid) return res.status(401).json({ error: 'Senha incorreta.' });
+
+    // 2. Verificar Pendências em todos os perfis
+    for (const perfil of account.perfis) {
+      // Bloqueio se for Cliente com pedido ativo
+      if (perfil.role === 'CLIENTE') {
+        const activeOrders = await prisma.order.count({
+          where: { clienteId: perfil.id, status: { in: ['PENDENTE', 'PREPARANDO', 'PRONTO', 'SAIU_ENTREGA'] } }
+        });
+        if (activeOrders > 0) return res.status(400).json({ error: 'Você possui pedidos em andamento. Finalize-os antes de excluir a conta.' });
+      }
+
+      // Bloqueio se for Entregador com entrega ativa
+      if (perfil.role === 'ENTREGADOR') {
+        const activeDeliveries = await prisma.delivery.count({
+          where: { entregadorId: perfil.id, status: { notIn: ['ENTREGUE', 'CANCELADO'] } }
+        });
+        if (activeDeliveries > 0) return res.status(400).json({ error: 'Você possui entregas em andamento.' });
+      }
+
+      // Bloqueio se for Dono/Comerciante com caixa aberto ou pedidos na loja
+      if (perfil.role === 'DONO' && perfil.comercioId) {
+        const activeStoreOrders = await prisma.order.count({
+          where: { comercioId: perfil.comercioId, status: { in: ['PENDENTE', 'PREPARANDO', 'PRONTO', 'SAIU_ENTREGA'] } }
+        });
+        if (activeStoreOrders > 0) return res.status(400).json({ error: 'Seu comércio possui pedidos ativos.' });
+      }
+    }
+
+    // 3. Aplicar Soft Delete
+    const now = new Date();
+    await prisma.$transaction([
+      prisma.account.update({
+        where: { id: accountId },
+        data: { isDeleted: true, deletedAt: now, ativo: false }
+      }),
+      prisma.user.updateMany({
+        where: { accountId },
+        data: { isDeleted: true, deletedAt: now, ativo: false }
+      })
+    ]);
+
+    res.json({ message: 'Conta agendada para exclusão. Você tem 30 dias para restaurá-la.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao processar exclusão de conta.' });
+  }
+};
+
+/**
+ * DELETE /api/perfil/me
+ * Marca apenas o PERFIL ATUAL para exclusão (Soft Delete)
+ */
+export const deleteMyProfile = async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  const accountId = req.user?.accountId;
+  const { senha } = req.body;
+
+  try {
+    const account = await prisma.account.findUnique({ where: { id: accountId } });
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+
+    if (!account || !user) return res.status(404).json({ error: 'Dados não encontrados.' });
+
+    // 1. Validar Senha
+    const isPasswordValid = await bcrypt.compare(senha, account.senha);
+    if (!isPasswordValid) return res.status(401).json({ error: 'Senha incorreta.' });
+
+    // 2. Verificar Pendências específicas do perfil
+    if (user.role === 'CLIENTE') {
+      const activeOrders = await prisma.order.count({
+        where: { clienteId: userId, status: { in: ['PENDENTE', 'PREPARANDO', 'PRONTO', 'SAIU_ENTREGA'] } }
+      });
+      if (activeOrders > 0) return res.status(400).json({ error: 'Você possui pedidos ativos neste perfil.' });
+    }
+
+    // 3. Aplicar Soft Delete no Perfil
+    await prisma.user.update({
+      where: { id: userId },
+      data: { isDeleted: true, deletedAt: new Date(), ativo: false }
+    });
+
+    res.json({ message: 'Perfil removido com sucesso. Você pode reativá-lo em até 30 dias.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao remover perfil.' });
+  }
+};

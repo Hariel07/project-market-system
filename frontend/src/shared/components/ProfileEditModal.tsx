@@ -114,6 +114,45 @@ export default function ProfileEditModal({ isOpen, onClose, user, onSave }: Prof
           </button>
           
         </form>
+
+        <div className="profile-danger-zone">
+          <h3>Gerenciamento de Conta</h3>
+          <div className="danger-actions">
+            <button type="button" className="btn-danger-outline" onClick={() => setShowDeleteConfirm('profile')}>
+              Excluir apenas este perfil ({user?.role})
+            </button>
+            <button type="button" className="btn-danger-outline" onClick={() => setShowDeleteConfirm('account')}>
+              Excluir conta master e todos os perfis
+            </button>
+          </div>
+          <p className="danger-note">Suas informações podem ser restauradas em até 30 dias se você fizer login novamente.</p>
+        </div>
+
+        {showDeleteConfirm && (
+          <div className="delete-confirm-overlay">
+            <div className="delete-confirm-card animate-fade-in-up">
+              <h3>Confirmar Exclusão</h3>
+              <p>
+                Você está prestes a excluir {showDeleteConfirm === 'account' ? 'sua CONTA MASTER COMPLETA' : 'este PERFIL'}. 
+                Isso afetará seu acesso imediato. Digite sua senha para confirmar:
+              </p>
+              <input 
+                type="password" 
+                className="input" 
+                placeholder="Sua senha atual" 
+                value={deletePassword}
+                onChange={e => setDeletePassword(e.target.value)}
+                style={{ marginBottom: '1.5rem' }}
+              />
+              <div className="delete-confirm-btns" style={{ display: 'flex', gap: '1rem' }}>
+                <button className="btn btn-ghost flex-1" onClick={() => { setShowDeleteConfirm(null); setDeletePassword(''); }}>Cancelar</button>
+                <button className="btn btn-danger flex-1" onClick={handleDeleteAction} disabled={loading}>
+                  {loading ? 'Processando...' : 'Confirmar Exclusão'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
