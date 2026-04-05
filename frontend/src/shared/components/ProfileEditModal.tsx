@@ -10,6 +10,7 @@ interface ProfileEditModalProps {
 }
 
 export default function ProfileEditModal({ isOpen, onClose, user, onSave }: ProfileEditModalProps) {
+  const [activeTab, setActiveTab] = useState<'data' | 'account'>('data');
   const [form, setForm] = useState({
     nomeCompleto: '',
     email: '',
@@ -27,7 +28,6 @@ export default function ProfileEditModal({ isOpen, onClose, user, onSave }: Prof
       const res = await api.delete(endpoint, { data: { senha: deletePassword } });
       
       alert(res.data.message);
-      // Logout imediato após marcar para exclusão
       localStorage.clear();
       window.location.href = '/login';
     } catch (error: any) {
@@ -45,6 +45,10 @@ export default function ProfileEditModal({ isOpen, onClose, user, onSave }: Prof
         telefone: user.telefone || ''
       });
     }
+    if (!isOpen) {
+      setActiveTab('data');
+      setShowDeleteConfirm(null);
+    }
   }, [user, isOpen]);
 
   if (!isOpen) return null;
@@ -58,20 +62,15 @@ export default function ProfileEditModal({ isOpen, onClose, user, onSave }: Prof
         telefone: form.telefone
       });
       
-      // O backend devolve o usuário atualizado
       const updatedAccount = response.data.user;
-      
-      // Mescla dados do Perfil atual com a Conta atualizada
       const currentUser = JSON.parse(localStorage.getItem('@MarketSystem:user') || '{}');
       const mergedUser = { 
         ...currentUser, 
         ...updatedAccount,
-        nome: updatedAccount.nomeCompleto // Garante compatibilidade onde usa 'nome'
+        nome: updatedAccount.nomeCompleto
       };
 
-      // Atualiza localStorage
       localStorage.setItem('@MarketSystem:user', JSON.stringify(mergedUser));
-      
       onSave(mergedUser);
       onClose();
       alert('Perfil atualizado com sucesso!');
@@ -87,87 +86,116 @@ export default function ProfileEditModal({ isOpen, onClose, user, onSave }: Prof
       <div className="profile-modal-content animate-fade-in-up" onClick={e => e.stopPropagation()}>
         <button className="profile-modal-close" onClick={onClose}>✕</button>
         
-        <h2>Editar Meu Perfil</h2>
-        <p>Atualize as informações da sua conta.</p>
-
-        <form onSubmit={handleSubmit} className="auth-form" style={{ marginTop: '1.5rem' }}>
-          
-          <div className="input-group">
-            <label>Nome Completo</label>
-            <input 
-              type="text" 
-              className="input" 
-              value={form.nomeCompleto} 
-              onChange={e => setForm({...form, nomeCompleto: e.target.value})} 
-              required 
-            />
-          </div>
-
-          <div className="input-group">
-            <label>E-mail da Conta (Não editável)</label>
-            <input 
-              type="email" 
-              className="input" 
-              value={form.email} 
-              disabled 
-              title="O e-mail não pode ser alterado por segurança."
-            />
-          </div>
-
-          <div className="input-group">
-            <label>Telefone / WhatsApp</label>
-            <input 
-              type="tel" 
-              className="input" 
-              value={form.telefone} 
-              onChange={e => setForm({...form, telefone: e.target.value})} 
-              required 
-            />
-          </div>
-
+        <h2>Gerenciar Perfil</h2>
+        
+        <div className="modal-tabs">
           <button 
-            type="submit" 
-            className={`btn btn-primary btn-block ${loading ? 'loading' : ''}`} 
-            disabled={loading}
+            className={`tab-btn ${activeTab === 'data' ? 'active' : ''}`}
+            onClick={() => setActiveTab('data')}
           >
-            {loading ? <span className="btn-loading"><span className="spinner"/> Salvando...</span> : 'Salvar Alterações'}
+            Dados Pessoais
           </button>
-          
-        </form>
+          <button 
+            className={`tab-btn ${activeTab === 'account' ? 'active' : ''}`}
+            onClick={() => setActiveTab('account')}
+          >
+            Acesso e Segurança
+          </button>
+        </div>
 
-        <div className="profile-danger-zone">
-          <h3>Gerenciamento de Conta</h3>
-          <div className="danger-actions">
-            <button type="button" className="btn-danger-outline" onClick={() => setShowDeleteConfirm('profile')}>
-              Excluir apenas este perfil ({user?.role})
-            </button>
-            <button type="button" className="btn-danger-outline" onClick={() => setShowDeleteConfirm('account')}>
-              Excluir conta master e todos os perfis
-            </button>
-          </div>
-          <p className="danger-note">Suas informações podem ser restauradas em até 30 dias se você fizer login novamente.</p>
+        <div className="modal-scroll-area">
+          {activeTab === 'data' ? (
+            <form onSubmit={handleSubmit} className="auth-form" style={{ marginTop: '1rem' }}>
+              <div className="input-group">
+                <label>Nome Completo</label>
+                <input 
+                  type="text" 
+                  className="input" 
+                  value={form.nomeCompleto} 
+                  onChange={e => setForm({...form, nomeCompleto: e.target.value})} 
+                  required 
+                />
+              </div>
+
+              <div className="input-group">
+                <label>E-mail da Conta (Não editável)</label>
+                <input 
+                  type="email" 
+                  className="input" 
+                  value={form.email} 
+                  disabled 
+                />
+              </div>
+
+              <div className="input-group">
+                <label>Telefone / WhatsApp</label>
+                <input 
+                  type="tel" 
+                  className="input" 
+                  value={form.telefone} 
+                  onChange={e => setForm({...form, telefone: e.target.value})} 
+                  required 
+                />
+              </div>
+
+              <button 
+                type="submit" 
+                className={`btn btn-primary btn-block ${loading ? 'loading' : ''}`} 
+                disabled={loading}
+              >
+                {loading ? 'Salvando...' : 'Salvar Alterações'}
+              </button>
+            </form>
+          ) : (
+            <div className="account-settings-pane animate-fade-in">
+              <div className="settings-section">
+                <h4>Sua Conta Master</h4>
+                <p className="text-sm text-secondary">Vínculo: CPF {user?.cpf}</p>
+              </div>
+
+              <div className="profile-danger-zone visible">
+                <h3>Zona de Exclusão</h3>
+                <p className="text-xs mb-4">Escolha uma das opções abaixo para remover seus acessos.</p>
+                
+                <div className="danger-actions">
+                  <button type="button" className="btn-danger-outline" onClick={() => setShowDeleteConfirm('profile')}>
+                    🗑️ Excluir apenas este perfil ({user?.role})
+                  </button>
+                  <button type="button" className="btn-danger-outline" onClick={() => setShowDeleteConfirm('account')}>
+                    🔥 EXCLUIR CONTA E TODOS OS PERFIS
+                  </button>
+                </div>
+                
+                <div className="info-box-blue" style={{ marginTop: '1.5rem', padding: '1rem', background: '#eff6ff', borderRadius: '12px', border: '1px solid #bfdbfe' }}>
+                  <p className="text-xs" style={{ color: '#1e40af', margin: 0 }}>
+                    <strong>💡 Período de Carência:</strong> Após confirmar, você terá 30 dias para restaurar seu acesso apenas fazendo login novamente.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {showDeleteConfirm && (
           <div className="delete-confirm-overlay">
             <div className="delete-confirm-card animate-fade-in-up">
-              <h3>Confirmar Exclusão</h3>
-              <p>
-                Você está prestes a excluir {showDeleteConfirm === 'account' ? 'sua CONTA MASTER COMPLETA' : 'este PERFIL'}. 
-                Isso afetará seu acesso imediato. Digite sua senha para confirmar:
+              <h3>Confirmar com Senha</h3>
+              <p className="text-sm">
+                Para confirmar a exclusão de {showDeleteConfirm === 'account' ? 'toda sua conta master' : 'seu perfil atual'}, digite sua senha:
               </p>
               <input 
                 type="password" 
                 className="input" 
-                placeholder="Sua senha atual" 
+                placeholder="Digite sua senha" 
                 value={deletePassword}
                 onChange={e => setDeletePassword(e.target.value)}
                 style={{ marginBottom: '1.5rem' }}
+                autoFocus
               />
               <div className="delete-confirm-btns" style={{ display: 'flex', gap: '1rem' }}>
                 <button className="btn btn-ghost flex-1" onClick={() => { setShowDeleteConfirm(null); setDeletePassword(''); }}>Cancelar</button>
                 <button className="btn btn-danger flex-1" onClick={handleDeleteAction} disabled={loading}>
-                  {loading ? 'Processando...' : 'Confirmar Exclusão'}
+                  {loading ? 'Processando...' : 'Confirmar'}
                 </button>
               </div>
             </div>
