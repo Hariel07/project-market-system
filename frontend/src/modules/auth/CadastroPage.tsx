@@ -176,7 +176,7 @@ export default function CadastroPage() {
       const planoFinal = (!assinaturaObrigatoria && role === 'comerciante') ? 'gratis' : plano;
       const guestLocation = localStorage.getItem('@MarketSystem:guestLocation') || '';
 
-      const response = await api.post('/api/auth/cadastro', {
+      const response = await api.post('/auth/cadastro', {
         role: isSetupMode ? 'admin' : role,
         nome,
         cpf: cpf.replace(/\D/g, ''),

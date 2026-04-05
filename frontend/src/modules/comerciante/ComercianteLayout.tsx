@@ -20,7 +20,7 @@ export default function ComercianteLayout({ title, subtitle, actions, children }
   useEffect(() => {
     async function loadComercio() {
       try {
-        const { data } = await api.get('/api/comercios/me');
+        const { data } = await api.get('/comercios/me');
         setComercio(data);
       } catch (error) {
         console.error('Falha ao carregar dados do comércio:', error);

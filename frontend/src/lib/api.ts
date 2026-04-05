@@ -1,11 +1,24 @@
 import axios from 'axios';
 
 const getBaseURL = () => {
-  const url = import.meta.env.VITE_API_URL || '';
+  let url = import.meta.env.VITE_API_URL || '';
+  
+  // Se não houver URL (Produção/Same Domain), usa o prefixo /api relativo
+  if (!url) return '/api';
 
-  if (!url || url === '/api') return '';
+  url = url.trim().replace(/\/+$/, ''); // Limpa espaços e barras no fim
 
-  return url.trim().replace(/\/$/, '');
+  // Se não começa com http e não é um caminho relativo, assume https
+  if (!url.startsWith('http') && !url.startsWith('/')) {
+    url = `https://${url}`;
+  }
+
+  // Se a URL informada NÃO termina com /api, nós adicionamos
+  if (!url.endsWith('/api')) {
+    url = `${url}/api`;
+  }
+
+  return url;
 };
 
 export const api = axios.create({

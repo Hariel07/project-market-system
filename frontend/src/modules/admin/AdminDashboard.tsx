@@ -22,7 +22,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await api.get('/api/admin/stats');
+        const res = await api.get('/admin/stats');
         setRealStats(res.data);
       } catch (err) {
         console.error('Erro ao buscar stats reais:', err);

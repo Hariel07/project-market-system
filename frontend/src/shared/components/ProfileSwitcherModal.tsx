@@ -51,7 +51,7 @@ export default function ProfileSwitcherModal({ isOpen, onClose }: Props) {
 
     setSwitching(profileId);
     try {
-      const response = await api.post('/api/auth/switch-profile', { perfilId: profileId });
+      const response = await api.post('/auth/switch-profile', { perfilId: profileId });
       const { token, user } = response.data;
 
       // Atualiza localStorage (mantendo compatibilidade com as duas chaves usadas no sistema)

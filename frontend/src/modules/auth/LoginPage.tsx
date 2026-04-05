@@ -111,7 +111,7 @@ export default function LoginPage() {
   const handleSelectProfile = async (perfilId: string) => {
     setLoading(true);
     try {
-      const response = await api.post('/api/auth/select-profile', { tempToken, perfilId });
+      const response = await api.post('/auth/select-profile', { tempToken, perfilId });
       const { token, user } = response.data;
 
       localStorage.setItem('token', token);
