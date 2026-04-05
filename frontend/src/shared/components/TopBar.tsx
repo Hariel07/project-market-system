@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
-import { useAppName } from '../../lib/useAppName';
+import { useAppConfig } from '../../lib/useAppName';
 import './TopBar.css';
 
 interface TopBarProps {
@@ -24,7 +23,7 @@ export default function TopBar({
   const navigate = useNavigate();
   const location = useLocation();
   const { totalItems } = useCart();
-  const nomeApp = useAppName();
+  const config = useAppConfig();
 
   return (
     <header className={`top-bar ${transparent ? 'top-bar-transparent' : ''}`} id="top-bar">
@@ -36,8 +35,14 @@ export default function TopBar({
             </button>
           ) : (
             <div className="top-bar-brand" onClick={() => navigate('/cliente')}>
-              <span className="top-bar-logo">🛒</span>
-              <span className="top-bar-name hide-mobile">{nomeApp}</span>
+              {config.logoUrl ? (
+                <div className="top-bar-logo-img">
+                  <img src={config.logoUrl} alt="Logo" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+                </div>
+              ) : (
+                <span className="top-bar-logo">🛒</span>
+              )}
+              <span className="top-bar-name hide-mobile">{config.nomeApp}</span>
             </div>
           )}
           {title && <h1 className="top-bar-title">{title}</h1>}

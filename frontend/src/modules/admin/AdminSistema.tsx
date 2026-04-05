@@ -6,6 +6,9 @@ import './AdminSistema.css';
 export default function AdminSistema() {
   const [nomeApp, setNomeApp] = useState('');
   const [nomeAppTemp, setNomeAppTemp] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [logoUrlTemp, setLogoUrlTemp] = useState('');
+  const [modoManutencao, setModoManutencao] = useState(false); // Novo estado
   const [loading, setLoading] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [mensagem, setMensagem] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null);
@@ -15,11 +18,12 @@ export default function AdminSistema() {
     const carregarConfigurações = async () => {
       setLoading(true);
       try {
-        // Tentar carregar do backend
         const res = await api.get('/api/config/sistema');
         setNomeApp(res.data.nomeApp || 'Market System');
+        setLogoUrl(res.data.logoUrl || '');
+        setLogoUrlTemp(res.data.logoUrl || '');
+        setModoManutencao(res.data.modoManutencao || false);
       } catch (err) {
-        // Fallback: usar localStorage
         const savedName = localStorage.getItem('nomeApp') || 'Market System';
         setNomeApp(savedName);
       } finally {
@@ -30,12 +34,9 @@ export default function AdminSistema() {
     carregarConfigurações();
   }, []);
 
-  // Sincronizar campo temporário com estado principal
-  useEffect(() => {
-    setNomeAppTemp(nomeApp);
-  }, [nomeApp]);
+  // ... (nomeAppTemp sync)
 
-  const handleSalvarNome = async () => {
+  const handleSalvarConfig = async () => {
     if (!nomeAppTemp.trim()) {
       setMensagem({ tipo: 'erro', texto: 'O nome do site não pode estar vazio!' });
       return;
@@ -45,25 +46,38 @@ export default function AdminSistema() {
     setMensagem(null);
 
     try {
-      // Tentar salvar no backend
-      await api.post('/api/config/sistema', { nomeApp: nomeAppTemp });
+      await api.post('/api/config/sistema', { 
+        nomeApp: nomeAppTemp,
+        logoUrl: logoUrlTemp,
+        modoManutencao // Envia o status atual
+      });
       setNomeApp(nomeAppTemp);
+      setLogoUrl(logoUrlTemp);
       localStorage.setItem('nomeApp', nomeAppTemp);
-      setMensagem({ tipo: 'sucesso', texto: '✅ Nome do site atualizado com sucesso!' });
-      
-      // Recarregar a página após 2 segundos para aplicar mudanças
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
+      setMensagem({ tipo: 'sucesso', texto: '✅ Configurações atualizadas com sucesso!' });
     } catch (err: any) {
-      // Fallback: salvar apenas no localStorage
-      setNomeApp(nomeAppTemp);
-      localStorage.setItem('nomeApp', nomeAppTemp);
-      setMensagem({ tipo: 'sucesso', texto: '✅ Nome do site atualizado localmente!' });
-      
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
+      setMensagem({ tipo: 'erro', texto: '❌ Falha ao salvar no servidor.' });
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const handleToggleManutencao = async () => {
+    const novoStatus = !modoManutencao;
+    const acao = novoStatus ? 'ATIVAR' : 'DESATIVAR';
+    
+    if (!window.confirm(`Deseja ${acao} o Modo Manutenção?`)) return;
+
+    setSalvando(true);
+    try {
+      await api.post('/api/config/sistema', { modoManutencao: novoStatus });
+      setModoManutencao(novoStatus);
+      // Feedback imediato e recarregamento para limpar caches de middleware
+      alert(`✅ Modo Manutenção ${novoStatus ? 'ATIVADO' : 'DESATIVADO'} com sucesso!`);
+      window.location.reload();
+    } catch (err: any) {
+      console.error(err);
+      alert('Falha ao alterar modo manutenção. Verifique se você ainda está logado como Admin.');
     } finally {
       setSalvando(false);
     }
@@ -84,21 +98,84 @@ export default function AdminSistema() {
           <div className="config-general">
             <div className="form-group">
               <label htmlFor="nomeApp" className="form-label">Nome do Site/Aplicação</label>
-              <div className="input-with-preview">
-                <input
-                  id="nomeApp"
-                  type="text"
-                  className="input sys-input"
-                  value={nomeAppTemp}
-                  onChange={(e) => setNomeAppTemp(e.target.value)}
-                  placeholder="ex: Market System"
-                  disabled={salvando}
-                />
-                <div className="preview-info">
-                  <span className="preview-label">Atual: <strong>{nomeApp}</strong></span>
+              <input
+                id="nomeApp"
+                type="text"
+                className="input sys-input"
+                value={nomeAppTemp}
+                onChange={(e) => setNomeAppTemp(e.target.value)}
+                placeholder="ex: Market System"
+                disabled={salvando}
+              />
+            </div>
+
+            <div className="form-group mt-4">
+              <label className="form-label">Identidade Visual (Logo)</label>
+              <div className="flex flex-col gap-4">
+                <div className="flex gap-4 items-center">
+                  <input
+                    type="file"
+                    id="logo-upload-v2"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (file.size > 5 * 1024 * 1024) {
+                          alert('Imagem muito grande! Limite de 5MB.');
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setLogoUrlTemp(reader.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                  
+                  <button 
+                    type="button" 
+                    className="btn btn-primary"
+                    onClick={() => document.getElementById('logo-upload-v2')?.click()}
+                  >
+                    🖼️ Escolher Logo do Computador
+                  </button>
+
+                  {logoUrlTemp && (
+                    <button 
+                      type="button"
+                      className="btn btn-ghost text-danger"
+                      onClick={() => setLogoUrlTemp('')}
+                    >
+                      🗑 Remover
+                    </button>
+                  )}
                 </div>
+
+                {logoUrlTemp && (
+                  <div className="logo-preview-card p-4 bg-gray-50 rounded-xl border border-dashed border-gray-300 flex items-center gap-6">
+                    <div className="logo-img-preview" style={{ 
+                      width: '100px', 
+                      height: '100px', 
+                      background: 'white', 
+                      borderRadius: '12px', 
+                      padding: '8px', 
+                      boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <img src={logoUrlTemp} alt="Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-bold text-gray-700">Preview da Logo</h4>
+                      <p className="text-xs text-gray-500 leading-relaxed">Esta imagem será exibida no cabeçalho de todas as páginas para seus clientes e no topo deste painel.</p>
+                    </div>
+                  </div>
+                )}
               </div>
-              <p className="input-hint">Este nome aparecerá em: Logo, titulo da página, headers, footers e emails.</p>
+              <p className="input-hint">Formatos suportados: PNG, JPG, SVG (recomendado PNG transparente).</p>
             </div>
 
             {mensagem && (
@@ -110,15 +187,18 @@ export default function AdminSistema() {
             <div className="form-actions" style={{ marginTop: '20px', display: 'flex', gap: '12px' }}>
               <button
                 className="btn btn-primary"
-                onClick={handleSalvarNome}
-                disabled={salvando || nomeAppTemp === nomeApp}
+                onClick={handleSalvarConfig}
+                disabled={salvando || (nomeAppTemp === nomeApp && logoUrlTemp === logoUrl)}
               >
                 {salvando ? '💾 Salvando...' : '💾 Salvar Alterações'}
               </button>
               <button
                 className="btn btn-outline"
-                onClick={() => setNomeAppTemp(nomeApp)}
-                disabled={salvando || nomeAppTemp === nomeApp}
+                onClick={() => {
+                  setNomeAppTemp(nomeApp);
+                  setLogoUrlTemp(logoUrl);
+                }}
+                disabled={salvando || (nomeAppTemp === nomeApp && logoUrlTemp === logoUrl)}
               >
                 ↶ Cancelar
               </button>
@@ -209,10 +289,42 @@ export default function AdminSistema() {
           </div>
           <div className="danger-actions">
             <div className="danger-info">
-              <strong>Modo Manutenção</strong>
-              <span>Derruba a plataforma para todos (Tela de "Voltamos já"). O painel Admin continuará online.</span>
+              <strong>Reinicializar Sistema (Modo de Fábrica)</strong>
+              <span>Isso apagará ABSOLUTAMENTE TUDO (Usuários, Lojas, Pedidos e sua própria conta). O sistema voltará ao estado de "Programa Novo".</span>
             </div>
-            <button className="btn btn-outline btn-danger">🗑 Ativar Modo Manutenção</button>
+            <button 
+              className="btn btn-outline btn-danger"
+              onClick={async () => {
+                if (window.confirm('ATENÇÃO: Isso apagará todo o banco de dados, incluindo sua conta. Deseja continuar?')) {
+                  const senha = window.prompt('Por segurança, digite sua senha de OWNER para confirmar a reinicialização:');
+                  if (!senha) return;
+
+                  try {
+                    await api.post('/api/admin/system/factory-reset', { senha });
+                    alert('🔥 Sistema reinicializado! O banco de dados está limpo.');
+                    localStorage.clear();
+                    window.location.href = '/cadastro';
+                  } catch (err: any) {
+                    alert(err.response?.data?.error || 'Erro ao reinicializar o sistema. Senha incorreta?');
+                  }
+                }
+              }}
+            >
+              🚀 Reinicializar para Modo Fábrica
+            </button>
+          </div>
+          <div className="danger-actions mt-4">
+            <div className="danger-info">
+              <strong>Modo Manutenção {modoManutencao ? '(ATIVADO 🔴)' : '(DESATIVADO 🟢)'}</strong>
+              <span>Derruba a plataforma para todos (Tela de "Voltamos já").</span>
+            </div>
+            <button 
+              className={`btn btn-outline ${modoManutencao ? 'btn-success' : 'btn-danger'}`}
+              onClick={handleToggleManutencao}
+              disabled={salvando}
+            >
+              {modoManutencao ? '🔓 Desativar Manutenção' : '🔒 Ativar Modo Manutenção'}
+            </button>
           </div>
         </div>
 

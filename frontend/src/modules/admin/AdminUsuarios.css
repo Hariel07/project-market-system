@@ -1,37 +1,119 @@
-/* ============================================================
-   Admin Usuários
-   ============================================================ */
-
 .admin-usuarios {
-  display: flex;
-  flex-direction: column;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 20px;
 }
 
-.p-4 { padding: var(--space-4); }
-
 .user-profile-cell {
-  display: flex; align-items: center; gap: var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .user-avatar-mini {
-  width: 32px; height: 32px; border-radius: 50%;
-  background: var(--color-surface); border: 1px solid var(--color-border-light);
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 700; color: var(--color-text-secondary);
+  width: 32px;
+  height: 32px;
+  background: var(--primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.user-avatar-mini.border-warning {
+  border: 2px solid #f59e0b;
 }
 
 .badge-role {
-  padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
 }
-.role-admin { background: #111827; color: white; }
-.role-cliente { background: #E0F2FE; color: #0284C7; }
-.role-comerciante { background: #FDF4FF; color: #C026D3; }
-.role-entregador { background: #FEF3C7; color: #D97706; }
 
-.status-dot {
-  display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px;
+.role-admin { background: #fee2e2; color: #dc2626; }
+.role-dono { background: #fef3c7; color: #d97706; }
+.role-cliente { background: #dcfce7; color: #16a34a; }
+.role-entregador { background: #dbeafe; color: #2563eb; }
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 }
-.status-green { background: var(--color-accent); }
-.status-red { background: var(--color-danger); }
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.user-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 600px) {
+  .user-details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.detail-section {
+  background: #f9fafb;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.detail-section h4 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  text-align: right;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #9ca3af;
+}
+
+.close-btn:hover {
+  color: #111827;
+}

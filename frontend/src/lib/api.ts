@@ -12,3 +12,26 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Interceptor para tratar erros globais (ex: Token Expirado/Inválido após Reset)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Se receber 401 e não for na rota de login ou check-cpf, limpa a sessão
+    const isPublicRoute = error.config.url.includes('/login') || 
+                         error.config.url.includes('/check-cpf') || 
+                         error.config.url.includes('/setup-check');
+
+    if (error.response?.status === 401 && !isPublicRoute) {
+      console.warn('Sessão inválida detectada. Limpando dados locais...');
+      localStorage.removeItem('@MarketSystem:token');
+      localStorage.removeItem('@MarketSystem:user');
+      
+      // Evita loops infinitos de reload
+      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/cadastro')) {
+        window.location.href = '/login?expired=true';
+      }
+    }
+    return Promise.reject(error);
+  }
+);

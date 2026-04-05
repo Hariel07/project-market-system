@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../lib/api';
-import { useAppName } from '../../lib/useAppName';
+import { useAppConfig } from '../../lib/useAppName';
 import './AuthPages.css';
 
 const roles = [
@@ -25,7 +25,7 @@ interface PlanData {
 export default function CadastroPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const nomeApp = useAppName();
+  const config = useAppConfig();
   
   const initialRole = searchParams.get('role') || '';
 
@@ -33,11 +33,14 @@ export default function CadastroPage() {
   const [role, setRole] = useState(initialRole);
   const [nome, setNome] = useState('');
   const [cpf, setCpf] = useState('');
+  const [dataNascimento, setDataNascimento] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [telefone, setTelefone] = useState('');
   const [loading, setLoading] = useState(false);
+  const [accountExists, setAccountExists] = useState(false);
+  const [passwordValidated, setPasswordValidated] = useState(false);
 
   // Campos adicionais do comerciante
   const [nomeComercio, setNomeComercio] = useState('');
@@ -49,17 +52,25 @@ export default function CadastroPage() {
   const [assinaturaObrigatoria, setAssinaturaObrigatoria] = useState(false);
   const [planosDisponiveis, setPlanosDisponiveis] = useState<PlanData[]>([]);
   const [configLoaded, setConfigLoaded] = useState(false);
+  const [isSetupMode, setIsSetupMode] = useState(false);
 
   // Carrega config da plataforma e planos ao montar
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const [configRes, planosRes] = await Promise.all([
-          api.get('/api/public/config'),
+        const [configRes, planosRes, setupRes] = await Promise.all([
+          api.get('/api/config/public'),
           api.get('/api/public/planos'),
+          api.get('/api/config/setup-check').catch(() => ({ data: { isSetupMode: false } })),
         ]);
         setAssinaturaObrigatoria(configRes.data.assinaturaObrigatoria);
         setPlanosDisponiveis(planosRes.data);
+        
+        if (setupRes.data?.isSetupMode) {
+          setIsSetupMode(true);
+          setRole('admin');
+          setStep(2);
+        }
       } catch (error) {
         console.error('Erro ao carregar config:', error);
       } finally {
@@ -78,6 +89,48 @@ export default function CadastroPage() {
       .replace(/(-\d{2})\d+?$/, '$1');
   };
 
+  const handleCpfChange = async (value: string) => {
+    const formatted = formatCPF(value);
+    setCpf(formatted);
+
+    if (formatted.length === 14) {
+      try {
+        const rawCpf = formatted.replace(/\D/g, '');
+        const res = await api.get(`/api/auth/check-cpf/${rawCpf}`);
+        setAccountExists(res.data.exists);
+        setPasswordValidated(false); // Reseta validação ao mudar CPF
+      } catch (err) {
+        console.error('Erro ao checar CPF');
+      }
+    } else {
+      setAccountExists(false);
+      setPasswordValidated(false);
+    }
+  };
+
+  const handleValidatePassword = async () => {
+    if (!senha) return alert('Por favor, digite sua senha atual para continuar.');
+    setLoading(true);
+    try {
+      const rawCpf = cpf.replace(/\D/g, '');
+      const res = await api.post('/api/auth/validate-password', { cpf: rawCpf, senha });
+      
+      if (res.data.success) {
+        const { nome, email, telefone, dataNascimento } = res.data.data;
+        setNome(nome);
+        setEmail(email);
+        setTelefone(telefone);
+        if (dataNascimento) setDataNascimento(dataNascimento.split('T')[0]);
+        
+        setPasswordValidated(true);
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Senha incorreta.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCNPJChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, '');
     if (value.length > 14) value = value.slice(0, 14);
@@ -94,24 +147,25 @@ export default function CadastroPage() {
     setCnpj(value);
   };
 
-  // Determina se deve mostrar a step de planos
   const showPlanoStep = role === 'comerciante' && assinaturaObrigatoria && planosDisponiveis.length > 0;
-
-  // Quantas steps o comerciante tem
-  const totalSteps = role === 'comerciante' ? (showPlanoStep ? 4 : 3) : 2;
-
-  // Verifica se é a última step
+  const totalSteps = isSetupMode ? 2 : (role === 'comerciante' ? (showPlanoStep ? 4 : 3) : 2);
   const isLastStep = step === totalSteps;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Navegação entre steps
-    if (step === 1) return setStep(2);
-    if (step === 2 && role === 'comerciante') return setStep(3);
-    if (step === 3 && role === 'comerciante' && showPlanoStep) return setStep(4);
+    if (step === 1 && !isSetupMode) return setStep(2);
+    
+    // Bloqueia avanço se conta existe mas não validou a senha ainda
+    if (step === 2 && accountExists && !passwordValidated) {
+      handleValidatePassword();
+      return;
+    }
 
-    if (senha !== confirmarSenha) {
+    if (step === 2 && role === 'comerciante' && !isSetupMode) return setStep(3);
+    if (step === 3 && role === 'comerciante' && showPlanoStep && !isSetupMode) return setStep(4);
+
+    if (!accountExists && senha !== confirmarSenha) {
       alert('As senhas não coincidem!');
       return;
     }
@@ -119,14 +173,14 @@ export default function CadastroPage() {
     setLoading(true);
     
     try {
-      // Se assinatura desligada, comerciante entra como "gratis" automaticamente
       const planoFinal = (!assinaturaObrigatoria && role === 'comerciante') ? 'gratis' : plano;
       const guestLocation = localStorage.getItem('@MarketSystem:guestLocation') || '';
 
       const response = await api.post('/api/auth/cadastro', {
-        role,
+        role: isSetupMode ? 'admin' : role,
         nome,
         cpf: cpf.replace(/\D/g, ''),
+        dataNascimento, // Enviando nova informação
         email,
         senha,
         telefone,
@@ -137,9 +191,15 @@ export default function CadastroPage() {
         guestLocation
       });
 
-      const { token, user } = response.data;
+      const { token, user, isSetup } = response.data;
       localStorage.setItem('@MarketSystem:token', token);
       localStorage.setItem('@MarketSystem:user', JSON.stringify(user));
+
+      if (isSetup || user.role === 'ADMIN') {
+        alert('🎉 Bem-vindo, Owner! O sistema foi inicializado com sucesso.');
+        navigate('/admin');
+        return;
+      }
 
       const redirect = searchParams.get('redirect');
       if (redirect) {
@@ -152,7 +212,7 @@ export default function CadastroPage() {
       
     } catch (error: any) {
       console.error(error);
-      alert(error.response?.data?.error || 'Erro ao comunicar com o Banco de Dados. O servidor Backend está rodando?');
+      alert(error.response?.data?.error || 'Erro ao comunicar com o servidor.');
     } finally {
       setLoading(false);
     }
@@ -162,7 +222,6 @@ export default function CadastroPage() {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
-  // Steps visíveis para o indicador de progresso
   const progressSteps = Array.from({ length: totalSteps }, (_, i) => i + 1);
 
   return (
@@ -175,19 +234,24 @@ export default function CadastroPage() {
 
       <div className="auth-container">
         <div className="auth-card animate-fade-in-up">
-          {/* Header */}
           <div className="auth-header">
-            <div className="auth-logo">🛒</div>
-            <h1 className="auth-title">Criar Conta</h1>
+            <div className="auth-logo">
+              {config.logoUrl ? (
+                <img src={config.logoUrl} alt="Logo" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+              ) : (
+                isSetupMode ? '👑' : '🛒'
+              )}
+            </div>
+            <h1 className="auth-title">{isSetupMode ? 'Configuração Mestre' : 'Criar Conta'}</h1>
             <p className="auth-subtitle">
-              {step === 1 ? `Como você quer usar o ${nomeApp}?` :
+              {isSetupMode ? 'Crie o perfil do Administrador Owner do sistema' :
+               step === 1 ? `Como você quer usar o ${config.nomeApp}?` :
                step === 2 ? 'Preencha seus dados' :
                step === 3 && role === 'comerciante' ? 'Dados do seu comércio' :
                'Escolha seu plano'}
             </p>
           </div>
 
-          {/* Progress */}
           <div className="register-progress">
             {progressSteps.map(s => (
               <div key={s} className={`progress-step-dot ${step >= s ? 'active' : ''} ${step === s ? 'current' : ''}`} />
@@ -195,7 +259,6 @@ export default function CadastroPage() {
           </div>
 
           <form className="auth-form" onSubmit={handleSubmit}>
-            {/* Step 1 — Escolha de perfil */}
             {step === 1 && (
               <div className="role-selection animate-fade-in-up">
                 {roles.map(r => (
@@ -217,63 +280,86 @@ export default function CadastroPage() {
               </div>
             )}
 
-            {/* Step 2 — Dados pessoais */}
             {step === 2 && (
               <div className="animate-fade-in-up">
-                <div className="input-group">
-                  <label htmlFor="nome">Nome completo</label>
-                  <div className="input-with-icon">
-                    <span className="input-icon">👤</span>
-                    <input id="nome" type="text" className="input" placeholder="Seu nome" value={nome} onChange={e => setNome(e.target.value)} required />
-                  </div>
-                </div>
-
                 <div className="input-group">
                   <label htmlFor="cpf">CPF</label>
                   <div className="input-with-icon">
                     <span className="input-icon">🆔</span>
-                    <input id="cpf" type="text" className="input" placeholder="000.000.000-00" value={cpf} onChange={e => setCpf(formatCPF(e.target.value))} maxLength={14} required />
+                    <input id="cpf" type="text" className="input" placeholder="000.000.000-00" value={cpf} onChange={e => handleCpfChange(e.target.value)} maxLength={14} required disabled={passwordValidated} />
                   </div>
-                </div>
-
-                <div className="input-group">
-                  <label htmlFor="reg-email">E-mail</label>
-                  <div className="input-with-icon">
-                    <span className="input-icon">✉️</span>
-                    <input id="reg-email" type="email" className="input" placeholder="seu@email.com" value={email} onChange={e => setEmail(e.target.value)} required />
-                  </div>
-                </div>
-
-                <div className="input-group">
-                  <label htmlFor="telefone">Telefone</label>
-                  <div className="input-with-icon">
-                    <span className="input-icon">📱</span>
-                    <input id="telefone" type="tel" className="input" placeholder="(11) 99999-0000" value={telefone} onChange={e => setTelefone(e.target.value)} required />
-                  </div>
-                </div>
-
-                <div className="input-group">
-                  <label htmlFor="reg-senha">Senha</label>
-                  <div className="input-with-icon">
-                    <span className="input-icon">🔒</span>
-                    <input id="reg-senha" type="password" className="input" placeholder="Mínimo 8 caracteres" value={senha} onChange={e => setSenha(e.target.value)} required minLength={8} />
-                  </div>
-                </div>
-
-                <div className="input-group">
-                  <label htmlFor="confirmar-senha">Confirmar senha</label>
-                  <div className="input-with-icon">
-                    <span className="input-icon">🔒</span>
-                    <input id="confirmar-senha" type="password" className="input" placeholder="Repita a senha" value={confirmarSenha} onChange={e => setConfirmarSenha(e.target.value)} required />
-                  </div>
-                  {confirmarSenha && senha !== confirmarSenha && (
-                    <span className="input-error">As senhas não coincidem</span>
+                  {accountExists && !passwordValidated && (
+                    <span className="text-xs text-blue-dark font-bold mt-1 block">
+                      💡 Este CPF já possui uma conta. Digite sua senha abaixo para continuar.
+                    </span>
                   )}
                 </div>
+
+                <div className="input-group">
+                  <label htmlFor="reg-senha">{accountExists ? 'Sua senha atual' : 'Crie uma senha'}</label>
+                  <div className="input-with-icon">
+                    <span className="input-icon">🔒</span>
+                    <input id="reg-senha" type="password" className="input" placeholder={accountExists ? 'Digite sua senha' : 'Mínimo 8 caracteres'} value={senha} onChange={e => setSenha(e.target.value)} required minLength={8} disabled={passwordValidated} />
+                  </div>
+                </div>
+
+                {accountExists && !passwordValidated && (
+                  <button type="button" className="btn btn-primary btn-block mb-4" onClick={handleValidatePassword} disabled={loading}>
+                    {loading ? 'Validando...' : 'Confirmar Identidade'}
+                  </button>
+                )}
+
+                {(!accountExists || passwordValidated) && (
+                  <>
+                    <div className="input-group">
+                      <label htmlFor="nome">Nome completo</label>
+                      <div className="input-with-icon">
+                        <span className="input-icon">👤</span>
+                        <input id="nome" type="text" className="input" value={nome} onChange={e => setNome(e.target.value)} required disabled={passwordValidated} />
+                      </div>
+                    </div>
+
+                    <div className="input-group">
+                      <label htmlFor="dataNasc">Data de Nascimento</label>
+                      <div className="input-with-icon">
+                        <span className="input-icon">📅</span>
+                        <input id="dataNasc" type="date" className="input" value={dataNascimento} onChange={e => setDataNascimento(e.target.value)} required disabled={passwordValidated} />
+                      </div>
+                    </div>
+
+                    <div className="input-group">
+                      <label htmlFor="reg-email">E-mail</label>
+                      <div className="input-with-icon">
+                        <span className="input-icon">✉️</span>
+                        <input id="reg-email" type="email" className="input" value={email} onChange={e => setEmail(e.target.value)} required disabled={accountExists} />
+                      </div>
+                    </div>
+
+                    <div className="input-group">
+                      <label htmlFor="telefone">Telefone</label>
+                      <div className="input-with-icon">
+                        <span className="input-icon">📱</span>
+                        <input id="telefone" type="tel" className="input" value={telefone} onChange={e => setTelefone(e.target.value)} required disabled={passwordValidated} />
+                      </div>
+                    </div>
+
+                    {!accountExists && (
+                      <div className="input-group">
+                        <label htmlFor="confirmar-senha">Confirmar senha</label>
+                        <div className="input-with-icon">
+                          <span className="input-icon">🔒</span>
+                          <input id="confirmar-senha" type="password" className="input" placeholder="Repita a senha" value={confirmarSenha} onChange={e => setConfirmarSenha(e.target.value)} required />
+                        </div>
+                        {confirmarSenha && senha !== confirmarSenha && (
+                          <span className="input-error">As senhas não coincidem</span>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
 
-            {/* Step 3 — Dados do comércio (só comerciante) */}
             {step === 3 && role === 'comerciante' && (
               <div className="animate-fade-in-up">
                 <div className="input-group">
@@ -317,7 +403,6 @@ export default function CadastroPage() {
               </div>
             )}
 
-            {/* Step 4 — Escolha de Plano dinâmico (só comerciante + assinatura ativada) */}
             {step === 4 && showPlanoStep && (
               <div className="plan-selection animate-fade-in-up">
                 {planosDisponiveis.map(p => (
@@ -343,7 +428,6 @@ export default function CadastroPage() {
               </div>
             )}
 
-            {/* Navigation */}
             <div className="auth-nav-buttons">
               {step > 1 && (
                 <button type="button" className="btn btn-outline" onClick={() => setStep(step - 1)}>
@@ -358,12 +442,11 @@ export default function CadastroPage() {
               >
                 {loading ? (
                   <span className="btn-loading"><span className="spinner" /> Criando conta...</span>
-                ) : isLastStep ? 'Criar conta' : 'Próximo'}
+                ) : isLastStep ? (accountExists ? 'Adicionar Perfil' : 'Criar conta') : 'Próximo'}
               </button>
             </div>
           </form>
 
-          {/* Login link */}
           <div className="auth-footer" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
             <p>
               Já tem uma conta?{' '}

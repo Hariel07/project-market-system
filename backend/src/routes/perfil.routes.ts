@@ -1,20 +1,13 @@
 import { Router } from 'express';
-import { updateProfile, getAddresses, createAddress, updateAddress, setPrincipalAddress, deleteAddress } from '../controllers/perfil.controller.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
+import { getMyProfile, updateMyProfile } from '../controllers/perfil.controller.js';
 
 const router = Router();
 
-// Todas as rotas de perfil precisam de usuário autenticado
-router.use(authMiddleware);
+// Rota unificada para o usuário ver seus próprios dados mestres
+router.get('/me', authMiddleware, getMyProfile);
 
-// Editar Perfil Base
-router.put('/', updateProfile);
-
-// CRUD de Endereços
-router.get('/enderecos', getAddresses);
-router.post('/enderecos', createAddress);
-router.put('/enderecos/:id', updateAddress);
-router.put('/enderecos/:id/principal', setPrincipalAddress);
-router.delete('/enderecos/:id', deleteAddress);
+// Rota unificada para o usuário editar seus dados (reflete em todos os perfis)
+router.patch('/me', authMiddleware, updateMyProfile);
 
 export { router as perfilRoutes };

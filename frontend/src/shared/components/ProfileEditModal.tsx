@@ -11,7 +11,7 @@ interface ProfileEditModalProps {
 
 export default function ProfileEditModal({ isOpen, onClose, user, onSave }: ProfileEditModalProps) {
   const [form, setForm] = useState({
-    nome: '',
+    nomeCompleto: '',
     email: '',
     telefone: ''
   });
@@ -20,7 +20,7 @@ export default function ProfileEditModal({ isOpen, onClose, user, onSave }: Prof
   useEffect(() => {
     if (user) {
       setForm({
-        nome: user.nome || '',
+        nomeCompleto: user.nomeCompleto || user.nome || '',
         email: user.email || '',
         telefone: user.telefone || ''
       });
@@ -33,15 +33,28 @@ export default function ProfileEditModal({ isOpen, onClose, user, onSave }: Prof
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await api.put('/api/perfil', form);
+      const response = await api.patch('/api/perfil/me', {
+        nomeCompleto: form.nomeCompleto,
+        telefone: form.telefone
+      });
+      
       // O backend devolve o usuário atualizado
-      const updatedUser = response.data.user;
+      const updatedAccount = response.data.user;
       
+      // Mescla dados do Perfil atual com a Conta atualizada
+      const currentUser = JSON.parse(localStorage.getItem('@MarketSystem:user') || '{}');
+      const mergedUser = { 
+        ...currentUser, 
+        ...updatedAccount,
+        nome: updatedAccount.nomeCompleto // Garante compatibilidade onde usa 'nome'
+      };
+
       // Atualiza localStorage
-      localStorage.setItem('@MarketSystem:user', JSON.stringify(updatedUser));
+      localStorage.setItem('@MarketSystem:user', JSON.stringify(mergedUser));
       
-      onSave(updatedUser);
+      onSave(mergedUser);
       onClose();
+      alert('Perfil atualizado com sucesso!');
     } catch (error: any) {
       alert(error.response?.data?.error || 'Erro ao atualizar perfil.');
     } finally {
@@ -64,20 +77,20 @@ export default function ProfileEditModal({ isOpen, onClose, user, onSave }: Prof
             <input 
               type="text" 
               className="input" 
-              value={form.nome} 
-              onChange={e => setForm({...form, nome: e.target.value})} 
+              value={form.nomeCompleto} 
+              onChange={e => setForm({...form, nomeCompleto: e.target.value})} 
               required 
             />
           </div>
 
           <div className="input-group">
-            <label>E-mail da Conta</label>
+            <label>E-mail da Conta (Não editável)</label>
             <input 
               type="email" 
               className="input" 
               value={form.email} 
-              onChange={e => setForm({...form, email: e.target.value})} 
-              required 
+              disabled 
+              title="O e-mail não pode ser alterado por segurança."
             />
           </div>
 

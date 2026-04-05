@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { CartProvider } from './contexts/CartContext';
 import BottomNav from './shared/components/BottomNav';
 import { NotificationCenter } from './shared/components/NotificationCenter';
+import MaintenancePage from './shared/components/MaintenancePage';
+import { useAppConfig } from './lib/useAppName';
 
 // Auth
 import LoginPage from './modules/auth/LoginPage';
@@ -29,6 +31,7 @@ import ComercianteEstoque from './modules/comerciante/ComercianteEstoque';
 import ComercianteItemForm from './modules/comerciante/ComercianteItemForm';
 import ComercianteConfig from './modules/comerciante/ComercianteConfig';
 import ComerciantePerfilConfig from './modules/comerciante/ComerciantePerfilConfig';
+import ComerciantePerfilPage from './modules/comerciante/ComerciantePerfilPage';
 
 // Entregador
 import EntregadorDashboard from './modules/entregador/EntregadorDashboard';
@@ -47,10 +50,26 @@ import AdminComercios from './modules/admin/AdminComercios';
 import AdminPlanos from './modules/admin/AdminPlanos';
 import AdminUsuarios from './modules/admin/AdminUsuarios';
 import AdminSistema from './modules/admin/AdminSistema';
+import AdminPerfilPage from './modules/admin/AdminPerfilPage';
 
 function AppRoutes() {
   const location = useLocation();
+  const config = useAppConfig();
   const isClienteRoute = location.pathname.startsWith('/cliente');
+
+  // Lógica de Manutenção: Bloqueia se ON e usuário não for ADMIN
+  const userStr = localStorage.getItem('@MarketSystem:user');
+  let isAdmin = false;
+  try {
+    const user = userStr ? JSON.parse(userStr) : null;
+    // Checa role no objeto ou busca direto se for conta de admin
+    isAdmin = user?.role === 'ADMIN' || localStorage.getItem('userRole') === 'ADMIN';
+  } catch (e) {}
+
+  // Visitantes também são bloqueados
+  if (config.modoManutencao && !isAdmin && !location.pathname.includes('/admin') && location.pathname !== '/login') {
+    return <MaintenancePage />;
+  }
 
   return (
     <>
@@ -84,6 +103,7 @@ function AppRoutes() {
         <Route path="/comerciante/item/:id" element={<ComercianteItemForm />} />
         <Route path="/comerciante/config" element={<ComercianteConfig />} />
         <Route path="/comerciante/config/perfil" element={<ComerciantePerfilConfig />} />
+        <Route path="/comerciante/perfil" element={<ComerciantePerfilPage />} />
 
         {/* Entregador */}
         <Route path="/entregador" element={<EntregadorDashboard />} />
@@ -102,6 +122,7 @@ function AppRoutes() {
         <Route path="/admin/planos" element={<AdminPlanos />} />
         <Route path="/admin/usuarios" element={<AdminUsuarios />} />
         <Route path="/admin/sistema" element={<AdminSistema />} />
+        <Route path="/admin/perfil" element={<AdminPerfilPage />} />
       </Routes>
 
       {/* Client specific UI */}
@@ -117,7 +138,12 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter 
+      future={{ 
+        v7_startTransition: true, 
+        v7_relativeSplatPath: true 
+      }}
+    >
       <CartProvider>
         <div className="app-layout">
           <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100 }}>

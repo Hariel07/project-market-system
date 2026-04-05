@@ -1,217 +1,94 @@
 import { Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
 import { prisma } from '../lib/prisma.js';
-import { AuthPayload } from '../middlewares/auth.middleware.js';
 
-export const updateProfile = async (req: Request, res: Response): Promise<void> => {
+/**
+ * GET /api/perfil/me
+ * Retorna os dados da CONTA e do PERFIL atual
+ */
+export const getMyProfile = async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  const accountId = req.user?.accountId;
+
   try {
-    const { nome, telefone, email } = req.body;
-    const userId = req.user?.id;
-    const accountId = req.user?.accountId;
+    const account = await prisma.account.findUnique({
+      where: { id: accountId },
+      include: {
+        enderecos: true,
+        perfis: true
+      }
+    });
 
-    if (!userId || !accountId) {
-      res.status(401).json({ error: 'Usuário não autenticado.' });
+    if (!account) {
+      res.status(404).json({ error: 'Conta não encontrada.' });
       return;
     }
 
-    // Atualiza nome no perfil
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: { nome }
-    });
-
-    // Atualiza e-mail/telefone na conta mãe
-    const updatedAccount = await prisma.account.update({
-      where: { id: accountId },
-      data: { telefone, email }
-    });
+    // Perfil específico que está logado
+    const currentProfile = account.perfis.find(p => p.id === userId);
 
     res.json({
-      status: 'SUCCESS',
-      user: {
-        ...updatedUser,
-        email: updatedAccount.email,
-        telefone: updatedAccount.telefone,
-        cpf: updatedAccount.cpf
-      }
+      id: account.id,
+      cpf: account.cpf,
+      email: account.email,
+      nomeCompleto: account.nomeCompleto,
+      dataNascimento: account.dataNascimento,
+      telefone: account.telefone,
+      enderecos: account.enderecos,
+      roleAtual: currentProfile?.role,
+      perfisDisponiveis: account.perfis.map(p => p.role)
     });
   } catch (error) {
-    console.error(error);
+    res.status(500).json({ error: 'Erro ao buscar perfil.' });
+  }
+};
+
+/**
+ * PATCH /api/perfil/me
+ * Atualiza dados mestres da CONTA (reflete em todos os perfis)
+ */
+export const updateMyProfile = async (req: Request, res: Response) => {
+  const accountId = req.user?.accountId;
+  const { nomeCompleto, telefone, dataNascimento, senha, novaSenha } = req.body;
+
+  try {
+    const account = await prisma.account.findUnique({ where: { id: accountId } });
+    if (!account) {
+      res.status(404).json({ error: 'Conta não encontrada.' });
+      return;
+    }
+
+    // Se quiser mudar a senha, precisa validar a antiga
+    let hashedPassword = account.senha;
+    if (novaSenha) {
+      const isPasswordValid = await bcrypt.compare(senha, account.senha);
+      if (!isPasswordValid) {
+        res.status(401).json({ error: 'Senha atual incorreta.' });
+        return;
+      }
+      hashedPassword = await bcrypt.hash(novaSenha, 10);
+    }
+
+    // Transação para atualizar a conta e todos os perfis vinculados
+    const [updated] = await prisma.$transaction([
+      prisma.account.update({
+        where: { id: accountId },
+        data: {
+          nomeCompleto: nomeCompleto || account.nomeCompleto,
+          telefone: telefone || account.telefone,
+          dataNascimento: dataNascimento ? new Date(dataNascimento) : account.dataNascimento,
+          senha: hashedPassword
+        }
+      }),
+      // Replica o nome para todos os perfis (Dono, Cliente, etc)
+      prisma.user.updateMany({
+        where: { accountId },
+        data: { nome: nomeCompleto || account.nomeCompleto }
+      })
+    ]);
+
+    res.json({ message: 'Perfil atualizado com sucesso!', user: updated });
+  } catch (error) {
     res.status(500).json({ error: 'Erro ao atualizar perfil.' });
-  }
-};
-
-export const getAddresses = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) {
-      res.status(401).json({ error: 'Não autorizado.' });
-      return;
-    }
-
-    const addresses = await prisma.address.findMany({
-      where: { userId },
-      orderBy: [
-        { isPrincipal: 'desc' },
-        { rotulo: 'asc' }
-      ]
-    });
-
-    res.json(addresses);
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao buscar endereços.' });
-  }
-};
-
-export const createAddress = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) {
-       res.status(401).json({ error: 'Não autorizado' });
-       return;
-    }
-
-    const {
-      logradouro, numero, complemento, bairro, cidade, estado, cep,
-      pontoReferencia, rotulo, icone, lat, lng, isPrincipal
-    } = req.body;
-
-    if (!pontoReferencia || pontoReferencia.trim() === '') {
-      res.status(400).json({ error: 'Ponto de referência é OBRIGATÓRIO.' });
-      return;
-    }
-
-    // Se for principal, desmarca os outros
-    if (isPrincipal) {
-      await prisma.address.updateMany({
-        where: { userId },
-        data: { isPrincipal: false }
-      });
-    }
-
-    const novoEndereco = await prisma.address.create({
-      data: {
-        userId,
-        logradouro,
-        numero,
-        complemento,
-        bairro,
-        cidade,
-        estado,
-        cep,
-        pontoReferencia,
-        rotulo: rotulo || 'OUTRO',
-        icone: icone || '📍',
-        lat,
-        lng,
-        isPrincipal
-      }
-    });
-
-    res.status(201).json(novoEndereco);
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao criar endereço.' });
-  }
-};
-
-export const updateAddress = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const userId = req.user?.id;
-    const id = req.params.id as string;
-
-    if (!userId) {
-       res.status(401).json({ error: 'Não autorizado' });
-       return;
-    }
-
-    const {
-      logradouro, numero, complemento, bairro, cidade, estado, cep,
-      pontoReferencia, rotulo, icone, lat, lng, isPrincipal
-    } = req.body;
-
-    if (!pontoReferencia || pontoReferencia.trim() === '') {
-      res.status(400).json({ error: 'Ponto de referência é OBRIGATÓRIO.' });
-      return;
-    }
-
-    // Verifica dono
-    const existing = await prisma.address.findUnique({ where: { id } });
-    if (!existing || existing.userId !== userId) {
-      res.status(404).json({ error: 'Endereço não encontrado ou não pertence a você.' });
-      return;
-    }
-
-    if (isPrincipal) {
-      await prisma.address.updateMany({
-        where: { userId },
-        data: { isPrincipal: false }
-      });
-    }
-
-    const updated = await prisma.address.update({
-      where: { id },
-      data: {
-        logradouro, numero, complemento, bairro, cidade, estado, cep,
-        pontoReferencia, rotulo, icone, lat, lng, isPrincipal
-      }
-    });
-
-    res.json(updated);
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao atualizar endereço.' });
-  }
-};
-
-export const setPrincipalAddress = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const userId = req.user?.id;
-    const id = req.params.id as string;
-
-    if (!userId) {
-      res.status(401).json({ error: 'Não autorizado' });
-      return;
-    }
-
-    const existing = await prisma.address.findUnique({ where: { id } });
-    if (!existing || existing.userId !== userId) {
-      res.status(404).json({ error: 'Endereço não encontrado.' });
-      return;
-    }
-
-    await prisma.address.updateMany({
-      where: { userId },
-      data: { isPrincipal: false }
-    });
-
-    const updated = await prisma.address.update({
-      where: { id },
-      data: { isPrincipal: true }
-    });
-
-    res.json(updated);
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao definir principal.' });
-  }
-};
-
-export const deleteAddress = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const userId = req.user?.id;
-    const id = req.params.id as string;
-
-    if (!userId) {
-      res.status(401).json({ error: 'Não autorizado' });
-      return;
-    }
-
-    const existing = await prisma.address.findUnique({ where: { id } });
-    if (!existing || existing.userId !== userId) {
-      res.status(404).json({ error: 'Endereço não encontrado.' });
-      return;
-    }
-
-    await prisma.address.delete({ where: { id } });
-    res.json({ status: 'SUCCESS' });
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao deletar endereço.' });
   }
 };

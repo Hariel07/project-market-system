@@ -1,6 +1,7 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAppName } from '../../lib/useAppName';
+import { useAppConfig } from '../../lib/useAppName';
+import ProfileSwitcherModal from '../../shared/components/ProfileSwitcherModal';
 import './AdminLayout.css';
 
 interface Props {
@@ -11,7 +12,8 @@ interface Props {
 export default function AdminLayout({ title, children }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
-  const nomeApp = useAppName();
+  const config = useAppConfig();
+  const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
 
   const navItems = [
     { icon: '🌐', label: 'Visão Global', path: '/admin' },
@@ -26,9 +28,15 @@ export default function AdminLayout({ title, children }: Props) {
       {/* Sidebar Desktop */}
       <aside className="admin-sidebar hidden-mobile">
         <div className="admin-sidebar-header">
-          <div className="admin-logo-badge">👨‍💻</div>
+          {config.logoUrl ? (
+            <div className="admin-logo-img-wrapper" style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img src={config.logoUrl} alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+            </div>
+          ) : (
+            <div className="admin-logo-badge">👨‍💻</div>
+          )}
           <div className="admin-logo-text">
-            <h2>{nomeApp}</h2>
+            <h2>{config.nomeApp}</h2>
             <span className="admin-logo-sub">Platform Admin</span>
           </div>
         </div>
@@ -47,6 +55,10 @@ export default function AdminLayout({ title, children }: Props) {
         </nav>
 
         <div className="admin-sidebar-footer">
+          <button className="admin-nav-item" style={{ color: '#4f46e5', fontWeight: 700 }} onClick={() => setIsSwitcherOpen(true)}>
+            <span className="admin-nav-icon">🔄</span>
+            Trocar de Perfil
+          </button>
           <button className="admin-nav-item text-danger" onClick={() => { localStorage.removeItem('@MarketSystem:token'); localStorage.removeItem('@MarketSystem:user'); navigate('/login'); }}>
             <span className="admin-nav-icon">🚪</span>
             Sair do Painel
@@ -77,6 +89,11 @@ export default function AdminLayout({ title, children }: Props) {
           {children}
         </main>
       </div>
+
+      <ProfileSwitcherModal 
+        isOpen={isSwitcherOpen} 
+        onClose={() => setIsSwitcherOpen(false)} 
+      />
 
       {/* Mobile Bottom Nav */}
       <nav className="admin-bottom-nav hidden-desktop">

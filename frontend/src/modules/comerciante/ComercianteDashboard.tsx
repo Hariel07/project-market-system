@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dashboardStatsMock, vendasSemana, pedidosComercioMock, alertasMock } from '../../data/comercianteMock';
 import { formatPrice } from '../../data/mockData';
@@ -7,8 +8,20 @@ import './ComercianteDashboard.css';
 export default function ComercianteDashboard() {
   const navigate = useNavigate();
   const stats = dashboardStatsMock;
+  
+  // Recupera dados do usuário logado (Perfil + Conta)
+  const [user] = useState(() => {
+    const saved = localStorage.getItem('@MarketSystem:user');
+    return saved ? JSON.parse(saved) : null;
+  });
+  
   const pedidosNovos = pedidosComercioMock.filter(p => p.status === 'novo');
   const maxVenda = Math.max(...vendasSemana.map(v => v.valor));
+
+  const formatCPF = (cpf: string) => {
+    if (!cpf) return '';
+    return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  };
 
   return (
     <ComercianteLayout 
@@ -25,6 +38,27 @@ export default function ComercianteDashboard() {
         </>
       }
     >
+      {/* Perfil do Gestor (Conta vinculada ao CPF) */}
+      <div className="gestor-profile-card animate-fade-in-up">
+        <div className="gestor-avatar">
+          {user?.nomeCompleto?.charAt(0) || user?.nome?.charAt(0) || '👤'}
+        </div>
+        <div className="gestor-info">
+          <div className="gestor-main">
+            <h3 className="gestor-name">{user?.nomeCompleto || user?.nome || 'Gestor'}</h3>
+            <span className="gestor-badge">CPF: {formatCPF(user?.cpf)}</span>
+          </div>
+          <div className="gestor-details">
+            <span className="gestor-detail-item">📧 {user?.email}</span>
+            <span className="gestor-detail-item">📱 {user?.telefone || 'Não informado'}</span>
+            <span className="gestor-detail-item">🔑 Perfil: {user?.role}</span>
+          </div>
+        </div>
+        <button className="btn btn-ghost btn-sm gestor-edit-btn" onClick={() => navigate('/comerciante/perfil')}>
+          ⚙️ Editar Perfil
+        </button>
+      </div>
+
       {/* Stats cards */}
       <div className="stats-grid animate-fade-in-up delay-1">
         <div className="stat-card-com stat-vendas">

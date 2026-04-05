@@ -154,3 +154,110 @@
   .admin-kpi-grid { grid-template-columns: 1fr; }
   .bar-label { font-size: 0.5rem; }
 }
+
+/* Gestor Profile Card (Common across dashboards) */
+.gestor-profile-card {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 24px;
+  border: 1px solid rgba(0,0,0,0.05);
+  margin-bottom: var(--space-6);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+.gestor-avatar {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: white;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  font-weight: 800;
+  box-shadow: 0 8px 16px rgba(79, 70, 229, 0.2);
+}
+
+.gestor-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.gestor-main {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.gestor-name {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0;
+}
+
+.gestor-badge {
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 0.2rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.gestor-details {
+  display: flex;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.gestor-detail-item {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.gestor-edit-btn {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4f46e5;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.gestor-edit-btn:hover {
+  background: #f1f5f9;
+}
+
+@media (max-width: 767px) {
+  .gestor-profile-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 1.25rem;
+    gap: 1rem;
+  }
+  .gestor-main {
+    justify-content: center;
+  }
+  .gestor-details {
+    justify-content: center;
+    gap: 0.6rem;
+    flex-direction: column;
+  }
+}

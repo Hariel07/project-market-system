@@ -20,6 +20,13 @@ export function NotificationCenter() {
 
   // Carregar notificações
   const carregarNotificacoes = async () => {
+    const token = localStorage.getItem('@MarketSystem:token');
+    if (!token) {
+      setNotificacoes([]);
+      setCountNaoLidas(0);
+      return;
+    }
+
     try {
       setLoading(true);
       const [respNotificacoes, respCount] = await Promise.all([
@@ -28,8 +35,11 @@ export function NotificationCenter() {
       ]);
       setNotificacoes(Array.isArray(respNotificacoes.data) ? respNotificacoes.data : []);
       setCountNaoLidas(respCount.data.count);
-    } catch (erro) {
-      console.error('Erro ao carregar notificações:', erro);
+    } catch (erro: any) {
+      // Se for 401, não loga erro no console pois o interceptor já trata
+      if (erro.response?.status !== 401) {
+        console.error('Erro ao carregar notificações:', erro);
+      }
     } finally {
       setLoading(false);
     }

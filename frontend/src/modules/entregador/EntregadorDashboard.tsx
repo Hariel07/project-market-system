@@ -15,6 +15,12 @@ export default function EntregadorDashboard() {
   useAuthProtected(['ENTREGADOR']);
   const { userId: entregadorId } = useAuthUser();
 
+  // Recupera dados do entregador logado
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('@MarketSystem:user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
   const [isOnline, setIsOnline] = useState(false);
   const [oportunidades, setOportunidades] = useState<OportunidadeEntrega[]>(oportunidadesMock);
   const [entregasAtivas, setEntregasAtivas] = useState<Entrega[]>([]);
@@ -22,6 +28,11 @@ export default function EntregadorDashboard() {
   const [erroOportunidades, setErroOportunidades] = useState<string | null>(null);
 
   const [stats, setStats] = useState(entregadorStatsMock);
+
+  const formatCPF = (cpf: string) => {
+    if (!cpf) return '';
+    return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  };
 
   const handleAceitarCorrida = async (opp: OportunidadeEntrega) => {
     const entregaId = opp.id;
@@ -97,6 +108,27 @@ export default function EntregadorDashboard() {
   return (
     <EntregadorLayout title="Início">
       <div className="ent-dashboard animate-fade-in-up">
+        
+        {/* Perfil do Entregador (Conta vinculada ao CPF) */}
+        <div className="gestor-profile-card">
+          <div className="gestor-avatar">
+            {user?.nomeCompleto?.charAt(0) || user?.nome?.charAt(0) || '🛵'}
+          </div>
+          <div className="gestor-info">
+            <div className="gestor-main">
+              <h3 className="gestor-name">{user?.nomeCompleto || user?.nome || 'Entregador'}</h3>
+              <span className="gestor-badge">CPF: {formatCPF(user?.cpf)}</span>
+            </div>
+            <div className="gestor-details">
+              <span className="gestor-detail-item">📧 {user?.email}</span>
+              <span className="gestor-detail-item">📱 {user?.telefone || 'Não informado'}</span>
+            </div>
+          </div>
+          <button className="gestor-edit-btn" onClick={() => navigate('/entregador/editar-perfil')}>
+            ⚙️ Perfil
+          </button>
+        </div>
+
         {/* Toggle Online/Offline Header */}
         <div className={`ent-status-header ${isOnline ? 'online' : 'offline'}`}>
           <div className="ent-status-info">

@@ -57,7 +57,9 @@ enum TipoMovimentoCaixa {
 model PlatformConfig {
   id                    String   @id @default("singleton")
   nomeApp               String   @default("Market System")
+  logoUrl               String?  // Logo que aparece ao lado do nome
   assinaturaObrigatoria Boolean  @default(false)
+  modoManutencao        Boolean  @default(false) // Novo campo
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 }
@@ -86,17 +88,21 @@ model SubscriptionPlan {
 // ----------------------------------------------------------------------
 
 model Account {
-  id        String   @id @default(uuid())
-  cpf       String   @unique
-  email     String   @unique
-  senha     String   // Bcrypt hash
-  telefone  String?
-  ativo     Boolean  @default(true)
+  id              String   @id @default(uuid())
+  cpf             String   @unique
+  email           String   @unique
+  senha           String   // Bcrypt hash
+  nomeCompleto    String   // Nome real da pessoa para todos os perfis
+  dataNascimento  DateTime?
+  telefone        String?
+  ativo           Boolean  @default(true)
+  isFake          Boolean  @default(false) // Para identificar contas de teste rápido
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   perfis    User[]
+  enderecos Address[] // Endereços vinculados à pessoa, não ao perfil
 }
 
 model User {
@@ -104,7 +110,7 @@ model User {
   accountId String
   account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
-  nome      String
+  nome      String?  // Nome de exibição (opcional)
   role      Role     @default(CLIENTE)
   ativo     Boolean  @default(true)
   
@@ -112,7 +118,6 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relações
-  enderecos      Address[]
   comercioId     String?
   comercio       Commerce?  @relation(fields: [comercioId], references: [id])
   pedidosCliente Order[]    @relation("ClientePedidos")
@@ -125,10 +130,13 @@ model User {
   notificacoes   Notification[]
   aberturasChaixa AberturaCaixa[]
   movimentosCaixa MovimentoCaixa[]
+  enderecos       Address[]
 }
 
 model Address {
   id              String   @id @default(uuid())
+  accountId       String?
+  account         Account? @relation(fields: [accountId], references: [id], onDelete: Cascade)
   userId          String?
   comercioId      String?
   
@@ -154,6 +162,10 @@ model Address {
 
   user            User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   comercio        Commerce? @relation(fields: [comercioId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@index([userId])
+  @@index([comercioId])
 }
 
 model Commerce {

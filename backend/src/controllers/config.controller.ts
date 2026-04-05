@@ -34,33 +34,41 @@ export async function getConfig(req: Request, res: Response): Promise<void> {
  * Atualiza configurações globais
  */
 export async function updateConfig(req: Request, res: Response): Promise<void> {
-  const { assinaturaObrigatoria, nomeApp } = req.body;
+  const { assinaturaObrigatoria, nomeApp, logoUrl, modoManutencao } = req.body;
 
   try {
+    const dataUpdate: any = {};
+    if (assinaturaObrigatoria !== undefined) dataUpdate.assinaturaObrigatoria = assinaturaObrigatoria;
+    if (nomeApp !== undefined) dataUpdate.nomeApp = nomeApp;
+    if (logoUrl !== undefined) dataUpdate.logoUrl = logoUrl;
+    
+    // Só adiciona modoManutencao se ele existir no Prisma Client gerado
+    if (modoManutencao !== undefined) {
+      dataUpdate.modoManutencao = modoManutencao;
+    }
+
     const config = await prisma.platformConfig.upsert({
       where: { id: 'singleton' },
-      update: {
-        ...(assinaturaObrigatoria !== undefined && { assinaturaObrigatoria }),
-        ...(nomeApp !== undefined && { nomeApp }),
-      },
+      update: dataUpdate,
       create: {
         id: 'singleton',
         assinaturaObrigatoria: assinaturaObrigatoria || false,
         nomeApp: nomeApp || 'Market System',
+        logoUrl: logoUrl || null,
+        modoManutencao: modoManutencao || false,
       },
     });
 
     res.json(config);
   } catch (error) {
     console.error('Erro ao atualizar config:', error);
-    res.status(500).json({ error: 'Erro interno ao atualizar configurações.' });
+    res.status(500).json({ error: 'Erro ao salvar configurações. Certifique-se de rodar npx prisma db push.' });
   }
 }
 
 /**
  * GET /api/public/config
  * Retorna apenas flags que o frontend público precisa saber
- * (ex: se assinatura é obrigatória no cadastro, nome do app)
  */
 export async function getPublicConfig(req: Request, res: Response): Promise<void> {
   try {
@@ -76,7 +84,9 @@ export async function getPublicConfig(req: Request, res: Response): Promise<void
 
     res.json({
       nomeApp: config.nomeApp,
+      logoUrl: config.logoUrl,
       assinaturaObrigatoria: config.assinaturaObrigatoria,
+      modoManutencao: config.modoManutencao,
     });
   } catch (error) {
     console.error('Erro ao buscar config pública:', error);
@@ -98,4 +108,17 @@ export async function getConfigSistema(req: Request, res: Response): Promise<voi
  */
 export async function updateConfigSistema(req: Request, res: Response): Promise<void> {
   return updateConfig(req, res);
+}
+
+/**
+ * GET /api/config/setup-check
+ * Verifica se o sistema está em modo de instalação inicial (0 usuários)
+ */
+export async function checkSetupMode(req: Request, res: Response): Promise<void> {
+  try {
+    const userCount = await prisma.user.count();
+    res.json({ isSetupMode: userCount === 0 });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao verificar modo setup.' });
+  }
 }

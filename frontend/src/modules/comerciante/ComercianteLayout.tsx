@@ -1,6 +1,7 @@
 import { type ReactNode, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../../lib/api';
+import ProfileSwitcherModal from '../../shared/components/ProfileSwitcherModal';
 import './ComercianteDashboard.css';
 
 interface Props {
@@ -14,6 +15,7 @@ export default function ComercianteLayout({ title, subtitle, actions, children }
   const navigate = useNavigate();
   const location = useLocation();
   const [comercio, setComercio] = useState<any>(null);
+  const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
 
   useEffect(() => {
     async function loadComercio() {
@@ -60,6 +62,12 @@ export default function ComercianteLayout({ title, subtitle, actions, children }
             </button>
           ))}
         </nav>
+
+        <button className="sidebar-link" style={{ color: 'var(--color-primary)', fontWeight: 700 }} onClick={() => setIsSwitcherOpen(true)}>
+          <span className="sidebar-icon">🔄</span>
+          Trocar Perfil
+        </button>
+
         <button className="sidebar-link sidebar-logout" onClick={() => { localStorage.removeItem('@MarketSystem:token'); localStorage.removeItem('@MarketSystem:user'); navigate('/login'); }}>
           <span className="sidebar-icon">🚪</span>
           Sair
@@ -109,6 +117,11 @@ export default function ComercianteLayout({ title, subtitle, actions, children }
           ))}
         </nav>
       </main>
+
+      <ProfileSwitcherModal 
+        isOpen={isSwitcherOpen} 
+        onClose={() => setIsSwitcherOpen(false)} 
+      />
     </div>
   );
 }

@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../lib/api';
-import { useAppName } from '../../lib/useAppName';
+import { useAppConfig } from '../../lib/useAppName';
 import './AuthPages.css';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const nomeApp = useAppName();
+  const config = useAppConfig();
   
   const [cpf, setCpf] = useState('');
   const [senha, setSenha] = useState('');
@@ -205,8 +205,14 @@ export default function LoginPage() {
       <div className="auth-container">
         <div className="auth-card animate-fade-in-up">
           <div className="auth-header">
-            <div className="auth-logo">🛒</div>
-            <h1 className="auth-title">{nomeApp}</h1>
+            <div className="auth-logo">
+              {config.logoUrl ? (
+                <img src={config.logoUrl} alt="Logo" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+              ) : (
+                '🛒'
+              )}
+            </div>
+            <h1 className="auth-title">{config.nomeApp}</h1>
             <p className="auth-subtitle">Entre na sua conta centralizada</p>
           </div>
 
@@ -239,6 +245,7 @@ export default function LoginPage() {
                   placeholder="Sua senha"
                   value={senha}
                   onChange={e => setSenha(e.target.value)}
+                  autoComplete="current-password"
                   required
                 />
                 <button

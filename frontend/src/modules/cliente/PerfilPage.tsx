@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TopBar from '../../shared/components/TopBar';
 import ProfileEditModal from '../../shared/components/ProfileEditModal';
+import ProfileSwitcherModal from '../../shared/components/ProfileSwitcherModal';
 import './PerfilPage.css';
 
 export default function PerfilPage() {
@@ -13,6 +14,7 @@ export default function PerfilPage() {
   });
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('@MarketSystem:token');
@@ -110,6 +112,15 @@ export default function PerfilPage() {
             ))}
           </div>
 
+          {/* Switch Profile */}
+          <button
+            className="btn btn-block animate-fade-in-up delay-3"
+            style={{ marginBottom: '1rem', background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', fontWeight: 700 }}
+            onClick={() => setIsSwitcherOpen(true)}
+          >
+            🔄 Trocar de Perfil
+          </button>
+
           {/* Logout */}
           <button
             className="btn btn-outline btn-block logout-btn animate-fade-in-up delay-3"
@@ -126,6 +137,11 @@ export default function PerfilPage() {
         onClose={() => setIsEditModalOpen(false)} 
         user={user} 
         onSave={(updatedUser) => setUser(updatedUser)} 
+      />
+
+      <ProfileSwitcherModal 
+        isOpen={isSwitcherOpen} 
+        onClose={() => setIsSwitcherOpen(false)} 
       />
     </div>
   );
