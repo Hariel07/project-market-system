@@ -33,7 +33,7 @@ try {
   console.log('⚙️  [0/4] Generating Prisma Client...');
   console.log(`   📍 ${backendDir}`);
   
-  execSync('npm install && npx prisma generate', {
+  execSync('npx prisma generate', {
     cwd: backendDir,
     stdio: 'inherit'
   });
@@ -46,7 +46,7 @@ try {
   console.log('🔨 [1/4] Building Frontend...');
   console.log(`   📍 ${frontendDir}`);
   
-  execSync('npm install && npm run build', {
+  execSync('npm run build', {
     cwd: frontendDir,
     stdio: 'inherit'
   });
@@ -81,8 +81,8 @@ try {
   console.log('🔨 [3/4] Building Backend TypeScript...');
   console.log(`   📍 ${backendDir}`);
   
-  // IMPORTANTE: Instalar dependências do backend e gerar prisma client de novo para o build TS
-  execSync('npm install && npx prisma generate && npm run build', {
+  // IMPORTANTE: Gerar prisma client de novo para o build TS
+  execSync('npx prisma generate && npm run build', {
     cwd: backendDir,
     stdio: 'inherit'
   });

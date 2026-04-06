@@ -90,9 +90,9 @@ app.use((req, res, next) => {
 // ========================================
 // SERVIDOR HTTP
 // ========================================
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`🚀 Servidor backend rodando na porta ${port}`);
-  console.log(`📱 Frontend servido em http://localhost:${port}`);
-  console.log(`⚡ API disponível em http://localhost:${port}/api`);
+  console.log(`📱 Frontend servido em http://0.0.0.0:${port}`);
+  console.log(`⚡ API disponível em http://0.0.0.0:${port}/api`);
 });
 
