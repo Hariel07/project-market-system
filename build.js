@@ -35,7 +35,8 @@ try {
   
   execSync('npm install && npx prisma generate', {
     cwd: backendDir,
-    stdio: 'inherit'
+    stdio: 'inherit',
+    env: { ...process.env, SKIP_ENV_VALIDATION: 'true' }
   });
   
   console.log('✅ Prisma Client generated!\n');
