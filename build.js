@@ -82,7 +82,12 @@ try {
   console.log(`   📍 ${backendDir}`);
   
   // IMPORTANTE: Gerar prisma client de novo para o build TS
-  execSync('npx prisma generate && npm run build', {
+  execSync('npx prisma generate', {
+    cwd: backendDir,
+    stdio: 'inherit'
+  });
+  
+  execSync('npm run build', {
     cwd: backendDir,
     stdio: 'inherit'
   });
