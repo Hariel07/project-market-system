@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma.js';
+import { Role } from '@prisma/client';
 
 // ============================================================
 // Configurações Globais da Plataforma — Admin
@@ -112,12 +113,12 @@ export async function updateConfigSistema(req: Request, res: Response): Promise<
 
 /**
  * GET /api/config/setup-check
- * Verifica se o sistema está em modo de instalação inicial (0 usuários)
+ * Verifica se o sistema está em modo de instalação inicial (0 administradores)
  */
 export async function checkSetupMode(req: Request, res: Response): Promise<void> {
   try {
-    const userCount = await prisma.user.count();
-    res.json({ isSetupMode: userCount === 0 });
+    const adminCount = await prisma.user.count({ where: { role: Role.ADMIN } });
+    res.json({ isSetupMode: adminCount === 0 });
   } catch (error) {
     res.status(500).json({ error: 'Erro ao verificar modo setup.' });
   }
