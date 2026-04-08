@@ -27,19 +27,13 @@ const app = express();
 const port = process.env.PORT || 3333;
 
 // Middleware - Limites aumentados para suportar logos em Base64
-const corsOptions = {
-  origin: [
-    'https://project-market-system-production-376b.up.railway.app',
-    'https://project-market-system.up.railway.app',
-    'http://localhost:5173', // For local development
-    'http://localhost:3333',  // For local development
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-};
+app.use(cors({
+  origin: '*', // Permite todas as origens para resolver o problema no Railway
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  credentials: true
+}));
 
-app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
@@ -107,4 +101,3 @@ app.listen(port, '0.0.0.0', () => {
   console.log(`📱 Frontend servido em http://0.0.0.0:${port}`);
   console.log(`⚡ API disponível em http://0.0.0.0:${port}/api`);
 });
-

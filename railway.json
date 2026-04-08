@@ -16,7 +16,7 @@
   "deploy": {
     "numReplicas": 1,
     "startCommand": "npm start",
-    "preDeployCommand": "cd backend && npx prisma generate && npx prisma db push --accept-data-loss",
+    "preDeployCommand": "npm run build && cd backend && npx prisma db push --accept-data-loss",
     "restartPolicyMaxRetries": 5
   }
 }
