@@ -34,16 +34,11 @@ try {
   console.log(`   📍 ${backendDir}`);
   
   // No Railway, a variável DATABASE_URL pode não estar disponível no build.
-  // Como o 'generate' não conecta ao banco, fornecemos uma URL dummy se estiver vazia.
-  const envVars = { ...process.env };
-  if (!envVars.DATABASE_URL) {
-    envVars.DATABASE_URL = "postgresql://dummy:dummy@localhost:5432/dummy";
-  }
-
+  // SKIP_ENV_VALIDATION=true permite que o Prisma gere o client sem precisar da variável.
   execSync('npx prisma generate', {
     cwd: backendDir,
     stdio: 'inherit',
-    env: envVars
+    env: { ...process.env, SKIP_ENV_VALIDATION: 'true' }
   });
   
   console.log('✅ Prisma Client generated!\n');
@@ -93,7 +88,7 @@ try {
   execSync('npx prisma generate', {
     cwd: backendDir,
     stdio: 'inherit',
-    env: envVars
+    env: { ...process.env, SKIP_ENV_VALIDATION: 'true' }
   });
   
   execSync('npm run build', {
