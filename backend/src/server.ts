@@ -24,7 +24,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const port = process.env.PORT || 3333;
+const port = Number(process.env.PORT) || 3333;
 
 // Middleware - Limites aumentados para suportar logos em Base64
 app.use(cors({
