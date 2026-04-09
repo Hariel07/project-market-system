@@ -34,7 +34,8 @@ export default function ComercianteLayout({ title, subtitle, actions, children }
     { icon: '📋', label: 'Pedidos', path: '/comerciante/pedidos' },
     { icon: '📦', label: 'Catálogo', path: '/comerciante/catalogo' },
     { icon: '🏷️', label: 'Estoque', path: '/comerciante/estoque' },
-    { icon: '➕', label: 'Novo Item', path: '/comerciante/item/novo' },
+    { icon: '🖥️', label: 'Caixa / PDV', path: '/comerciante/caixa' },
+    { icon: '👥', label: 'Equipe', path: '/comerciante/equipe' },
     { icon: '⚙️', label: 'Configurações', path: '/comerciante/config' },
   ];
 
@@ -102,7 +103,7 @@ export default function ComercianteLayout({ title, subtitle, actions, children }
           {[
             { icon: '📊', label: 'Início', path: '/comerciante' },
             { icon: '📋', label: 'Pedidos', path: '/comerciante/pedidos' },
-            { icon: '📦', label: 'Catálogo', path: '/comerciante/catalogo' },
+            { icon: '🖥️', label: 'Caixa', path: '/comerciante/caixa' },
             { icon: '🏷️', label: 'Estoque', path: '/comerciante/estoque' },
             { icon: '⚙️', label: 'Mais', path: '/comerciante/config' },
           ].map(item => (

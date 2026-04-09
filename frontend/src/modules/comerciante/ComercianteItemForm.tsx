@@ -38,6 +38,10 @@ export default function ComercianteItemForm() {
   const [categoriaId, setCategoriaId] = useState('');
   const [unidade, setUnidade] = useState('UN');
   const [estoque, setEstoque] = useState('');
+  const [imagemUrl, setImagemUrl] = useState('');
+  const [estoqueMinimo, setEstoqueMinimo] = useState('');
+  const [dataValidade, setDataValidade] = useState('');
+  const [alertaValidadeDias, setAlertaValidadeDias] = useState('');
   const [isCombo, setIsCombo] = useState(false);
   const [ativo, setAtivo] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -76,6 +80,10 @@ export default function ComercianteItemForm() {
         setCategoriaId(prod.categoriaId || '');
         setUnidade(prod.unidade);
         setEstoque(prod.estoque.toString());
+        setImagemUrl(prod.imagemUrl || '');
+        setEstoqueMinimo((prod as any).estoqueMinimo?.toString() || '');
+        setDataValidade((prod as any).dataValidade ? new Date((prod as any).dataValidade).toISOString().split('T')[0] : '');
+        setAlertaValidadeDias((prod as any).alertaValidadeDias?.toString() || '');
         setIsCombo(prod.isCombo);
         setAtivo(prod.ativo);
       }
@@ -114,6 +122,10 @@ export default function ComercianteItemForm() {
       categoriaId: categoriaId || null,
       unidade,
       estoque: estoque || '0',
+      imagemUrl: imagemUrl || null,
+      estoqueMinimo: estoqueMinimo || null,
+      dataValidade: dataValidade || null,
+      alertaValidadeDias: alertaValidadeDias ? parseInt(alertaValidadeDias) : null,
       isCombo,
       ativo,
     };
@@ -186,7 +198,35 @@ export default function ComercianteItemForm() {
           </div>
         </section>
 
-        {/* Seção 2: Preço e Estoque */}
+        {/* Seção 2: Imagem */}
+        <section className="form-section">
+          <h2 className="form-section-title">🖼️ Imagem do produto</h2>
+          <div className="form-grid">
+            <div className="input-group full-width">
+              <label htmlFor="item-imagem">URL da imagem <span className="optional">(opcional)</span></label>
+              <input
+                id="item-imagem"
+                type="url"
+                className="input"
+                placeholder="https://exemplo.com/imagem.jpg"
+                value={imagemUrl}
+                onChange={e => setImagemUrl(e.target.value)}
+              />
+              {imagemUrl && (
+                <div style={{ marginTop: '0.5rem' }}>
+                  <img
+                    src={imagemUrl}
+                    alt="Preview"
+                    style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}
+                    onError={e => (e.currentTarget.style.display = 'none')}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* Seção 3: Preço e Estoque */}
         <section className="form-section">
           <h2 className="form-section-title">💰 Preço e estoque</h2>
           <div className="form-grid">
@@ -212,6 +252,40 @@ export default function ComercianteItemForm() {
             <div className="input-group">
               <label htmlFor="item-estoque">Estoque atual</label>
               <input id="item-estoque" type="number" className="input" placeholder="0" min="0" value={estoque} onChange={e => setEstoque(e.target.value)} />
+            </div>
+            <div className="input-group">
+              <label htmlFor="item-estoque-min">Estoque mínimo <span className="optional">(alerta)</span></label>
+              <input id="item-estoque-min" type="number" className="input" placeholder="Ex: 10" min="0" value={estoqueMinimo} onChange={e => setEstoqueMinimo(e.target.value)} />
+            </div>
+          </div>
+        </section>
+
+        {/* Seção 4: Validade */}
+        <section className="form-section">
+          <h2 className="form-section-title">📅 Validade</h2>
+          <div className="form-grid">
+            <div className="input-group">
+              <label htmlFor="item-validade">Data de validade <span className="optional">(opcional)</span></label>
+              <input
+                id="item-validade"
+                type="date"
+                className="input"
+                value={dataValidade}
+                onChange={e => setDataValidade(e.target.value)}
+              />
+            </div>
+            <div className="input-group">
+              <label htmlFor="item-alerta-dias">Avisar com quantos dias de antecedência</label>
+              <input
+                id="item-alerta-dias"
+                type="number"
+                className="input"
+                placeholder="Ex: 7 (usa padrão do comércio se vazio)"
+                min="1"
+                max="365"
+                value={alertaValidadeDias}
+                onChange={e => setAlertaValidadeDias(e.target.value)}
+              />
             </div>
           </div>
         </section>

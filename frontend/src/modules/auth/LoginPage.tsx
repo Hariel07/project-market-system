@@ -52,7 +52,7 @@ export default function LoginPage() {
       case 'CAIXA': return navigate('/comerciante');
       case 'ENTREGADOR': return navigate('/entregador');
       case 'CLIENTE':
-      default: return navigate('/cliente');
+      default: return navigate('/');
     }
   };
 
@@ -82,7 +82,7 @@ export default function LoginPage() {
       }
 
       const redirect = searchParams.get('redirect');
-      const isBuying = redirect && redirect.includes('/cliente');
+      const isBuying = redirect && redirect.includes('/');
 
       if (response.data.status === 'SELECT_PROFILE') {
         if (isBuying) {
@@ -367,7 +367,7 @@ export default function LoginPage() {
               type="button"
               className="btn btn-outline btn-lg btn-block"
               style={{ marginTop: '0.75rem' }}
-              onClick={() => navigate('/cliente')}
+              onClick={() => navigate('/')}
             >
               👀 Continuar como Visitante
             </button>
@@ -383,7 +383,7 @@ export default function LoginPage() {
                 if (redirect) {
                   // Se estava indo p/ cliente/checkout, forçar role=cliente no cadastro
                   target += `?redirect=${encodeURIComponent(redirect)}`;
-                  if (redirect.includes('/cliente')) target += '&role=cliente';
+                  if (redirect.includes('/')) target += '&role=cliente';
                 }
                 navigate(target);
               }} 

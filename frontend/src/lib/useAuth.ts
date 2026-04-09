@@ -62,6 +62,8 @@ export function useLogout() {
     localStorage.removeItem('userId');
     localStorage.removeItem('userRole');
     localStorage.removeItem('userName');
+    localStorage.removeItem('@MarketSystem:token');
+    localStorage.removeItem('@MarketSystem:user');
     navigate('/login', { replace: true });
   };
 

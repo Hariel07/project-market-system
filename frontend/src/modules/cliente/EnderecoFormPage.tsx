@@ -116,7 +116,7 @@ export default function EnderecoFormPage() {
         }
       } else {
         alert('Endereço não encontrado.');
-        navigate('/cliente/enderecos');
+        navigate('/enderecos');
       }
     } catch (err) {
       console.error(err);
@@ -217,7 +217,7 @@ export default function EnderecoFormPage() {
       } else {
         await api.post('perfil/enderecos', payload);
       }
-      navigate('/cliente/enderecos');
+      navigate('/enderecos');
     } catch (error: any) {
       alert(error.response?.data?.error || 'Erro ao salvar. Verifique os dados.');
     } finally {

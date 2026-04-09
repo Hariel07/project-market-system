@@ -70,9 +70,11 @@ export default function ProfileSwitcherModal({ isOpen, onClose }: Props) {
         case 'DONO':
         case 'GERENTE':
         case 'ESTOQUE':
-        case 'CAIXA': navigate('/comerciante'); break;
+        case 'CAIXA':
+        case 'AJUDANTE_GERAL':
+        case 'GARCOM': navigate('/comerciante'); break;
         case 'ENTREGADOR': navigate('/entregador'); break;
-        default: navigate('/cliente');
+        default: navigate('/');
       }
       
       window.location.reload(); // Recarrega para limpar estados de contextos
@@ -101,9 +103,14 @@ export default function ProfileSwitcherModal({ isOpen, onClose }: Props) {
               {profiles.map(p => {
                 let icon = '👤';
                 let label = 'Cliente';
-                if (p.role === 'DONO') { icon = '🏪'; label = p.comercio?.nomeFantasia || 'Comércio'; }
-                if (p.role === 'ENTREGADOR') { icon = '🛵'; label = 'Entregador'; }
-                if (p.role === 'ADMIN') { icon = '⚙️'; label = 'Administrador'; }
+                if (p.role === 'DONO')          { icon = '🏪'; label = p.comercio?.nomeFantasia || 'Dono'; }
+                if (p.role === 'GERENTE')        { icon = '👔'; label = `Gerente — ${p.comercio?.nomeFantasia || ''}`; }
+                if (p.role === 'ESTOQUE')        { icon = '📦'; label = `Estoquista — ${p.comercio?.nomeFantasia || ''}`; }
+                if (p.role === 'CAIXA')          { icon = '🖥️'; label = `Op. Caixa — ${p.comercio?.nomeFantasia || ''}`; }
+                if (p.role === 'AJUDANTE_GERAL') { icon = '🤝'; label = `Ajudante — ${p.comercio?.nomeFantasia || ''}`; }
+                if (p.role === 'GARCOM')         { icon = '🍽️'; label = `Garçom — ${p.comercio?.nomeFantasia || ''}`; }
+                if (p.role === 'ENTREGADOR')     { icon = '🛵'; label = 'Entregador'; }
+                if (p.role === 'ADMIN')          { icon = '⚙️'; label = 'Administrador'; }
 
                 const isCurrent = p.id === currentUserId;
 

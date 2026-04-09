@@ -1,6 +1,8 @@
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
 import { useAppConfig } from '../../lib/useAppName';
+import ProfileSwitcherModal from './ProfileSwitcherModal';
 import './TopBar.css';
 
 interface TopBarProps {
@@ -24,8 +26,36 @@ export default function TopBar({
   const location = useLocation();
   const { totalItems } = useCart();
   const config = useAppConfig();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const isLoggedIn = !!localStorage.getItem('@MarketSystem:token');
+  const userStr = localStorage.getItem('@MarketSystem:user');
+  const user = userStr ? (() => { try { return JSON.parse(userStr); } catch { return null; } })() : null;
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('@MarketSystem:token');
+    localStorage.removeItem('@MarketSystem:user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userName');
+    navigate('/login');
+  };
 
   return (
+    <>
     <header className={`top-bar ${transparent ? 'top-bar-transparent' : ''}`} id="top-bar">
       <div className="top-bar-inner container">
         <div className="top-bar-left">
@@ -34,7 +64,7 @@ export default function TopBar({
               ←
             </button>
           ) : (
-            <div className="top-bar-brand" onClick={() => navigate('/cliente')}>
+            <div className="top-bar-brand" onClick={() => navigate('/')}>
               {config.logoUrl ? (
                 <div className="top-bar-logo-img">
                   <img src={config.logoUrl} alt="Logo" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
@@ -65,15 +95,15 @@ export default function TopBar({
           {/* Desktop nav links */}
           <nav className="top-bar-nav hide-mobile">
             {[
-              { path: '/cliente', label: 'Início' },
-              { path: '/cliente/mercados', label: 'Mercados' },
-              { path: '/cliente/pedidos', label: 'Pedidos' },
+              { path: '/', label: 'Início' },
+              { path: '/mercados', label: 'Mercados' },
+              { path: '/pedidos', label: 'Pedidos' },
             ].map(item => (
               <button
                 key={item.path}
                 className={`top-bar-nav-link ${location.pathname === item.path ? 'active' : ''}`}
                 onClick={() => {
-                  if (item.path === '/cliente/pedidos' && !localStorage.getItem('@MarketSystem:token')) {
+                  if (item.path === '/pedidos' && !localStorage.getItem('@MarketSystem:token')) {
                     navigate(`/login?redirect=${encodeURIComponent(item.path)}`);
                   } else {
                     navigate(item.path);
@@ -88,7 +118,7 @@ export default function TopBar({
           {showCart && (
             <button
               className="top-bar-cart"
-              onClick={() => navigate('/cliente/carrinho')}
+              onClick={() => navigate('/carrinho')}
               id="btn-cart"
             >
               🛒
@@ -98,25 +128,50 @@ export default function TopBar({
             </button>
           )}
 
-          {localStorage.getItem('@MarketSystem:token') ? (
-            <button className="top-bar-avatar hide-mobile" onClick={() => {
-              const userStr = localStorage.getItem('@MarketSystem:user');
-              if (userStr) {
-                try {
-                  const user = JSON.parse(userStr);
-                  if (['DONO', 'GERENTE', 'ESTOQUE', 'CAIXA'].includes(user.role)) return navigate('/comerciante');
-                  if (user.role === 'ENTREGADOR') return navigate('/entregador');
-                  if (user.role === 'ADMIN') return navigate('/admin');
-                } catch(e) {}
-              }
-              navigate('/cliente/perfil');
-            }} id="btn-profile">
-              👤
-            </button>
+          {isLoggedIn ? (
+            <div ref={dropdownRef} style={{ position: 'relative' }} className="hide-mobile">
+              <button
+                className="top-bar-avatar"
+                onClick={() => setDropdownOpen(v => !v)}
+                id="btn-profile"
+                title={user?.nome || 'Perfil'}
+              >
+                {user?.nome ? user.nome.charAt(0).toUpperCase() : '👤'}
+              </button>
+              {dropdownOpen && (
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+                  background: 'var(--color-bg-card, #fff)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-md, 8px)',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                  minWidth: 180, zIndex: 200,
+                  overflow: 'hidden',
+                }}>
+                  {user?.nome && (
+                    <div style={{ padding: '0.6rem 1rem', borderBottom: '1px solid var(--color-border)', fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
+                      {user.nome}
+                    </div>
+                  )}
+                  <button
+                    style={{ display: 'block', width: '100%', padding: '0.65rem 1rem', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}
+                    onClick={() => { setDropdownOpen(false); setSwitcherOpen(true); }}
+                  >
+                    🔄 Trocar perfil
+                  </button>
+                  <button
+                    style={{ display: 'block', width: '100%', padding: '0.65rem 1rem', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--color-danger)' }}
+                    onClick={handleLogout}
+                  >
+                    🚪 Sair
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
-            <button 
-              className="btn btn-outline btn-sm hide-mobile" 
-              onClick={() => navigate('/login')} 
+            <button
+              className="btn btn-outline btn-sm hide-mobile"
+              onClick={() => navigate('/login')}
               id="btn-login-header"
               style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
             >
@@ -126,5 +181,8 @@ export default function TopBar({
         </div>
       </div>
     </header>
+
+    <ProfileSwitcherModal isOpen={switcherOpen} onClose={() => setSwitcherOpen(false)} />
+    </>
   );
 }

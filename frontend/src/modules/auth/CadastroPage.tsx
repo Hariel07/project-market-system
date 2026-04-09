@@ -213,7 +213,7 @@ export default function CadastroPage() {
       } else {
         if (role === 'comerciante') navigate('/comerciante');
         else if (role === 'entregador') navigate('/entregador');
-        else navigate('/cliente');
+        else navigate('/');
       }
       
     } catch (error: any) {
@@ -488,7 +488,7 @@ export default function CadastroPage() {
               type="button"
               className="btn btn-ghost"
               style={{ padding: '0.4rem 0.8rem', fontSize: '0.9rem' }}
-              onClick={() => navigate('/cliente')}
+              onClick={() => navigate('/')}
             >
               👀 Continuar como Visitante
             </button>

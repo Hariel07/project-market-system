@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x", "linux-musl", "linux-musl-openssl-3.0.x"]
 }
 
@@ -8,19 +8,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ----------------------------------------------------------------------
+// ======================================================================
 // ENUMS
-// ----------------------------------------------------------------------
+// ======================================================================
 
 enum Role {
-  ADMIN       // Nível 6: Plataforma Global
-  DONO        // Nível 5: Proprietário do Comércio
-  GERENTE     // Nível 4: Gerente da Loja
-  ESTOQUE     // Nível 3: Repositor/Estoquista
-  CAIXA       // Nível 2: Operador PDV
-  GARCOM      // Nível 1: Atendimento
-  ENTREGADOR  // Externo: Faz as entregas
-  CLIENTE     // Externo: Compra pelo App
+  ADMIN          // Nível 7: Plataforma Global
+  DONO           // Nível 6: Proprietário do Comércio
+  GERENTE        // Nível 5: Gerente da Loja
+  ESTOQUE        // Nível 4: Repositor/Estoquista
+  CAIXA          // Nível 3: Operador PDV
+  AJUDANTE_GERAL // Nível 2: Auxiliar sem acesso a financeiro/estoque
+  GARCOM         // Nível 1: Atendimento (salão/restaurante)
+  ENTREGADOR     // Externo: Faz as entregas
+  CLIENTE        // Externo: Compra pelo App
 }
 
 enum OrderStatus {
@@ -50,16 +51,50 @@ enum TipoMovimentoCaixa {
   FECHAMENTO
 }
 
-// ----------------------------------------------------------------------
-// MODELOS GLOBAIS
-// ----------------------------------------------------------------------
+// Tipos de carteiras financeiras da plataforma
+enum TipoContaFinanceira {
+  COMERCIO    // Carteira de um comércio
+  ENTREGADOR  // Carteira de um entregador
+  PLATAFORMA  // Conta centralizada da plataforma (Admin)
+}
+
+// Tipos de movimentação no ledger financeiro
+enum TipoTransacao {
+  PAGAMENTO_PEDIDO      // Cliente paga o comercio
+  REPASSE_ENTREGADOR    // Comercio/plataforma repassa frete ao entregador
+  PAGAMENTO_ASSINATURA  // Comercio paga mensalidade à plataforma
+  DEPOSITO_CONTA        // Depósito manual em conta
+  SAQUE                 // Saque da conta
+  ESTORNO               // Devolução de valor
+  AJUSTE_ADMIN          // Ajuste manual pelo admin
+}
+
+enum StatusTransacao {
+  PENDENTE
+  PROCESSADO
+  FALHOU
+  ESTORNADO
+}
+
+enum StatusPagamentoAssinatura {
+  PENDENTE
+  PAGO
+  ATRASADO
+  CANCELADO
+}
+
+// ======================================================================
+// MODELOS GLOBAIS DE PLATAFORMA
+// ======================================================================
 
 model PlatformConfig {
   id                    String   @id @default("singleton")
   nomeApp               String   @default("Market System")
-  logoUrl               String?  // Logo que aparece ao lado do nome
+  logoUrl               String?
   assinaturaObrigatoria Boolean  @default(false)
-  modoManutencao        Boolean  @default(false) // Novo campo
+  modoManutencao        Boolean  @default(false)
+  // Dias de aviso padrão para vencimento de produtos (pode ser sobrescrito por Commerce)
+  alertaValidadeDiasPadrao Int   @default(7)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 }
@@ -80,25 +115,25 @@ model SubscriptionPlan {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  comercios    Commerce[]
+  comercios             Commerce[]
+  pagamentosAssinatura  PagamentoAssinatura[]
 }
 
-// ----------------------------------------------------------------------
+// ======================================================================
 // GESTÃO DE IDENTIDADE (SSO)
-// ----------------------------------------------------------------------
+// ======================================================================
 
 model Account {
   id              String   @id @default(uuid())
   cpf             String   @unique
   email           String   @unique
-  senha           String   // Bcrypt hash
-  nomeCompleto    String   // Nome real da pessoa para todos os perfis
+  senha           String
+  nomeCompleto    String
   dataNascimento  DateTime?
   telefone        String?
   ativo           Boolean  @default(true)
-  isFake          Boolean  @default(false) // Para identificar contas de teste rápido
-  
-  // Soft Delete
+  isFake          Boolean  @default(false)
+
   isDeleted       Boolean   @default(false)
   deletedAt       DateTime?
 
@@ -106,7 +141,7 @@ model Account {
   updatedAt DateTime @updatedAt
 
   perfis    User[]
-  enderecos Address[] // Endereços vinculados à pessoa, não ao perfil
+  enderecos Address[]
 }
 
 model User {
@@ -114,31 +149,33 @@ model User {
   accountId String
   account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
-  nome      String?  // Nome de exibição (opcional)
+  nome      String?
   role      Role     @default(CLIENTE)
   ativo     Boolean  @default(true)
-  
-  // Soft Delete
-  isDeleted       Boolean   @default(false)
-  deletedAt       DateTime?
+
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relações
-  comercioId     String?
-  comercio       Commerce?  @relation(fields: [comercioId], references: [id])
-  pedidosCliente Order[]    @relation("ClientePedidos")
-  entregas       Delivery[] @relation("EntregadorDeliveries")
-  chatsEntregador Chat[] @relation("EntregadorChats")
-  chatsCliente   Chat[] @relation("ClienteChats")
-  mensagensChat  ChatMessage[]
+  comercioId      String?
+  comercio        Commerce?  @relation(fields: [comercioId], references: [id])
+
+  pedidosCliente  Order[]    @relation("ClientePedidos")
+  entregas        Delivery[] @relation("EntregadorDeliveries")
+  chatsEntregador Chat[]     @relation("EntregadorChats")
+  chatsCliente    Chat[]     @relation("ClienteChats")
+  mensagensChat   ChatMessage[]
   ratingsEntregador Rating[] @relation("EntregadorRatings")
-  ratingsCliente Rating[] @relation("ClienteRatings")
-  notificacoes   Notification[]
+  ratingsCliente  Rating[]   @relation("ClienteRatings")
+  notificacoes    Notification[]
   aberturasChaixa AberturaCaixa[]
   movimentosCaixa MovimentoCaixa[]
   enderecos       Address[]
+
+  // Financeiro
+  contaFinanceira ContaFinanceira? // 1:1 para entregadores
 }
 
 model Address {
@@ -147,22 +184,23 @@ model Address {
   account         Account? @relation(fields: [accountId], references: [id], onDelete: Cascade)
   userId          String?
   comercioId      String?
-  
+
   logradouro      String
   numero          String?
   complemento     String?
   bairro          String?
   cidade          String?
   estado          String?
+  pais            String?  @default("BR")
   cep             String?
   pontoReferencia String?
-  
+
   rotulo          String   @default("CASA")
   icone           String   @default("🏠")
-  
+
   lat             Float?
   lng             Float?
-  
+
   isPrincipal     Boolean  @default(false)
 
   createdAt       DateTime @default(now())
@@ -176,136 +214,182 @@ model Address {
   @@index([comercioId])
 }
 
-model Commerce {
-  id          String   @id @default(uuid())
-  razaoSocial String
-  nomeFantasia String
-  cnpj        String   @unique
-  segmento    String   // Mercado, Restaurante, Farmácia, etc.
-  logoUrl     String?  
-  ativo       Boolean  @default(false)
-  planoAtual  String   @default("GRATIS")
-  
-  // Relação com plano de assinatura
-  planoId     String?
-  plano       SubscriptionPlan? @relation(fields: [planoId], references: [id])
-  
-  // Endereço e Configs Básicas
-  taxaEntrega Float    @default(0.0)
-  tempoMedio  String?  // Ex: "30-45 min"
-  
-  // Status de Operação
-  isOpen             Boolean @default(true)
-  horarioAtendimento String? // Ex: "Seg à Sex: 08:00h às 18:00h"
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// ======================================================================
+// COMÉRCIO
+// ======================================================================
 
-  // Relações
-  enderecos   Address[]
-  usuarios    User[]
-  produtos    Product[]
-  pedidos     Order[]
-  categorias  Category[]
+model Commerce {
+  id           String  @id @default(uuid())
+  razaoSocial  String
+  nomeFantasia String
+  cnpj         String  @unique
+  segmento     String  // "Mercado", "Lanchonete", "Restaurante", etc.
+  logoUrl      String?
+  ativo        Boolean @default(false)
+  planoAtual   String  @default("GRATIS")
+
+  planoId      String?
+  plano        SubscriptionPlan? @relation(fields: [planoId], references: [id])
+
+  // Localização denormalizada para filtros rápidos sem JOIN
+  cidade       String?
+  estado       String?
+  pais         String?  @default("BR")
+  lat          Float?   // Coordenada central do comércio (para distância)
+  lng          Float?
+
+  // Configs operacionais
+  taxaEntrega        Float   @default(0.0)
+  tempoMedio         String? // "30-45 min"
+  isOpen             Boolean @default(true)
+  horarioAtendimento String?
+
+  // Configuração de alertas de estoque/validade
+  alertaValidadeDias    Int  @default(7)   // Avisar X dias antes do vencimento
+  estoqueMinimoPadrao   Int  @default(10)  // Qtd mínima padrão para alertas
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  enderecos    Address[]
+  usuarios     User[]
+  produtos     Product[]
+  pedidos      Order[]
+  categorias   Category[]
+  aberturasChaixa AberturaCaixa[]
+  movimentosCaixa MovimentoCaixa[]
+
+  // Financeiro
+  contaFinanceira      ContaFinanceira?
+  pagamentosAssinatura PagamentoAssinatura[]
+
+  @@index([cidade])
+  @@index([estado])
+  @@index([segmento])
+  @@index([ativo])
 }
 
-// ----------------------------------------------------------------------
+// ======================================================================
 // CATÁLOGO E PRODUTOS
-// ----------------------------------------------------------------------
+// ======================================================================
 
 model Category {
   id         String   @id @default(uuid())
   nome       String
   icone      String?
+  ordem      Int      @default(0)
+  ativo      Boolean  @default(true)
   comercioId String
   comercio   Commerce @relation(fields: [comercioId], references: [id])
   produtos   Product[]
+
+  @@index([comercioId])
 }
 
 model Product {
-  id            String   @id @default(uuid())
-  comercioId    String
-  categoriaId   String?
-  
-  nome          String
-  descricao     String?
-  precoVenda    Float
+  id              String   @id @default(uuid())
+  comercioId      String
+  categoriaId     String?
+
+  nome            String
+  descricao       String?
+  precoVenda      Float
   precoPromocional Float?
-  unidade       String   @default("UN") // UN, KG, L
-  imagemUrl     String?
-  
-  estoque       Float    @default(0)
-  isCombo       Boolean  @default(false)
-  ativo         Boolean  @default(true)
+  unidade         String   @default("UN") // UN, KG, L, ML, G, PCT
+  imagemUrl       String?
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  estoque         Float    @default(0)
+  estoqueMinimo   Float?   // Nível para alerta de estoque baixo (sobrescreve padrão do comércio)
+  isCombo         Boolean  @default(false)
+  ativo           Boolean  @default(true)
 
-  // Relações
-  comercio      Commerce @relation(fields: [comercioId], references: [id])
-  categoria     Category? @relation(fields: [categoriaId], references: [id])
-  itensPedido   OrderItem[]
+  // Validade (para produtos alimentícios e farmacêuticos)
+  dataValidade    DateTime?
+  // Dias de aviso antes do vencimento (null = usa o padrão do comércio)
+  alertaValidadeDias Int?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  comercio        Commerce  @relation(fields: [comercioId], references: [id])
+  categoria       Category? @relation(fields: [categoriaId], references: [id])
+  itensPedido     OrderItem[]
+
+  @@index([comercioId])
+  @@index([categoriaId])
+  @@index([dataValidade])
+  @@index([ativo])
 }
 
-// ----------------------------------------------------------------------
+// ======================================================================
 // PEDIDOS E ENTREGAS
-// ----------------------------------------------------------------------
+// ======================================================================
 
 model Order {
-  id            String   @id @default(uuid())
-  comercioId    String
-  clienteId     String
-  
-  status        OrderStatus @default(PENDENTE)
-  valorTotal    Float
-  taxaEntrega   Float       @default(0.0)
-  metodoPagto   PaymentMethod
+  id              String      @id @default(uuid())
+  comercioId      String
+  clienteId       String
 
-  observacoes   String?
-  enderecoEntrega String? // JSON ou string formatada
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  status          OrderStatus @default(PENDENTE)
+  valorTotal      Float
+  taxaEntrega     Float       @default(0.0)
+  metodoPagto     PaymentMethod
 
-  // Relações
-  comercio      Commerce @relation(fields: [comercioId], references: [id])
-  cliente       User     @relation("ClientePedidos", fields: [clienteId], references: [id])
-  itens         OrderItem[]
-  entrega       Delivery?
+  // Pagamento em dinheiro
+  troco           Float?      // Valor para troco (ex: cliente paga com R$50)
+  valorPago       Float?      // Valor efetivamente pago/confirmado
+
+  observacoes     String?
+  enderecoEntrega String?     // JSON serializado
+
+  // Link com transação financeira gerada ao confirmar pagamento
+  transacaoId     String?     @unique
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  comercio        Commerce @relation(fields: [comercioId], references: [id])
+  cliente         User     @relation("ClientePedidos", fields: [clienteId], references: [id])
+  itens           OrderItem[]
+  entrega         Delivery?
+  transacao       TransacaoFinanceira? @relation(fields: [transacaoId], references: [id])
+
+  @@index([comercioId])
+  @@index([clienteId])
+  @@index([status])
 }
 
 model OrderItem {
-  id          String   @id @default(uuid())
-  pedidoId    String
-  produtoId   String
-  quantidade  Float
+  id            String   @id @default(uuid())
+  pedidoId      String
+  produtoId     String
+  quantidade    Float
   precoUnitario Float
-  
-  createdAt   DateTime @default(now())
-  
-  pedido      Order    @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
-  produto     Product  @relation(fields: [produtoId], references: [id])
+
+  createdAt     DateTime @default(now())
+
+  pedido        Order   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  produto       Product @relation(fields: [produtoId], references: [id])
 }
 
 model Delivery {
   id              String   @id @default(uuid())
   pedidoId        String   @unique
   entregadorId    String?
-  
+
   status          String   @default("AGUARDANDO_COLETA")
   taxaRepasse     Float?
-  assinatura      String?  // Base64 da assinatura do cliente na entrega
+  assinatura      String?  // Base64 da assinatura do cliente
 
   coletadoEm      DateTime?
   entregueEm      DateTime?
 
-  // Relações
   pedido          Order         @relation(fields: [pedidoId], references: [id])
   entregador      User?         @relation("EntregadorDeliveries", fields: [entregadorId], references: [id])
   gpsLogs         DeliveryGPS[]
   chat            Chat?
   rating          Rating?
-  
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
@@ -324,112 +408,115 @@ model DeliveryGPS {
   @@index([deliveryId])
 }
 
-// CHAT E COMUNICAÇÃO
+// ======================================================================
+// COMUNICAÇÃO
+// ======================================================================
+
 model Chat {
   id                String   @id @default(uuid())
   entregaId         String   @unique
   entregadorId      String
   clienteId         String
-  
+
   ultimaMensagem    String?
   ultimaAtividadeEm DateTime?
-  
+
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-  
-  entrega           Delivery @relation(fields: [entregaId], references: [id], onDelete: Cascade)
-  entregador        User     @relation("EntregadorChats", fields: [entregadorId], references: [id])
-  cliente           User     @relation("ClienteChats", fields: [clienteId], references: [id])
+
+  entrega           Delivery    @relation(fields: [entregaId], references: [id], onDelete: Cascade)
+  entregador        User        @relation("EntregadorChats", fields: [entregadorId], references: [id])
+  cliente           User        @relation("ClienteChats", fields: [clienteId], references: [id])
   mensagens         ChatMessage[]
-  
+
   @@index([entregadorId])
   @@index([clienteId])
 }
 
 model ChatMessage {
-  id        String   @id @default(uuid())
-  chatId    String
+  id         String   @id @default(uuid())
+  chatId     String
   enviahoPor String   // "entregador" | "cliente"
-  userId    String
-  
-  conteudo  String
-  lido      Boolean  @default(false)
-  
-  createdAt DateTime @default(now())
-  
-  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  usuario   User     @relation(fields: [userId], references: [id])
-  
+  userId     String
+
+  conteudo   String
+  lido       Boolean  @default(false)
+
+  createdAt  DateTime @default(now())
+
+  chat       Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  usuario    User @relation(fields: [userId], references: [id])
+
   @@index([chatId])
   @@index([userId])
 }
 
-// NOTIFICAÇÕES
 model Notification {
   id        String   @id @default(uuid())
   userId    String
-  tipo      String   // "nova_entrega", "perto_destino", "mensagem", "rating"
+  tipo      String
   titulo    String
   corpo     String
   icone     String?
-  
+
   entregaId String?
-  dados     String?  // JSON com dados adicionais
-  
+  dados     String?  // JSON
+
   lido      Boolean  @default(false)
-  
+
   createdAt DateTime @default(now())
-  
-  usuario   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
+  usuario   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([lido])
 }
 
-// RATINGS E AVALIAÇÕES
 model Rating {
-  id            String   @id @default(uuid())
-  entregaId     String   @unique
-  entregadorId  String
-  clienteId     String
-  
-  estrelas      Int      // 1-5
-  comentario    String?
+  id                 String   @id @default(uuid())
+  entregaId          String   @unique
+  entregadorId       String
+  clienteId          String
+
+  estrelas           Int
+  comentario         String?
   respostaEntregador String?
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  entrega       Delivery @relation(fields: [entregaId], references: [id], onDelete: Cascade)
-  entregador    User     @relation("EntregadorRatings", fields: [entregadorId], references: [id])
-  cliente       User     @relation("ClienteRatings", fields: [clienteId], references: [id])
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  entrega            Delivery @relation(fields: [entregaId], references: [id], onDelete: Cascade)
+  entregador         User     @relation("EntregadorRatings", fields: [entregadorId], references: [id])
+  cliente            User     @relation("ClienteRatings", fields: [clienteId], references: [id])
 }
 
-// MOVIMENTO DE CAIXA
+// ======================================================================
+// CAIXA / PDV
+// ======================================================================
+
 model AberturaCaixa {
   id              String   @id @default(uuid())
   comercioId      String
-  pdvId           String?  // Opcional: se for PDV específico, senão é caixa geral
-  
-  status          String   @default("ABERTA")  // ABERTA, FECHADA
+  pdvId           String?
+
+  status          String   @default("ABERTA")  // ABERTA | FECHADA
   saldoInicial    Float    @default(0.0)
   saldoFinal      Float?
-  
+
   responsavelId   String
   responsavel     User     @relation(fields: [responsavelId], references: [id])
-  
+
   dataAbertura    DateTime @default(now())
   dataFechamento  DateTime?
-  
   observacoes     String?
-  
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  
-  // Relações
-  comercio        String   // Apenas para referência
+
+  // Relações corretas (bug da versão anterior corrigido)
+  comercio        Commerce       @relation(fields: [comercioId], references: [id])
   movimentos      MovimentoCaixa[]
-  
+
   @@index([comercioId])
   @@index([status])
 }
@@ -438,25 +525,110 @@ model MovimentoCaixa {
   id              String   @id @default(uuid())
   comercioId      String
   aberturaCaixaId String?
-  pdvId           String?  // Opcional: PDV específico
-  
+  pdvId           String?
+
   tipo            TipoMovimentoCaixa
   valor           Float    // Positivo = entrada, Negativo = saída
   descricao       String
-  
+
   responsavelId   String
   responsavel     User     @relation(fields: [responsavelId], references: [id])
-  
-  referencia      String?  // ID relacionado (pedido, nf, etc)
-  
+
+  referencia      String?  // ID externo (pedido, NF, etc.)
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  
+
   // Relações
+  comercio        Commerce       @relation(fields: [comercioId], references: [id])
   aberturaCaixa   AberturaCaixa? @relation(fields: [aberturaCaixaId], references: [id], onDelete: SetNull)
-  
+
   @@index([comercioId])
   @@index([tipo])
   @@index([aberturaCaixaId])
 }
 
+// ======================================================================
+// SISTEMA FINANCEIRO
+// ======================================================================
+
+// Carteira vinculada a um Comércio, Entregador ou à Plataforma
+model ContaFinanceira {
+  id             String              @id @default(uuid())
+  tipo           TipoContaFinanceira
+
+  // Exatamente uma das FKs abaixo é preenchida (ou nenhuma para PLATAFORMA)
+  comercioId     String?             @unique
+  userId         String?             @unique  // Para ENTREGADOR
+
+  saldo          Float               @default(0.0)
+  saldoBloqueado Float               @default(0.0)  // Em trânsito (aguardando confirmação)
+
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  comercio       Commerce? @relation(fields: [comercioId], references: [id])
+  usuario        User?     @relation(fields: [userId], references: [id])
+
+  transacoesOrigem  TransacaoFinanceira[] @relation("ContaOrigem")
+  transacoesDestino TransacaoFinanceira[] @relation("ContaDestino")
+  pagamentosAssinatura PagamentoAssinatura[]
+
+  @@index([tipo])
+}
+
+// Ledger imutável de toda movimentação financeira (auditoria)
+model TransacaoFinanceira {
+  id          String          @id @default(uuid())
+  tipo        TipoTransacao
+  status      StatusTransacao @default(PENDENTE)
+
+  origemId    String?         // ContaFinanceira de origem (null = dinheiro externo)
+  destinoId   String?         // ContaFinanceira de destino (null = saque externo)
+
+  valor       Float           // Sempre positivo; a direção é definida por origem/destino
+  descricao   String
+  metadata    Json?           // Dados extras (gateway, bandeira, NSU, etc.)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  origem      ContaFinanceira? @relation("ContaOrigem",  fields: [origemId],  references: [id])
+  destino     ContaFinanceira? @relation("ContaDestino", fields: [destinoId], references: [id])
+  // Relação reversa: Order.transacaoId aponta para este modelo
+  pedido      Order?
+
+  // Transações filho (ex: repasse ao entregador gerado pela transação do pedido)
+  parentId    String?
+  parent      TransacaoFinanceira?  @relation("TransacaoFilha", fields: [parentId], references: [id])
+  filhas      TransacaoFinanceira[] @relation("TransacaoFilha")
+
+  @@index([tipo])
+  @@index([status])
+  @@index([origemId])
+  @@index([destinoId])
+}
+
+// Histórico de cobranças mensais de assinatura
+model PagamentoAssinatura {
+  id          String                    @id @default(uuid())
+  comercioId  String
+  planoId     String
+  contaId     String?                   // ContaFinanceira usada para debitar
+
+  valor       Float
+  status      StatusPagamentoAssinatura @default(PENDENTE)
+  vencimento  DateTime
+  pagoEm      DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  comercio    Commerce         @relation(fields: [comercioId], references: [id])
+  plano       SubscriptionPlan @relation(fields: [planoId], references: [id])
+  conta       ContaFinanceira? @relation(fields: [contaId], references: [id])
+
+  @@index([comercioId])
+  @@index([status])
+  @@index([vencimento])
+}

@@ -175,7 +175,7 @@ export default function MercadoDetalhePage() {
                 >
                   <div
                     className="product-card-main"
-                    onClick={() => navigate(`/cliente/produto/${item.id}`)}
+                    onClick={() => navigate(`/produto/${item.id}`)}
                   >
                     <div className="product-card-img">
                       <span className="product-emoji">{emoji}</span>

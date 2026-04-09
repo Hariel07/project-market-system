@@ -4,7 +4,6 @@ import TopBar from '../../shared/components/TopBar';
 import { categoriasMock, formatPrice } from '../../data/mockData';
 import { api } from '../../lib/api';
 import './MercadosPage.css';
-import './MercadosPage.css';
 
 export default function MercadosPage() {
   const navigate = useNavigate();
@@ -15,14 +14,22 @@ export default function MercadosPage() {
   const [filtroCategoria, setFiltroCategoria] = useState(searchParams.get('categoria') || '');
   const [filtroAberto, setFiltroAberto] = useState(false);
   const [ordenar, setOrdenar] = useState<'avaliacao' | 'distancia' | 'entrega'>('avaliacao');
+  const [filtroCidade, setFiltroCidade] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('');
+  const [showGeoFilter, setShowGeoFilter] = useState(false);
 
   useEffect(() => {
     fetchComercios();
-  }, []);
+  }, [filtroCidade, filtroEstado]);
 
   const fetchComercios = async () => {
     try {
-      const { data } = await api.get('comercios/public');
+      setLoading(true);
+      const params: Record<string, string> = {};
+      if (filtroCidade.trim()) params.cidade = filtroCidade.trim();
+      if (filtroEstado.trim()) params.estado = filtroEstado.trim();
+      const query = new URLSearchParams(params).toString();
+      const { data } = await api.get(`comercios/public${query ? '?' + query : ''}`);
       setRealComercios(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Erro ao buscar lojas:', error);
@@ -121,6 +128,13 @@ export default function MercadosPage() {
                 🟢 Abertos agora
               </button>
 
+              <button
+                className={`filter-toggle ${showGeoFilter ? 'active' : ''}`}
+                onClick={() => setShowGeoFilter(v => !v)}
+              >
+                📍 Localização
+              </button>
+
               <select
                 className="filter-select"
                 value={ordenar}
@@ -132,6 +146,37 @@ export default function MercadosPage() {
                 <option value="entrega">🚚 Menor taxa</option>
               </select>
             </div>
+
+            {showGeoFilter && (
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="Cidade"
+                  value={filtroCidade}
+                  onChange={e => setFiltroCidade(e.target.value)}
+                  style={{ flex: 1, minWidth: 140 }}
+                  id="filtro-cidade"
+                />
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="Estado (ex: SP)"
+                  value={filtroEstado}
+                  onChange={e => setFiltroEstado(e.target.value)}
+                  style={{ flex: 1, minWidth: 100 }}
+                  id="filtro-estado"
+                />
+                {(filtroCidade || filtroEstado) && (
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => { setFiltroCidade(''); setFiltroEstado(''); }}
+                  >
+                    ✕ Limpar
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Results */}
@@ -149,7 +194,7 @@ export default function MercadosPage() {
               <div
                 key={store.id}
                 className={`store-list-card ${!store.aberto ? 'closed' : ''}`}
-                onClick={() => store.aberto && navigate(`/cliente/mercado/${store.id}`)}
+                onClick={() => store.aberto && navigate(`/mercado/${store.id}`)}
                 id={`mercado-${store.id}`}
                 style={{ 
                   filter: store.aberto ? 'none' : 'grayscale(100%) opacity(0.7)', 

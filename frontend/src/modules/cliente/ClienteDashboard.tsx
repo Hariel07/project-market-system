@@ -67,7 +67,7 @@ export default function ClienteDashboard() {
               <button
                 key={cat.id}
                 className="category-chip"
-                onClick={() => navigate(`/cliente/mercados?categoria=${cat.nome}`)}
+                onClick={() => navigate(`/mercados?categoria=${cat.nome}`)}
                 id={`cat-${cat.id}`}
               >
                 <span className="category-emoji">{cat.emoji}</span>
@@ -81,7 +81,7 @@ export default function ClienteDashboard() {
         <section className="container animate-fade-in-up delay-3">
           <div className="section-header">
             <h2 className="section-title">Perto de você</h2>
-            <button className="section-link" onClick={() => navigate('/cliente/mercados')}>
+            <button className="section-link" onClick={() => navigate('/mercados')}>
               Ver todos →
             </button>
           </div>
@@ -90,7 +90,7 @@ export default function ClienteDashboard() {
               <div
                 key={store.id}
                 className="store-card card"
-                onClick={() => navigate(`/cliente/mercado/${store.id}`)}
+                onClick={() => navigate(`/mercado/${store.id}`)}
                 id={`store-${store.id}`}
               >
                 <div className="store-card-logo">
@@ -124,7 +124,7 @@ export default function ClienteDashboard() {
           <section className="container animate-fade-in-up delay-4">
             <div className="section-header">
               <h2 className="section-title">Todos os comércios</h2>
-              <button className="section-link" onClick={() => navigate('/cliente/mercados')}>
+              <button className="section-link" onClick={() => navigate('/mercados')}>
                 Ver todos →
               </button>
             </div>
@@ -133,7 +133,7 @@ export default function ClienteDashboard() {
                 <div
                   key={store.id}
                   className={`store-card card ${!store.isOpen ? 'store-closed' : ''}`}
-                  onClick={() => navigate(`/cliente/mercado/${store.id}`)}
+                  onClick={() => navigate(`/mercado/${store.id}`)}
                   id={`store-extra-${store.id}`}
                 >
                   <div className="store-card-logo">

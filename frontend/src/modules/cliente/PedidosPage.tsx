@@ -56,7 +56,7 @@ export default function PedidosPage() {
 
   useEffect(() => {
     if (!localStorage.getItem('@MarketSystem:token')) {
-      navigate('/login?redirect=/cliente/pedidos');
+      navigate('/login?redirect=/pedidos');
       return;
     }
 
@@ -96,7 +96,7 @@ export default function PedidosPage() {
                   <div
                     key={pedido.id}
                     className="pedido-card pedido-card-active"
-                    onClick={() => navigate(`/cliente/pedido/${pedido.id}`)}
+                    onClick={() => navigate(`/pedido/${pedido.id}`)}
                     id={`pedido-${pedido.id}`}
                   >
                     <div className="pedido-card-top">
@@ -147,7 +147,7 @@ export default function PedidosPage() {
                 <div
                   key={pedido.id}
                   className="pedido-card"
-                  onClick={() => navigate(`/cliente/pedido/${pedido.id}`)}
+                  onClick={() => navigate(`/pedido/${pedido.id}`)}
                   id={`pedido-historico-${pedido.id}`}
                 >
                   <div className="pedido-card-top">
@@ -199,7 +199,7 @@ export default function PedidosPage() {
               <span className="empty-icon">📋</span>
               <h3>Nenhum pedido ainda</h3>
               <p>Seus pedidos aparecerão aqui</p>
-              <button className="btn btn-primary mt-6" onClick={() => navigate('/cliente/mercados')}>
+              <button className="btn btn-primary mt-6" onClick={() => navigate('/mercados')}>
                 Explorar mercados
               </button>
             </div>

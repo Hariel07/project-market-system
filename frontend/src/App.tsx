@@ -20,7 +20,6 @@ import PedidosPage from './modules/cliente/PedidosPage';
 import PedidoStatusPage from './modules/cliente/PedidoStatusPage';
 import PerfilPage from './modules/cliente/PerfilPage';
 import EnderecosPage from './modules/cliente/EnderecosPage';
-// Formulário de Endereço (Forçando atualização do cache do TS)
 import EnderecoFormPage from './modules/cliente/EnderecoFormPage';
 
 // Comerciante
@@ -32,6 +31,8 @@ import ComercianteItemForm from './modules/comerciante/ComercianteItemForm';
 import ComercianteConfig from './modules/comerciante/ComercianteConfig';
 import ComerciantePerfilConfig from './modules/comerciante/ComerciantePerfilConfig';
 import ComerciantePerfilPage from './modules/comerciante/ComerciantePerfilPage';
+import ComercianteCaixa from './modules/comerciante/ComercianteCaixa';
+import ComercianteFuncionarios from './modules/comerciante/ComercianteFuncionarios';
 
 // Entregador
 import EntregadorDashboard from './modules/entregador/EntregadorDashboard';
@@ -52,21 +53,40 @@ import AdminUsuarios from './modules/admin/AdminUsuarios';
 import AdminSistema from './modules/admin/AdminSistema';
 import AdminPerfilPage from './modules/admin/AdminPerfilPage';
 
+// Rotas reservadas para outros módulos (não são do cliente)
+const NON_CLIENTE_PREFIXES = ['/comerciante', '/entregador', '/admin', '/login', '/cadastro'];
+
+function isRotaCliente(pathname: string) {
+  return !NON_CLIENTE_PREFIXES.some(p => pathname.startsWith(p));
+}
+
+// Redireciona a raiz '/' com base no perfil do usuário logado
+function RootRedirect() {
+  const userStr = localStorage.getItem('@MarketSystem:user');
+  if (!userStr) return <ClienteDashboard />;
+  try {
+    const user = JSON.parse(userStr);
+    const role = user?.role;
+    if (role === 'DONO' || role === 'GERENTE' || role === 'CAIXA' || role === 'ESTOQUE' || role === 'AJUDANTE_GERAL' || role === 'GARCOM') {
+      return <Navigate to="/comerciante" replace />;
+    }
+    if (role === 'ENTREGADOR') return <Navigate to="/entregador" replace />;
+    if (role === 'ADMIN') return <Navigate to="/admin" replace />;
+  } catch {}
+  return <ClienteDashboard />;
+}
+
 function AppRoutes() {
   const location = useLocation();
   const config = useAppConfig();
-  const isClienteRoute = location.pathname.startsWith('/cliente');
 
-  // Lógica de Manutenção: Bloqueia se ON e usuário não for ADMIN
   const userStr = localStorage.getItem('@MarketSystem:user');
   let isAdmin = false;
   try {
     const user = userStr ? JSON.parse(userStr) : null;
-    // Checa role no objeto ou busca direto se for conta de admin
-    isAdmin = user?.role === 'ADMIN' || localStorage.getItem('userRole') === 'ADMIN';
-  } catch (e) {}
+    isAdmin = user?.role === 'ADMIN';
+  } catch {}
 
-  // Visitantes também são bloqueados
   if (config.modoManutencao && !isAdmin && !location.pathname.includes('/admin') && location.pathname !== '/login') {
     return <MaintenancePage />;
   }
@@ -74,24 +94,25 @@ function AppRoutes() {
   return (
     <>
       <Routes>
+        {/* Raiz inteligente */}
+        <Route path="/" element={<RootRedirect />} />
+
         {/* Auth */}
-        <Route path="/" element={<Navigate to="/cliente" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/cadastro" element={<CadastroPage />} />
 
-        {/* Cliente */}
-        <Route path="/cliente" element={<ClienteDashboard />} />
-        <Route path="/cliente/mercados" element={<MercadosPage />} />
-        <Route path="/cliente/mercado/:id" element={<MercadoDetalhePage />} />
-        <Route path="/cliente/produto/:id" element={<ProdutoPage />} />
-        <Route path="/cliente/carrinho" element={<CarrinhoPage />} />
-        <Route path="/cliente/checkout" element={<CheckoutPage />} />
-        <Route path="/cliente/pedidos" element={<PedidosPage />} />
-        <Route path="/cliente/pedido/:id" element={<PedidoStatusPage />} />
-        <Route path="/cliente/perfil" element={<PerfilPage />} />
-        <Route path="/cliente/enderecos" element={<EnderecosPage />} />
-        <Route path="/cliente/enderecos/novo" element={<EnderecoFormPage />} />
-        <Route path="/cliente/enderecos/editar/:id" element={<EnderecoFormPage />} />
+        {/* Cliente — sem prefixo /cliente */}
+        <Route path="/mercados" element={<MercadosPage />} />
+        <Route path="/mercado/:id" element={<MercadoDetalhePage />} />
+        <Route path="/produto/:id" element={<ProdutoPage />} />
+        <Route path="/carrinho" element={<CarrinhoPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/pedidos" element={<PedidosPage />} />
+        <Route path="/pedido/:id" element={<PedidoStatusPage />} />
+        <Route path="/perfil" element={<PerfilPage />} />
+        <Route path="/enderecos" element={<EnderecosPage />} />
+        <Route path="/enderecos/novo" element={<EnderecoFormPage />} />
+        <Route path="/enderecos/editar/:id" element={<EnderecoFormPage />} />
 
         {/* Comerciante */}
         <Route path="/comerciante" element={<ComercianteDashboard />} />
@@ -101,6 +122,8 @@ function AppRoutes() {
         <Route path="/comerciante/catalogo/editar/:id" element={<ComercianteItemForm />} />
         <Route path="/comerciante/estoque" element={<ComercianteEstoque />} />
         <Route path="/comerciante/item/:id" element={<ComercianteItemForm />} />
+        <Route path="/comerciante/caixa" element={<ComercianteCaixa />} />
+        <Route path="/comerciante/equipe" element={<ComercianteFuncionarios />} />
         <Route path="/comerciante/config" element={<ComercianteConfig />} />
         <Route path="/comerciante/config/perfil" element={<ComerciantePerfilConfig />} />
         <Route path="/comerciante/perfil" element={<ComerciantePerfilPage />} />
@@ -116,7 +139,7 @@ function AppRoutes() {
         <Route path="/entregador/preferencias" element={<PreferenciasPage />} />
         <Route path="/entregador/suporte" element={<SuportePage />} />
 
-        {/* Admin Platform */}
+        {/* Admin */}
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/comercios" element={<AdminComercios />} />
         <Route path="/admin/planos" element={<AdminPlanos />} />
@@ -125,23 +148,18 @@ function AppRoutes() {
         <Route path="/admin/perfil" element={<AdminPerfilPage />} />
       </Routes>
 
-      {/* Client specific UI */}
-      {isClienteRoute && (
-        <>
-          {/* Removemos o modal de localização a pedido para uso orgânico nativo */}
-          <BottomNav />
-        </>
-      )}
+      {/* BottomNav apenas nas rotas do cliente */}
+      {isRotaCliente(location.pathname) && <BottomNav />}
     </>
   );
 }
 
 export default function App() {
   return (
-    <BrowserRouter 
-      future={{ 
-        v7_startTransition: true, 
-        v7_relativeSplatPath: true 
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
       }}
     >
       <CartProvider>

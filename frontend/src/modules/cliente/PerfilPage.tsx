@@ -21,7 +21,7 @@ export default function PerfilPage() {
     const userStr = localStorage.getItem('@MarketSystem:user');
 
     if (!token || !userStr) {
-      navigate('/login?redirect=/cliente/perfil');
+      navigate('/login?redirect=/perfil');
       return;
     }
 
@@ -98,7 +98,7 @@ export default function PerfilPage() {
                 id={`menu-${item.label.toLowerCase()}`}
                 onClick={() => {
                   if (item.label === 'Endereços') {
-                    navigate('/cliente/enderecos');
+                    navigate('/enderecos');
                   }
                 }}
               >

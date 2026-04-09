@@ -71,7 +71,7 @@ export default function EnderecosPage() {
           
           <button 
             className="btn-adicionar-endereco animate-fade-in-up" 
-            onClick={() => navigate('/cliente/enderecos/novo')}
+            onClick={() => navigate('/enderecos/novo')}
           >
             <span className="plus-icon">+</span> 
             Adicionar Novo Endereço
@@ -94,7 +94,7 @@ export default function EnderecosPage() {
                 <div 
                   key={end.id} 
                   className={`endereco-card-premium animate-fade-in-up delay-${Math.min(index + 1, 5)} ${end.isPrincipal ? 'principal' : ''}`}
-                  onClick={() => navigate(`/cliente/enderecos/editar/${end.id}`)}
+                  onClick={() => navigate(`/enderecos/editar/${end.id}`)}
                 >
                   {end.isPrincipal && (
                     <div className="badge-principal">Padrão</div>

@@ -7,26 +7,20 @@ import {
   criarProduto,
   atualizarProduto,
   deletarProduto,
+  listarVencendo,
 } from '../controllers/produtos.controller.js';
 
 const router = Router();
 
-// Todas as rotas de produtos exigem autenticação
 router.use(authMiddleware);
 
-// GET    /api/produtos          → Listar (DONO, GERENTE, ESTOQUE, CAIXA)
-router.get('/', roleMiddleware('DONO', 'GERENTE', 'ESTOQUE', 'CAIXA'), listarProdutos);
+// Rota específica antes do /:id para não ser interceptada
+router.get('/vencendo', roleMiddleware('ADMIN', 'DONO', 'GERENTE', 'ESTOQUE'), listarVencendo);
 
-// GET    /api/produtos/:id      → Buscar um (DONO, GERENTE, ESTOQUE, CAIXA)
-router.get('/:id', roleMiddleware('DONO', 'GERENTE', 'ESTOQUE', 'CAIXA'), buscarProduto);
-
-// POST   /api/produtos          → Criar (DONO, GERENTE)
-router.post('/', roleMiddleware('DONO', 'GERENTE'), criarProduto);
-
-// PUT    /api/produtos/:id      → Atualizar (DONO, GERENTE, ESTOQUE)
-router.put('/:id', roleMiddleware('DONO', 'GERENTE', 'ESTOQUE'), atualizarProduto);
-
-// DELETE /api/produtos/:id      → Deletar (DONO apenas)
-router.delete('/:id', roleMiddleware('DONO'), deletarProduto);
+router.get('/',    roleMiddleware('ADMIN', 'DONO', 'GERENTE', 'ESTOQUE', 'CAIXA'), listarProdutos);
+router.get('/:id', roleMiddleware('ADMIN', 'DONO', 'GERENTE', 'ESTOQUE', 'CAIXA'), buscarProduto);
+router.post('/',   roleMiddleware('ADMIN', 'DONO', 'GERENTE', 'ESTOQUE'), criarProduto);
+router.put('/:id', roleMiddleware('ADMIN', 'DONO', 'GERENTE', 'ESTOQUE'), atualizarProduto);
+router.delete('/:id', roleMiddleware('ADMIN', 'DONO', 'GERENTE'), deletarProduto);
 
 export default router;

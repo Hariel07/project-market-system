@@ -91,7 +91,7 @@ export default function ProdutoPage() {
             {/* Store info */}
             <div
               className="produto-store-info"
-              onClick={() => navigate(`/cliente/mercado/${comercio.id}`)}
+              onClick={() => navigate(`/mercado/${comercio.id}`)}
             >
               <span className="produto-store-logo">{comercio.logo}</span>
               <div>

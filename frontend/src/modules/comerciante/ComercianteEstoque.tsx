@@ -15,9 +15,22 @@ interface Produto {
   categoria: { id: string; nome: string } | null;
 }
 
+interface ProdutoVencendo {
+  id: string;
+  nome: string;
+  dataValidade: string;
+  diasRestantes: number;
+  vencido: boolean;
+  estoque: number;
+  unidade: string;
+  categoria: { nome: string } | null;
+}
+
 export default function ComercianteEstoque() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<'visao' | 'movimentos' | 'entrada'>('visao');
+  const [tab, setTab] = useState<'visao' | 'validades' | 'movimentos' | 'entrada'>('visao');
+  const [produtosVencendo, setProdutosVencendo] = useState<ProdutoVencendo[]>([]);
+  const [loadingValidades, setLoadingValidades] = useState(false);
   const [search, setSearch] = useState('');
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +39,22 @@ export default function ComercianteEstoque() {
   useEffect(() => {
     fetchProdutos();
   }, []);
+
+  const fetchValidades = async () => {
+    try {
+      setLoadingValidades(true);
+      const res = await api.get('produtos/vencendo');
+      setProdutosVencendo(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      setProdutosVencendo([]);
+    } finally {
+      setLoadingValidades(false);
+    }
+  };
+
+  useEffect(() => {
+    if (tab === 'validades') fetchValidades();
+  }, [tab]);
 
   const fetchProdutos = async () => {
     try {
@@ -108,6 +137,14 @@ export default function ComercianteEstoque() {
       <div className="estoque-tabs animate-fade-in-up">
         <button className={`estoque-tab ${tab === 'visao' ? 'active' : ''}`} onClick={() => setTab('visao')}>
           📊 Visão geral
+        </button>
+        <button className={`estoque-tab ${tab === 'validades' ? 'active' : ''}`} onClick={() => setTab('validades')}>
+          📅 Validades
+          {produtosVencendo.some(p => p.vencido || p.diasRestantes <= 3) && (
+            <span style={{ marginLeft: '0.4rem', background: 'var(--color-danger)', color: '#fff', borderRadius: '999px', padding: '0 6px', fontSize: '0.7rem', fontWeight: 700 }}>
+              {produtosVencendo.filter(p => p.vencido || p.diasRestantes <= 3).length}
+            </span>
+          )}
         </button>
         <button className={`estoque-tab ${tab === 'movimentos' ? 'active' : ''}`} onClick={() => setTab('movimentos')}>
           📜 Movimentações
@@ -192,6 +229,65 @@ export default function ComercianteEstoque() {
             </div>
           )}
         </>
+      )}
+
+      {/* Tab: Validades */}
+      {tab === 'validades' && (
+        <div className="animate-fade-in-up delay-1">
+          {loadingValidades ? (
+            <div className="empty-state" style={{ padding: '3rem' }}>
+              <span className="empty-icon"><span className="spinner" /></span>
+              <h3>Verificando validades...</h3>
+            </div>
+          ) : produtosVencendo.length === 0 ? (
+            <div className="empty-state" style={{ padding: '3rem' }}>
+              <span className="empty-icon">✅</span>
+              <h3>Tudo em ordem!</h3>
+              <p style={{ color: 'var(--color-text-secondary)' }}>Nenhum produto vencido ou próximo do vencimento.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              {produtosVencendo.map(p => {
+                const urgente = p.vencido || p.diasRestantes <= 3;
+                const alerta = !p.vencido && p.diasRestantes <= 7;
+                const bgColor = p.vencido
+                  ? 'rgba(var(--color-danger-rgb, 220,38,38), 0.08)'
+                  : alerta || urgente
+                    ? 'rgba(var(--color-warning-rgb, 245,158,11), 0.08)'
+                    : undefined;
+
+                return (
+                  <div
+                    key={p.id}
+                    className="card"
+                    style={{ padding: 'var(--space-4)', background: bgColor, borderLeft: `4px solid ${p.vencido ? 'var(--color-danger)' : urgente || alerta ? 'var(--color-warning, #f59e0b)' : 'var(--color-success)'}` }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+                          <span style={{ fontWeight: 700 }}>{p.nome}</span>
+                          {p.vencido && <span className="badge badge-danger">Vencido</span>}
+                          {!p.vencido && urgente && <span className="badge badge-danger">{p.diasRestantes}d restantes</span>}
+                          {!p.vencido && !urgente && alerta && <span className="badge badge-warning">{p.diasRestantes}d restantes</span>}
+                          {!p.vencido && !urgente && !alerta && <span className="badge badge-success">{p.diasRestantes}d restantes</span>}
+                        </div>
+                        <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginTop: '0.2rem' }}>
+                          {p.categoria?.nome || 'Sem categoria'} • Estoque: {p.estoque} {p.unidade} • Vence: {new Date(p.dataValidade).toLocaleDateString('pt-BR')}
+                        </div>
+                      </div>
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => navigate(`/comerciante/catalogo/editar/${p.id}`)}
+                      >
+                        ✏️ Editar
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Tab: Movimentações — ainda usa mock (será integrado quando módulo de pedidos existir) */}

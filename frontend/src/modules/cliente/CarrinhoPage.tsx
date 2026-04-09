@@ -23,7 +23,7 @@ export default function CarrinhoPage() {
               <p>Adicione itens de um mercado para começar</p>
               <button
                 className="btn btn-primary btn-lg mt-6"
-                onClick={() => navigate('/cliente/mercados')}
+                onClick={() => navigate('/mercados')}
               >
                 Explorar mercados
               </button>
@@ -114,9 +114,9 @@ export default function CarrinhoPage() {
                 className="btn btn-primary btn-lg flex-1"
                 onClick={() => {
                   if (localStorage.getItem('@MarketSystem:token')) {
-                    navigate('/cliente/checkout');
+                    navigate('/checkout');
                   } else {
-                    navigate('/login?redirect=/cliente/checkout');
+                    navigate('/login?redirect=/checkout');
                   }
                 }}
                 id="btn-checkout"

@@ -33,6 +33,7 @@ export default function CheckoutPage() {
   const [enderecos, setEnderecos] = useState<Endereco[]>([]);
   const [enderecoSelecionado, setEnderecoSelecionado] = useState<Endereco | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [troco, setTroco] = useState('');
   const [erro, setErro] = useState<string | null>(null);
 
   const [comercio, setComercio] = useState<{ taxaEntrega: number } | null>(null);
@@ -42,12 +43,12 @@ export default function CheckoutPage() {
     const user = userStr ? JSON.parse(userStr) : null;
 
     if (!localStorage.getItem('@MarketSystem:token') || !user) {
-      navigate('/login?redirect=/cliente/checkout');
+      navigate('/login?redirect=/checkout');
       return;
     }
     if (user.role !== 'CLIENTE') {
       alert('Apenas clientes podem fazer compras.');
-      navigate('/cadastro?role=cliente&redirect=/cliente/checkout');
+      navigate('/cadastro?role=cliente&redirect=/checkout');
       return;
     }
 
@@ -108,7 +109,7 @@ export default function CheckoutPage() {
     try {
       const res: any = await api.post('pedidos', payload);
       clearCart();
-      navigate(`/cliente/pedido/${res.data.id}`);
+      navigate(`/pedido/${res.data.id}`);
     } catch (err: any) {
       const msg = err?.response?.data?.error || 'Erro ao criar pedido. Tente novamente.';
       setErro(msg);
@@ -117,7 +118,7 @@ export default function CheckoutPage() {
   };
 
   if (items.length === 0 && !processing) {
-    navigate('/cliente/carrinho');
+    navigate('/carrinho');
     return null;
   }
 
@@ -135,7 +136,7 @@ export default function CheckoutPage() {
                 <p className="text-secondary">Nenhum endereço cadastrado.</p>
                 <button
                   className="btn btn-outline btn-sm mt-2"
-                  onClick={() => navigate('/cliente/enderecos/novo')}
+                  onClick={() => navigate('/enderecos/novo')}
                 >
                   + Adicionar endereço
                 </button>
@@ -163,7 +164,7 @@ export default function CheckoutPage() {
                 ))}
                 <button
                   className="btn btn-ghost btn-sm text-primary mt-1"
-                  onClick={() => navigate('/cliente/enderecos/novo')}
+                  onClick={() => navigate('/enderecos/novo')}
                 >
                   + Novo endereço
                 </button>
@@ -205,6 +206,30 @@ export default function CheckoutPage() {
                 </button>
               ))}
             </div>
+
+            {/* Campo de troco — só aparece quando DINHEIRO está selecionado */}
+            {formaPagamento === 'dinheiro' && (
+              <div className="input-group" style={{ marginTop: '1rem' }}>
+                <label htmlFor="troco-input" style={{ fontWeight: 600, display: 'block', marginBottom: '0.4rem' }}>
+                  💵 Precisa de troco para quanto?
+                </label>
+                <input
+                  id="troco-input"
+                  type="number"
+                  className="input"
+                  placeholder={`Ex: 50,00 (total: ${(subtotal + (comercio?.taxaEntrega ?? 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})`}
+                  min={0}
+                  step="0.01"
+                  value={troco}
+                  onChange={e => setTroco(e.target.value)}
+                />
+                {troco && parseFloat(troco) > 0 && (
+                  <small style={{ color: 'var(--color-text-secondary)', marginTop: '0.25rem', display: 'block' }}>
+                    Troco: {(parseFloat(troco) - (subtotal + (comercio?.taxaEntrega ?? 0))).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </small>
+                )}
+              </div>
+            )}
           </section>
 
           {/* Resumo */}

@@ -16,6 +16,9 @@ import chatRoutes from './routes/chat.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import ratingRoutes from './routes/rating.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import caixaRoutes from './routes/caixa.routes.js';
+import funcionariosRoutes from './routes/funcionarios.routes.js';
+import financeiroRoutes from './routes/financeiro.routes.js';
 import { maintenanceMiddleware } from './middlewares/maintenance.middleware.js';
 
 dotenv.config();
@@ -76,6 +79,10 @@ app.use('/api/pedidos', pedidosRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/notificacoes', notificationRoutes);
 app.use('/api/avaliacoes', ratingRoutes);
+
+app.use('/api/caixa', caixaRoutes);
+app.use('/api/funcionarios', funcionariosRoutes);
+app.use('/api/financeiro', financeiroRoutes);
 
 // Rotas de Planos e Config (públicas + admin)
 app.use('/api', planosRoutes);
