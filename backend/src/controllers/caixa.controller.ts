@@ -50,7 +50,7 @@ export const listarMovimentos = async (req: Request, res: Response) => {
 export const criarMovimento = async (req: Request, res: Response) => {
   try {
     const { comercioId, pdvId, tipo, valor, descricao, referencia } = req.body;
-    const userId = (req as any).userId;
+    const userId = req.user!.id;
 
     if (!comercioId || !tipo || valor === undefined || !descricao) {
       return res.status(400).json({ error: 'Campos obrigatórios: comercioId, tipo, valor, descricao' });
@@ -85,7 +85,7 @@ export const criarMovimento = async (req: Request, res: Response) => {
 
 export const atualizarMovimento = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { valor, descricao } = req.body;
 
     const movimento = await prisma.movimentoCaixa.update({
@@ -106,7 +106,7 @@ export const atualizarMovimento = async (req: Request, res: Response) => {
 
 export const deletarMovimento = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     await prisma.movimentoCaixa.delete({ where: { id } });
     res.json({ msg: 'Movimento deletado com sucesso' });
@@ -121,7 +121,7 @@ export const deletarMovimento = async (req: Request, res: Response) => {
 export const abrirCaixa = async (req: Request, res: Response) => {
   try {
     const { comercioId, pdvId, saldoInicial, observacoes } = req.body;
-    const userId = (req as any).userId;
+    const userId = req.user!.id;
 
     // Verificar se há caixa aberta
     const caixaAberta = await (prisma.aberturaCaixa as any).findFirst({
@@ -157,6 +157,12 @@ export const abrirCaixa = async (req: Request, res: Response) => {
       },
     });
 
+    // Marcar loja como aberta
+    await prisma.commerce.update({
+      where: { id: comercioId },
+      data: { isOpen: true },
+    });
+
     res.status(201).json(aberturaCaixa);
   } catch (error) {
     console.error('Erro ao abrir caixa:', error);
@@ -166,9 +172,9 @@ export const abrirCaixa = async (req: Request, res: Response) => {
 
 export const fecharCaixa = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { saldoFinal, observacoes } = req.body;
-    const userId = (req as any).userId;
+    const userId = req.user!.id;
 
     const aberturaCaixa = await (prisma.aberturaCaixa as any).update({
       where: { id },
@@ -202,6 +208,12 @@ export const fecharCaixa = async (req: Request, res: Response) => {
         },
       });
     }
+
+    // Marcar loja como fechada
+    await prisma.commerce.update({
+      where: { id: aberturaCaixa.comercioId },
+      data: { isOpen: false },
+    });
 
     res.json(aberturaCaixa);
   } catch (error) {
