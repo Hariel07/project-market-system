@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { prisma } from '../lib/prisma';
+import { prisma } from '../lib/prisma.js';
 import { TipoMovimentoCaixa } from '@prisma/client';
 
 // ========== MOVIMENTO DE CAIXA ==========
@@ -124,7 +124,7 @@ export const abrirCaixa = async (req: Request, res: Response) => {
     const userId = (req as any).userId;
 
     // Verificar se há caixa aberta
-    const caixaAberta = await prisma.aberturaCaixa.findFirst({
+    const caixaAberta = await (prisma.aberturaCaixa as any).findFirst({
       where: { comercioId, status: 'ABERTA', pdvId: pdvId || undefined },
     });
 
@@ -132,7 +132,7 @@ export const abrirCaixa = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Já existe um caixa aberto para este PDV' });
     }
 
-    const aberturaCaixa = await prisma.aberturaCaixa.create({
+    const aberturaCaixa = await (prisma.aberturaCaixa as any).create({
       data: {
         comercioId,
         pdvId,
@@ -170,7 +170,7 @@ export const fecharCaixa = async (req: Request, res: Response) => {
     const { saldoFinal, observacoes } = req.body;
     const userId = (req as any).userId;
 
-    const aberturaCaixa = await prisma.aberturaCaixa.update({
+    const aberturaCaixa = await (prisma.aberturaCaixa as any).update({
       where: { id },
       data: {
         status: 'FECHADA',
@@ -182,9 +182,9 @@ export const fecharCaixa = async (req: Request, res: Response) => {
     });
 
     // Calcular diferença
-    const totalMovimentos = aberturaCaixa.movimentos
-      .filter(m => m.tipo !== 'ABERTURA' && m.tipo !== 'FECHAMENTO')
-      .reduce((sum, m) => sum + m.valor, 0);
+    const totalMovimentos = (aberturaCaixa.movimentos as any[])
+      .filter((m: any) => m.tipo !== 'ABERTURA' && m.tipo !== 'FECHAMENTO')
+      .reduce((sum: number, m: any) => sum + m.valor, 0);
 
     const diferenca = (saldoFinal || 0) - (aberturaCaixa.saldoInicial + totalMovimentos);
 
@@ -219,7 +219,7 @@ export const listarAberturasCaixa = async (req: Request, res: Response) => {
     if (pdvId) filtros.pdvId = pdvId as string;
     if (status) filtros.status = status as string;
 
-    const aberturas = await prisma.aberturaCaixa.findMany({
+    const aberturas = await (prisma.aberturaCaixa as any).findMany({
       where: filtros,
       include: { responsavel: true, movimentos: true },
       orderBy: { dataAbertura: 'desc' },
@@ -236,7 +236,7 @@ export const obterAberturaAtiva = async (req: Request, res: Response) => {
   try {
     const { comercioId, pdvId } = req.params;
 
-    const abertura = await prisma.aberturaCaixa.findFirst({
+    const abertura = await (prisma.aberturaCaixa as any).findFirst({
       where: { comercioId, status: 'ABERTA', pdvId: pdvId || undefined },
       include: { responsavel: true, movimentos: true },
       orderBy: { dataAbertura: 'desc' },
@@ -246,14 +246,15 @@ export const obterAberturaAtiva = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Nenhum caixa aberto' });
     }
 
-    const totalMovimentos = abertura.movimentos
-      .filter(m => m.tipo !== 'ABERTURA')
-      .reduce((sum, m) => sum + m.valor, 0);
+    const movimentos: any[] = abertura.movimentos ?? [];
+    const totalMovimentos = movimentos
+      .filter((m: any) => m.tipo !== 'ABERTURA')
+      .reduce((sum: number, m: any) => sum + m.valor, 0);
 
     res.json({
       ...abertura,
       saldoAtual: abertura.saldoInicial + totalMovimentos,
-      totalMovimentos: abertura.movimentos.length,
+      totalMovimentos: movimentos.length,
     });
   } catch (error) {
     console.error('Erro ao obter abertura ativa:', error);

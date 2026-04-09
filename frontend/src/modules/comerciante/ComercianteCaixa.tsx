@@ -68,7 +68,7 @@ export default function ComercianteCaixa() {
   const [obsFechamento, setObsFechamento] = useState('');
   const [showFechamento, setShowFechamento] = useState(false);
 
-  const comercioId = user?.commerceId;
+  const comercioId = user?.comercioId;
 
   const fetchCaixaAtivo = useCallback(async () => {
     if (!comercioId) return;
