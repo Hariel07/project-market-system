@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TopBar from '../../shared/components/TopBar';
-import { categoriasMock, formatPrice } from '../../data/mockData';
+import { formatPrice } from '../../data/mockData';
 import { api } from '../../lib/api';
 import './ClienteDashboard.css';
 
@@ -15,15 +15,25 @@ interface ComercioAPI {
   isOpen: boolean;
 }
 
+interface CategoriaAPI {
+  id: string;
+  nome: string;
+  icone: string | null;
+}
+
 export default function ClienteDashboard() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [comercios, setComercios] = useState<ComercioAPI[]>([]);
+  const [categorias, setCategorias] = useState<CategoriaAPI[]>([]);
 
   useEffect(() => {
     api.get('comercios/public')
       .then((res: any) => setComercios(Array.isArray(res.data) ? res.data : []))
       .catch(() => setComercios([]));
+    api.get('categorias')
+      .then((res: any) => setCategorias(Array.isArray(res.data) ? res.data : []))
+      .catch(() => setCategorias([]));
   }, []);
 
   const abertos = comercios.filter(c => c.isOpen).slice(0, 4);
@@ -63,17 +73,20 @@ export default function ClienteDashboard() {
             <h2 className="section-title">Categorias</h2>
           </div>
           <div className="categories-scroll">
-            {categoriasMock.map(cat => (
+            {categorias.map(cat => (
               <button
                 key={cat.id}
                 className="category-chip"
                 onClick={() => navigate(`/mercados?categoria=${cat.nome}`)}
                 id={`cat-${cat.id}`}
               >
-                <span className="category-emoji">{cat.emoji}</span>
+                <span className="category-emoji">{cat.icone || '📦'}</span>
                 <span className="category-name">{cat.nome}</span>
               </button>
             ))}
+            {categorias.length === 0 && (
+              <p className="text-secondary" style={{ padding: '0.5rem 1rem' }}>Nenhuma categoria cadastrada.</p>
+            )}
           </div>
         </section>
 

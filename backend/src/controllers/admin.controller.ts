@@ -57,6 +57,31 @@ export const listAllUsers = async (req: Request, res: Response) => {
 };
 
 /**
+ * GET /api/admin/comercios
+ */
+export const listAllComercios = async (req: Request, res: Response) => {
+  try {
+    const comercios = await prisma.commerce.findMany({
+      select: {
+        id: true,
+        nomeFantasia: true,
+        razaoSocial: true,
+        segmento: true,
+        cidade: true,
+        estado: true,
+        ativo: true,
+        taxaEntrega: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(comercios);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao listar comércios.' });
+  }
+};
+
+/**
  * GET /api/admin/users/:id/details
  */
 export const getUserDetails = async (req: Request, res: Response) => {

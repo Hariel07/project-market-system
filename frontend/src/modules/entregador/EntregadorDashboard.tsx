@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EntregadorLayout from './EntregadorLayout';
-import { entregadorStatsMock, oportunidadesMock } from '../../data/entregadorMock';
+import { oportunidadesMock } from '../../data/entregadorMock';
 import { formatPrice } from '../../data/mockData';
 import { api } from '../../lib/api';
 import { useAuthProtected, useAuthUser } from '../../lib/useAuth';
@@ -27,7 +27,7 @@ export default function EntregadorDashboard() {
   const [loading, setLoading] = useState(false);
   const [erroOportunidades, setErroOportunidades] = useState<string | null>(null);
 
-  const [stats, setStats] = useState(entregadorStatsMock);
+  const [stats, setStats] = useState({ ganhosHoje: 0, corridasHoje: 0, taxaAceitacao: 100, avaliacao: 5.0 });
 
   const formatCPF = (cpf: string) => {
     if (!cpf) return '';
@@ -44,6 +44,21 @@ export default function EntregadorDashboard() {
       alert(msg);
     }
   };
+
+  // Carregar stats reais do financeiro
+  useEffect(() => {
+    if (!entregadorId) return;
+    api.get('financeiro/saldo').then((res: any) => {
+      if (res.data?.saldo !== undefined) {
+        setStats(prev => ({ ...prev, ganhosHoje: res.data.saldo }));
+      }
+    }).catch(() => {});
+    api.get(`entregas/entregador/${entregadorId}`).then((res: any) => {
+      const lista = Array.isArray(res.data) ? res.data : [];
+      const concluidas = lista.filter((e: any) => e.status === 'ENTREGUE').length;
+      setStats(prev => ({ ...prev, corridasHoje: concluidas }));
+    }).catch(() => {});
+  }, [entregadorId]);
 
   // Carregar oportunidades quando entregador fica online
   useEffect(() => {

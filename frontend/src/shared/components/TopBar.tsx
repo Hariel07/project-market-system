@@ -153,6 +153,22 @@ export default function TopBar({
                       {user.nome}
                     </div>
                   )}
+                  {user?.role === 'CLIENTE' && (
+                    <button
+                      style={{ display: 'block', width: '100%', padding: '0.65rem 1rem', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}
+                      onClick={() => { setDropdownOpen(false); navigate('/perfil'); }}
+                    >
+                      👤 Meu perfil
+                    </button>
+                  )}
+                  {(user?.role === 'DONO' || user?.role === 'GERENTE' || user?.role === 'ESTOQUE' || user?.role === 'CAIXA' || user?.role === 'AJUDANTE_GERAL' || user?.role === 'GARCOM') && (
+                    <button
+                      style={{ display: 'block', width: '100%', padding: '0.65rem 1rem', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}
+                      onClick={() => { setDropdownOpen(false); navigate('/comerciante'); }}
+                    >
+                      🏪 Painel do comércio
+                    </button>
+                  )}
                   <button
                     style={{ display: 'block', width: '100%', padding: '0.65rem 1rem', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}
                     onClick={() => { setDropdownOpen(false); setSwitcherOpen(true); }}

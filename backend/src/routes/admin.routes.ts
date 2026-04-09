@@ -4,6 +4,7 @@ import { roleMiddleware } from '../middlewares/role.middleware.js';
 import {
   getDashboardStats,
   listAllUsers,
+  listAllComercios,
   getUserDetails,
   createFakeData,
   deleteFakeData,
@@ -16,6 +17,7 @@ const router = Router();
 router.use(authMiddleware, roleMiddleware('ADMIN'));
 
 router.get('/stats', getDashboardStats);
+router.get('/comercios', listAllComercios);
 router.get('/users', listAllUsers);
 router.get('/users/:id/details', getUserDetails);
 

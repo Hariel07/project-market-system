@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import TopBar from '../../shared/components/TopBar';
-import { categoriasMock, formatPrice } from '../../data/mockData';
+import { formatPrice } from '../../data/mockData';
 import { api } from '../../lib/api';
 import './MercadosPage.css';
 
@@ -14,12 +14,16 @@ export default function MercadosPage() {
   const [filtroCategoria, setFiltroCategoria] = useState(searchParams.get('categoria') || '');
   const [filtroAberto, setFiltroAberto] = useState(false);
   const [ordenar, setOrdenar] = useState<'avaliacao' | 'distancia' | 'entrega'>('avaliacao');
+  const [categorias, setCategorias] = useState<{ id: string; nome: string; icone: string | null }[]>([]);
   const [filtroCidade, setFiltroCidade] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
   const [showGeoFilter, setShowGeoFilter] = useState(false);
 
   useEffect(() => {
     fetchComercios();
+    api.get('categorias')
+      .then((res: any) => setCategorias(Array.isArray(res.data) ? res.data : []))
+      .catch(() => setCategorias([]));
   }, [filtroCidade, filtroEstado]);
 
   const fetchComercios = async () => {
@@ -109,13 +113,13 @@ export default function MercadosPage() {
               >
                 Todos
               </button>
-              {categoriasMock.map(cat => (
+              {categorias.map(cat => (
                 <button
                   key={cat.id}
                   className={`filter-chip ${filtroCategoria === cat.nome ? 'active' : ''}`}
                   onClick={() => setFiltroCategoria(filtroCategoria === cat.nome ? '' : cat.nome)}
                 >
-                  {cat.emoji} {cat.nome}
+                  {cat.icone || '📦'} {cat.nome}
                 </button>
               ))}
             </div>

@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ComercianteLayout from './ComercianteLayout';
 import { api } from '../../lib/api';
-import { movimentosEstoqueMock } from '../../data/comercianteMock';
 import './ComercianteEstoque.css';
 
 interface Produto {
@@ -290,42 +289,18 @@ export default function ComercianteEstoque() {
         </div>
       )}
 
-      {/* Tab: Movimentações — ainda usa mock (será integrado quando módulo de pedidos existir) */}
+      {/* Tab: Movimentações — registros das entradas manuais feitas via aba "Entrada manual" */}
       {tab === 'movimentos' && (
         <div className="movimentos-section animate-fade-in-up delay-1">
-          <div className="movimentos-table-wrap">
-            <table className="catalogo-table">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Tipo</th>
-                  <th>Qtd</th>
-                  <th className="hide-mobile">Motivo</th>
-                  <th>Data</th>
-                  <th className="hide-mobile">Responsável</th>
-                </tr>
-              </thead>
-              <tbody>
-                {movimentosEstoqueMock.map(mov => (
-                  <tr key={mov.id}>
-                    <td><strong>{mov.itemNome}</strong></td>
-                    <td>
-                      <span className={`mov-type mov-${mov.tipo}`}>
-                        {mov.tipo === 'entrada' ? '📥 Entrada' : mov.tipo === 'saida' ? '📤 Saída' : '🔧 Ajuste'}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={mov.tipo === 'entrada' ? 'text-accent' : mov.tipo === 'saida' ? 'text-danger' : ''}>
-                        {mov.tipo === 'entrada' ? '+' : ''}{mov.quantidade}
-                      </span>
-                    </td>
-                    <td className="hide-mobile text-sm text-secondary">{mov.motivo}</td>
-                    <td className="text-sm">{mov.data}</td>
-                    <td className="hide-mobile text-sm">{mov.responsavel}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="empty-state" style={{ padding: '3rem' }}>
+            <span className="empty-icon">📜</span>
+            <h3>Histórico em breve</h3>
+            <p style={{ color: 'var(--color-text-secondary)' }}>
+              As movimentações de estoque serão registradas automaticamente conforme pedidos forem processados e entradas manuais realizadas.
+            </p>
+            <button className="btn btn-primary btn-sm" style={{ marginTop: '1rem' }} onClick={() => setTab('entrada')}>
+              📥 Registrar entrada agora
+            </button>
           </div>
         </div>
       )}

@@ -1,108 +1,152 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import { comerciosGlobalMock } from '../../data/adminMock';
 import { formatPrice } from '../../data/mockData';
+import { api } from '../../lib/api';
 import './AdminComercios.css';
 
+interface Comercio {
+  id: string;
+  nomeFantasia: string;
+  razaoSocial: string | null;
+  segmento: string;
+  cidade: string | null;
+  estado: string | null;
+  ativo: boolean;
+  taxaEntrega: number;
+  plano?: { nome: string } | null;
+  dono?: { account: { email: string | null; cpf: string } } | null;
+}
+
 export default function AdminComercios() {
+  const [comercios, setComercios] = useState<Comercio[]>([]);
+  const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('todos');
 
-  const filtrados = comerciosGlobalMock.filter(c => {
-    const batimentoNome = c.nome.toLowerCase().includes(busca.toLowerCase());
-    const batimentoStatus = filtroStatus === 'todos' || c.status === filtroStatus;
-    return batimentoNome && batimentoStatus;
+  useEffect(() => {
+    api.get('admin/comercios')
+      .then((res: any) => setComercios(Array.isArray(res.data) ? res.data : []))
+      .catch(() => {
+        // fallback: tenta endpoint público
+        api.get('comercios/public?limit=100')
+          .then((res: any) => setComercios(Array.isArray(res.data) ? res.data : []))
+          .catch(() => setComercios([]));
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtrados = comercios.filter(c => {
+    const nome = (c.nomeFantasia || '').toLowerCase();
+    const seg = (c.segmento || '').toLowerCase();
+    const bateBusca = nome.includes(busca.toLowerCase()) || seg.includes(busca.toLowerCase());
+    const bateStatus =
+      filtroStatus === 'todos' ||
+      (filtroStatus === 'ativo' && c.ativo) ||
+      (filtroStatus === 'inativo' && !c.ativo);
+    return bateBusca && bateStatus;
   });
 
   return (
     <AdminLayout title="Comércios da Plataforma">
       <div className="admin-comercios-container animate-fade-in-up">
-        
+
+        {/* Resumo */}
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+          <div className="admin-kpi-card" style={{ flex: 1, minWidth: 140 }}>
+            <div className="kpi-icon bg-accent-subtle text-accent-dark">🏪</div>
+            <div className="kpi-info">
+              <span className="kpi-label">Total</span>
+              <span className="kpi-value">{loading ? '...' : comercios.length}</span>
+            </div>
+          </div>
+          <div className="admin-kpi-card" style={{ flex: 1, minWidth: 140 }}>
+            <div className="kpi-icon bg-primary-subtle text-primary">✅</div>
+            <div className="kpi-info">
+              <span className="kpi-label">Ativos</span>
+              <span className="kpi-value">{loading ? '...' : comercios.filter(c => c.ativo).length}</span>
+            </div>
+          </div>
+          <div className="admin-kpi-card" style={{ flex: 1, minWidth: 140 }}>
+            <div className="kpi-icon bg-warning-subtle text-warning-dark">🚫</div>
+            <div className="kpi-info">
+              <span className="kpi-label">Inativos</span>
+              <span className="kpi-value">{loading ? '...' : comercios.filter(c => !c.ativo).length}</span>
+            </div>
+          </div>
+        </div>
+
         {/* Filtros */}
         <div className="admin-card mb-4">
           <div className="admin-filter-bar">
             <div className="input-search-group">
               <span className="search-icon">🔍</span>
-              <input 
-                type="text" 
-                className="input search-input" 
-                placeholder="Buscar por nome ou dono..."
+              <input
+                type="text"
+                className="input search-input"
+                placeholder="Buscar por nome ou segmento..."
                 value={busca}
                 onChange={e => setBusca(e.target.value)}
               />
             </div>
-            <select 
-              className="input admin-select" 
-              value={filtroStatus} 
+            <select
+              className="input admin-select"
+              value={filtroStatus}
               onChange={e => setFiltroStatus(e.target.value)}
             >
-              <option value="todos">Todos os Status</option>
+              <option value="todos">Todos</option>
               <option value="ativo">✅ Ativos</option>
-              <option value="analise">⏳ Em Análise</option>
-              <option value="bloqueado">🚫 Bloqueados</option>
+              <option value="inativo">🚫 Inativos</option>
             </select>
           </div>
         </div>
 
-        {/* Tabela de Comércios */}
+        {/* Tabela */}
         <div className="admin-card table-wrapper">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Comércio / Segmento</th>
-                <th>Contato / Dono</th>
-                <th>Plano</th>
-                <th>Faturamento (Mês)</th>
-                <th>Status</th>
-                <th className="text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtrados.length === 0 && (
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '3rem' }}>
+              <span className="spinner" /> <p style={{ marginTop: '1rem', color: 'var(--color-text-secondary)' }}>Carregando...</p>
+            </div>
+          ) : (
+            <table className="admin-table">
+              <thead>
                 <tr>
-                  <td colSpan={7} className="text-center py-6 text-secondary">Nenhum comércio encontrado</td>
+                  <th>Comércio</th>
+                  <th>Segmento</th>
+                  <th>Localização</th>
+                  <th>Taxa entrega</th>
+                  <th>Status</th>
                 </tr>
-              )}
-              {filtrados.map(c => (
-                <tr key={c.id}>
-                  <td><strong>#{c.id}</strong></td>
-                  <td>
-                    <div className="admin-table-brand">
-                      <div className="brand-dot">{c.segmento.charAt(0)}</div>
-                      <div className="brand-info">
-                        <strong>{c.nome}</strong>
-                        <span>{c.segmento} · Cadastro: {c.dataCadastro}</span>
+              </thead>
+              <tbody>
+                {filtrados.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="text-center py-6 text-secondary">Nenhum comércio encontrado</td>
+                  </tr>
+                )}
+                {filtrados.map(c => (
+                  <tr key={c.id}>
+                    <td>
+                      <div className="admin-table-brand">
+                        <div className="brand-dot">{(c.nomeFantasia || '?').charAt(0).toUpperCase()}</div>
+                        <div className="brand-info">
+                          <strong>{c.nomeFantasia}</strong>
+                          <span>{c.razaoSocial || '—'}</span>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="admin-table-contact">
-                      <strong>{c.dono}</strong>
-                      <span>{c.email}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`plan-badge plan-${c.plano}`}>{c.plano.toUpperCase()}</span>
-                  </td>
-                  <td>
-                    {formatPrice(c.faturamentoMes)} <br/>
-                    <small className="text-tertiary">{c.pedidosMes} pedidos</small>
-                  </td>
-                  <td>
-                    <span className={`status-pill status-${c.status}`}>
-                      {c.status === 'ativo' ? 'Ativo' : c.status === 'analise' ? 'Em Análise' : 'Bloqueado'}
-                    </span>
-                  </td>
-                  <td className="text-right admin-table-actions">
-                    <button className="btn-icon-admin" title="Ver detalhes">👁️</button>
-                    {c.status === 'analise' && <button className="btn-icon-admin text-accent" title="Aprovar Cadastro">✅</button>}
-                    {c.status === 'ativo' && <button className="btn-icon-admin text-danger" title="Bloquear">🚫</button>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </td>
+                    <td>{c.segmento || '—'}</td>
+                    <td>{[c.cidade, c.estado].filter(Boolean).join(', ') || '—'}</td>
+                    <td>{c.taxaEntrega === 0 ? '🟢 Grátis' : formatPrice(c.taxaEntrega)}</td>
+                    <td>
+                      <span className={`status-pill ${c.ativo ? 'status-ativo' : 'status-bloqueado'}`}>
+                        {c.ativo ? 'Ativo' : 'Inativo'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
 
       </div>

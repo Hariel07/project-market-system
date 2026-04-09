@@ -21,7 +21,8 @@ router.post('/:id/fechar', fecharCaixa);
 
 // Consultas
 router.get('/comercio/:comercioId', listarAberturasCaixa);
-router.get('/ativo/:comercioId/:pdvId?', obterAberturaAtiva);
+router.get('/ativo/:comercioId/:pdvId', obterAberturaAtiva);
+router.get('/ativo/:comercioId', obterAberturaAtiva);
 
 // Movimentos
 router.get('/movimentos/:comercioId', listarMovimentos);
