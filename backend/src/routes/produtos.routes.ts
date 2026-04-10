@@ -4,6 +4,7 @@ import { roleMiddleware } from '../middlewares/role.middleware.js';
 import {
   listarProdutos,
   buscarProduto,
+  buscarProdutoPublico,
   criarProduto,
   atualizarProduto,
   deletarProduto,
@@ -11,6 +12,9 @@ import {
 } from '../controllers/produtos.controller.js';
 
 const router = Router();
+
+// Rotas públicas (sem autenticação)
+router.get('/public/:id', buscarProdutoPublico);
 
 router.use(authMiddleware);
 

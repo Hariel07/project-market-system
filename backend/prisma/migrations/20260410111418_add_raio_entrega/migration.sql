@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Commerce" ADD COLUMN     "raioEntregaKm" DOUBLE PRECISION NOT NULL DEFAULT 5.0;

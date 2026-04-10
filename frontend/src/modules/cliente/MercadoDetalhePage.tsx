@@ -2,9 +2,42 @@ import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import TopBar from '../../shared/components/TopBar';
 import { useCart } from '../../contexts/CartContext';
-import { formatPrice, type Item } from '../../data/mockData';
+import { formatPrice } from '../../lib/utils';
+import type { Item } from '../../data/mockData';
 import { api } from '../../lib/api';
 import './MercadoDetalhePage.css';
+
+const DAY_LABELS: Record<string, string> = {
+  seg: 'Seg', ter: 'Ter', qua: 'Qua', qui: 'Qui', sex: 'Sex', sab: 'Sáb', dom: 'Dom',
+};
+const DAY_ORDER = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
+
+function HorarioInfo({ json }: { json: string }) {
+  let schedule: Record<string, any> = {};
+  try { schedule = JSON.parse(json); } catch { return null; }
+
+  const today = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'][new Date().getDay()];
+
+  return (
+    <div className="store-schedule">
+      <h4 className="store-schedule-title">🕐 Horários de Atendimento</h4>
+      <div className="store-schedule-grid">
+        {DAY_ORDER.map(key => {
+          const day = schedule[key];
+          const isToday = key === today;
+          return (
+            <div key={key} className={`schedule-row ${isToday ? 'today' : ''} ${!day?.ativo ? 'closed-day' : ''}`}>
+              <span className="schedule-day">{DAY_LABELS[key]}</span>
+              <span className="schedule-hours">
+                {day?.ativo ? `${day.abre} – ${day.fecha}` : 'Fechado'}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function MercadoDetalhePage() {
   const { id } = useParams();
@@ -22,22 +55,19 @@ export default function MercadoDetalhePage() {
 
     async function fetchTudo() {
       try {
+        // Fetch full merchant detail (includes categorias + produtos)
         const [resComercio, resProdutos] = await Promise.all([
-          api.get('comercios/public'),
+          api.get(`comercios/${id}`),
           api.get(`/comercios/${id}/produtos`),
         ]);
 
-        const comerciosData = Array.isArray(resComercio.data) ? resComercio.data : [];
-        const found = comerciosData.find((c: any) => c.id === id);
-        if (found) {
-          setComercio({
-            ...found,
-            nome: found.nomeFantasia,
-            tempoEntrega: found.tempoMedio || '?? min',
-          });
-        }
+        const c = resComercio.data;
+        setComercio({
+          ...c,
+          nome: c.nomeFantasia,
+          tempoEntrega: c.tempoMedio || '?? min',
+        });
 
-        // Mapear produtos da API para o formato Item do carrinho
         const produtosData = Array.isArray(resProdutos.data) ? resProdutos.data : [];
         const produtosAPI: Item[] = produtosData.map((p: any) => ({
           id: p.id,
@@ -88,36 +118,79 @@ export default function MercadoDetalhePage() {
       <TopBar showBack showCart title={comercio.nome} />
 
       <main className="page-content">
+        {/* Capa / Banner */}
+        <div className="store-capa-wrapper">
+          <div
+            className="store-capa"
+            style={{
+              background: comercio.capaUrl
+                ? `url(${comercio.capaUrl}) center/cover no-repeat`
+                : 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+            }}
+          >
+            <span style={{
+              position: 'absolute', top: 12, right: 12,
+              background: comercio.isOpen ? 'rgba(22,163,74,0.9)' : 'rgba(220,38,38,0.85)',
+              color: '#fff', borderRadius: 20, padding: '3px 12px',
+              fontSize: '0.78rem', fontWeight: 700,
+            }}>
+              {comercio.isOpen ? '🟢 Aberto' : '🔴 Fechado'}
+            </span>
+          </div>
+        </div>
+
         {/* Store Header */}
         <section className="store-hero animate-fade-in-up">
           <div className="container">
-            <div className="store-hero-card">
-              <div className="store-hero-logo">
-                {comercio.logoUrl && comercio.logoUrl.length <= 4
-                  ? comercio.logoUrl
-                  : comercio.logoUrl
-                    ? <img src={comercio.logoUrl} alt={comercio.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : '🏪'}
-              </div>
-              <div className="store-hero-info">
-                <h1 className="store-hero-name">{comercio.nome}</h1>
-                <p className="store-hero-segment">{comercio.segmento}</p>
-                <div className="store-hero-stats">
-                  <span>⭐ {comercio.avaliacao}</span>
-                  <span className="store-dot">•</span>
-                  <span>📍 {comercio.distancia}</span>
-                  <span className="store-dot">•</span>
-                  <span>🕐 {comercio.tempoEntrega}</span>
-                </div>
-                <div className="store-hero-delivery">
-                  {comercio.taxaEntrega === 0 ? (
-                    <span className="free-delivery">🟢 Entrega grátis</span>
-                  ) : (
-                    <span>Entrega: {formatPrice(comercio.taxaEntrega)}</span>
-                  )}
-                </div>
-              </div>
+            {/* Logo */}
+            <div className="store-hero-logo" style={{
+              marginTop: -16,
+              border: 'none',
+              background: comercio.logoUrl ? 'transparent' : 'var(--color-surface)',
+              overflow: 'hidden',
+              boxShadow: 'none',
+            }}>
+              {comercio.logoUrl
+                ? <img src={comercio.logoUrl} alt={comercio.nome} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                : <span style={{ fontSize: '3rem' }}>🏪</span>
+              }
             </div>
+
+            <div className="store-hero-info" style={{ marginTop: '0.75rem' }}>
+              <h1 className="store-hero-name">{comercio.nome}</h1>
+              <p className="store-hero-segment">{comercio.segmento}</p>
+
+              <div className="store-hero-stats">
+                <span>🕐 {comercio.tempoEntrega}</span>
+                <span className="store-dot">•</span>
+                <span>
+                  {comercio.taxaEntrega === 0
+                    ? <span style={{ color: '#16a34a', fontWeight: 700 }}>Entrega grátis</span>
+                    : `Entrega: ${formatPrice(comercio.taxaEntrega)}`}
+                </span>
+                {comercio.cidade && (
+                  <>
+                    <span className="store-dot">•</span>
+                    <span>📍 {comercio.cidade}</span>
+                  </>
+                )}
+              </div>
+
+              {/* Descrição */}
+              {comercio.descricao && (
+                <p style={{
+                  marginTop: '0.6rem', fontSize: '0.88rem',
+                  color: 'var(--color-text-secondary)', lineHeight: 1.5,
+                }}>
+                  {comercio.descricao}
+                </p>
+              )}
+            </div>
+
+            {/* Horários */}
+            {comercio.horarioAtendimento && (
+              <HorarioInfo json={comercio.horarioAtendimento} />
+            )}
           </div>
         </section>
 
@@ -178,7 +251,10 @@ export default function MercadoDetalhePage() {
                     onClick={() => navigate(`/produto/${item.id}`)}
                   >
                     <div className="product-card-img">
-                      <span className="product-emoji">{emoji}</span>
+                      {item.imagem
+                        ? <img src={item.imagem} alt={item.nome} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'var(--radius-md)' }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        : <span className="product-emoji">{emoji}</span>
+                      }
                       {item.emPromocao && (
                         <span className="product-promo-badge">
                           {item.promocaoNome || 'Oferta'}
@@ -188,9 +264,6 @@ export default function MercadoDetalhePage() {
                     <div className="product-card-info">
                       <h3 className="product-card-name">{item.nome}</h3>
                       <p className="product-card-desc truncate">{item.descricao}</p>
-                      <div className="product-card-rating">
-                        ⭐ {item.avaliacao} <span className="text-secondary">({item.avaliacoes})</span>
-                      </div>
                     </div>
                   </div>
                   <div className="product-card-action">

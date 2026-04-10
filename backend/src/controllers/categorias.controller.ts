@@ -2,6 +2,34 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma.js';
 
 /**
+ * GET /api/categorias/public
+ * Lista categorias únicas de todos os comércios ativos (sem autenticação).
+ */
+export async function listarCategoriasPublico(req: Request, res: Response): Promise<void> {
+  try {
+    const categorias = await prisma.category.findMany({
+      where: { comercio: { ativo: true } },
+      select: { id: true, nome: true, icone: true },
+      orderBy: { nome: 'asc' },
+    });
+
+    // Remove duplicatas por nome (exibe cada categoria uma vez)
+    const vistas = new Set<string>();
+    const unicas = categorias.filter(c => {
+      const key = c.nome.toLowerCase();
+      if (vistas.has(key)) return false;
+      vistas.add(key);
+      return true;
+    });
+
+    res.json(unicas);
+  } catch (error) {
+    console.error('Erro ao listar categorias públicas:', error);
+    res.status(500).json({ error: 'Erro interno.' });
+  }
+}
+
+/**
  * GET /api/categorias
  * Lista todas as categorias do comércio do usuário logado.
  */

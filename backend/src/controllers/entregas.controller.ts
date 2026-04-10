@@ -95,10 +95,11 @@ export async function listarOportunidades(req: Request, res: Response) {
     const pedidos = await prisma.order.findMany({
       where: {
         status: {
-          in: ['PREPARANDO', 'PRONTO'],
+          in: ['PRONTO'],
         },
         entrega: {
           entregadorId: null,
+          status: 'AGUARDANDO_COLETA',
         },
         ...(comercioId && { comercioId: comercioId as string }),
       },

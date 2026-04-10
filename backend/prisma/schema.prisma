@@ -224,7 +224,9 @@ model Commerce {
   nomeFantasia String
   cnpj         String  @unique
   segmento     String  // "Mercado", "Lanchonete", "Restaurante", etc.
+  descricao    String? // Descrição livre do comércio visível para clientes
   logoUrl      String?
+  capaUrl      String? // Imagem de capa retangular (banner)
   ativo        Boolean @default(false)
   planoAtual   String  @default("GRATIS")
 
@@ -241,8 +243,13 @@ model Commerce {
   // Configs operacionais
   taxaEntrega        Float   @default(0.0)
   tempoMedio         String? // "30-45 min"
+  raioEntregaKm      Float   @default(5.0) // Raio de cobertura de entrega em km
   isOpen             Boolean @default(true)
   horarioAtendimento String?
+
+  // Configs de impressão de cupom fiscal
+  impressaoAutomatica Boolean @default(false) // Imprime cupom ao concluir pedido
+  copiasImpressao     Int     @default(1)     // Número de cópias automáticas
 
   // Configuração de alertas de estoque/validade
   alertaValidadeDias    Int  @default(7)   // Avisar X dias antes do vencimento
@@ -297,6 +304,7 @@ model Product {
   precoPromocional Float?
   unidade         String   @default("UN") // UN, KG, L, ML, G, PCT
   imagemUrl       String?
+  imagens         String[] // Múltiplas imagens do produto (URLs)
 
   estoque         Float    @default(0)
   estoqueMinimo   Float?   // Nível para alerta de estoque baixo (sobrescreve padrão do comércio)

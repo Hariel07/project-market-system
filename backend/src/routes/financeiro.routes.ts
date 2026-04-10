@@ -5,6 +5,7 @@ import {
   confirmarPagamento,
   getAssinaturas,
   pagarAssinatura,
+  getGanhosEntregador,
 } from '../controllers/financeiro.controller.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 import { roleMiddleware } from '../middlewares/role.middleware.js';
@@ -15,6 +16,7 @@ router.use(authMiddleware);
 
 router.get('/saldo',   roleMiddleware('ADMIN', 'DONO', 'GERENTE', 'ENTREGADOR'), getSaldo);
 router.get('/transacoes', roleMiddleware('ADMIN', 'DONO', 'GERENTE', 'ENTREGADOR'), getTransacoes);
+router.get('/ganhos',  roleMiddleware('ENTREGADOR'), getGanhosEntregador);
 
 router.post('/confirmar-pagamento', roleMiddleware('ADMIN', 'DONO', 'GERENTE'), confirmarPagamento);
 

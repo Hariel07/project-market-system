@@ -3,7 +3,9 @@ import { CartProvider } from './contexts/CartContext';
 import BottomNav from './shared/components/BottomNav';
 import { NotificationCenter } from './shared/components/NotificationCenter';
 import MaintenancePage from './shared/components/MaintenancePage';
+import { PrivateRoute } from './shared/components/PrivateRoute';
 import { useAppConfig } from './lib/useAppName';
+import { isTokenValid } from './lib/utils';
 
 // Auth
 import LoginPage from './modules/auth/LoginPage';
@@ -32,7 +34,9 @@ import ComercianteConfig from './modules/comerciante/ComercianteConfig';
 import ComerciantePerfilConfig from './modules/comerciante/ComerciantePerfilConfig';
 import ComerciantePerfilPage from './modules/comerciante/ComerciantePerfilPage';
 import ComercianteCaixa from './modules/comerciante/ComercianteCaixa';
+import ComerciantePDV from './modules/comerciante/ComerciantePDV';
 import ComercianteFuncionarios from './modules/comerciante/ComercianteFuncionarios';
+import ComercianteAreaEntrega from './modules/comerciante/ComercianteAreaEntrega';
 
 // Entregador
 import EntregadorDashboard from './modules/entregador/EntregadorDashboard';
@@ -62,8 +66,18 @@ function isRotaCliente(pathname: string) {
 
 // Redireciona a raiz '/' com base no perfil do usuário logado
 function RootRedirect() {
+  const token = localStorage.getItem('@MarketSystem:token');
   const userStr = localStorage.getItem('@MarketSystem:user');
-  if (!userStr) return <ClienteDashboard />;
+
+  // Token ausente ou expirado — limpa silenciosamente e mostra a vitrine como visitante
+  if (!userStr || !isTokenValid(token)) {
+    if (token || userStr) {
+      localStorage.removeItem('@MarketSystem:token');
+      localStorage.removeItem('@MarketSystem:user');
+    }
+    return <ClienteDashboard />;
+  }
+
   try {
     const user = JSON.parse(userStr);
     const role = user?.role;
@@ -101,51 +115,55 @@ function AppRoutes() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/cadastro" element={<CadastroPage />} />
 
-        {/* Cliente — sem prefixo /cliente */}
+        {/* Cliente — rotas públicas */}
         <Route path="/mercados" element={<MercadosPage />} />
         <Route path="/mercado/:id" element={<MercadoDetalhePage />} />
         <Route path="/produto/:id" element={<ProdutoPage />} />
         <Route path="/carrinho" element={<CarrinhoPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/pedidos" element={<PedidosPage />} />
-        <Route path="/pedido/:id" element={<PedidoStatusPage />} />
-        <Route path="/perfil" element={<PerfilPage />} />
-        <Route path="/enderecos" element={<EnderecosPage />} />
-        <Route path="/enderecos/novo" element={<EnderecoFormPage />} />
-        <Route path="/enderecos/editar/:id" element={<EnderecoFormPage />} />
+
+        {/* Cliente — rotas protegidas (requer CLIENTE logado) */}
+        <Route path="/checkout" element={<PrivateRoute roles={['CLIENTE']} element={<CheckoutPage />} />} />
+        <Route path="/pedidos" element={<PrivateRoute roles={['CLIENTE']} element={<PedidosPage />} />} />
+        <Route path="/pedido/:id" element={<PrivateRoute roles={['CLIENTE']} element={<PedidoStatusPage />} />} />
+        <Route path="/perfil" element={<PrivateRoute roles={['CLIENTE']} element={<PerfilPage />} />} />
+        <Route path="/enderecos" element={<PrivateRoute roles={['CLIENTE']} element={<EnderecosPage />} />} />
+        <Route path="/enderecos/novo" element={<PrivateRoute roles={['CLIENTE']} element={<EnderecoFormPage />} />} />
+        <Route path="/enderecos/editar/:id" element={<PrivateRoute roles={['CLIENTE']} element={<EnderecoFormPage />} />} />
 
         {/* Comerciante */}
-        <Route path="/comerciante" element={<ComercianteDashboard />} />
-        <Route path="/comerciante/pedidos" element={<ComerciantePedidos />} />
-        <Route path="/comerciante/catalogo" element={<ComercianteCatalogo />} />
-        <Route path="/comerciante/catalogo/novo" element={<ComercianteItemForm />} />
-        <Route path="/comerciante/catalogo/editar/:id" element={<ComercianteItemForm />} />
-        <Route path="/comerciante/estoque" element={<ComercianteEstoque />} />
-        <Route path="/comerciante/item/:id" element={<ComercianteItemForm />} />
-        <Route path="/comerciante/caixa" element={<ComercianteCaixa />} />
-        <Route path="/comerciante/equipe" element={<ComercianteFuncionarios />} />
-        <Route path="/comerciante/config" element={<ComercianteConfig />} />
-        <Route path="/comerciante/config/perfil" element={<ComerciantePerfilConfig />} />
-        <Route path="/comerciante/perfil" element={<ComerciantePerfilPage />} />
+        <Route path="/comerciante" element={<PrivateRoute roles={['DONO','GERENTE','CAIXA','ESTOQUE','AJUDANTE_GERAL','GARCOM']} element={<ComercianteDashboard />} />} />
+        <Route path="/comerciante/pedidos" element={<PrivateRoute roles={['DONO','GERENTE','CAIXA','ESTOQUE','AJUDANTE_GERAL','GARCOM']} element={<ComerciantePedidos />} />} />
+        <Route path="/comerciante/catalogo" element={<PrivateRoute roles={['DONO','GERENTE','CAIXA','ESTOQUE','AJUDANTE_GERAL','GARCOM']} element={<ComercianteCatalogo />} />} />
+        <Route path="/comerciante/catalogo/novo" element={<PrivateRoute roles={['DONO','GERENTE','ESTOQUE']} element={<ComercianteItemForm />} />} />
+        <Route path="/comerciante/catalogo/editar/:id" element={<PrivateRoute roles={['DONO','GERENTE','ESTOQUE']} element={<ComercianteItemForm />} />} />
+        <Route path="/comerciante/estoque" element={<PrivateRoute roles={['DONO','GERENTE','ESTOQUE']} element={<ComercianteEstoque />} />} />
+        <Route path="/comerciante/item/:id" element={<PrivateRoute roles={['DONO','GERENTE','ESTOQUE']} element={<ComercianteItemForm />} />} />
+        <Route path="/comerciante/caixa" element={<PrivateRoute roles={['DONO','GERENTE','CAIXA']} element={<ComercianteCaixa />} />} />
+        <Route path="/comerciante/pdv/:pdvId" element={<PrivateRoute roles={['DONO','GERENTE','CAIXA','AJUDANTE_GERAL','GARCOM']} element={<ComerciantePDV />} />} />
+        <Route path="/comerciante/equipe" element={<PrivateRoute roles={['DONO','GERENTE']} element={<ComercianteFuncionarios />} />} />
+        <Route path="/comerciante/config" element={<PrivateRoute roles={['DONO','GERENTE']} element={<ComercianteConfig />} />} />
+        <Route path="/comerciante/config/perfil" element={<PrivateRoute roles={['DONO','GERENTE']} element={<ComerciantePerfilConfig />} />} />
+        <Route path="/comerciante/config/area-entrega" element={<PrivateRoute roles={['DONO','GERENTE']} element={<ComercianteAreaEntrega />} />} />
+        <Route path="/comerciante/perfil" element={<PrivateRoute roles={['DONO','GERENTE','CAIXA','ESTOQUE','AJUDANTE_GERAL','GARCOM']} element={<ComerciantePerfilPage />} />} />
 
         {/* Entregador */}
-        <Route path="/entregador" element={<EntregadorDashboard />} />
-        <Route path="/entregador/rota/:id" element={<EntregadorRota />} />
-        <Route path="/entregador/historico" element={<EntregadorHistorico />} />
-        <Route path="/entregador/ganhos" element={<EntregadorGanhos />} />
-        <Route path="/entregador/config" element={<EntregadorConfig />} />
-        <Route path="/entregador/editar-perfil" element={<EditarPerfilPage />} />
-        <Route path="/entregador/conta-bancaria" element={<ContaBancariaPage />} />
-        <Route path="/entregador/preferencias" element={<PreferenciasPage />} />
-        <Route path="/entregador/suporte" element={<SuportePage />} />
+        <Route path="/entregador" element={<PrivateRoute roles={['ENTREGADOR']} element={<EntregadorDashboard />} />} />
+        <Route path="/entregador/rota/:id" element={<PrivateRoute roles={['ENTREGADOR']} element={<EntregadorRota />} />} />
+        <Route path="/entregador/historico" element={<PrivateRoute roles={['ENTREGADOR']} element={<EntregadorHistorico />} />} />
+        <Route path="/entregador/ganhos" element={<PrivateRoute roles={['ENTREGADOR']} element={<EntregadorGanhos />} />} />
+        <Route path="/entregador/config" element={<PrivateRoute roles={['ENTREGADOR']} element={<EntregadorConfig />} />} />
+        <Route path="/entregador/editar-perfil" element={<PrivateRoute roles={['ENTREGADOR']} element={<EditarPerfilPage />} />} />
+        <Route path="/entregador/conta-bancaria" element={<PrivateRoute roles={['ENTREGADOR']} element={<ContaBancariaPage />} />} />
+        <Route path="/entregador/preferencias" element={<PrivateRoute roles={['ENTREGADOR']} element={<PreferenciasPage />} />} />
+        <Route path="/entregador/suporte" element={<PrivateRoute roles={['ENTREGADOR']} element={<SuportePage />} />} />
 
         {/* Admin */}
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/comercios" element={<AdminComercios />} />
-        <Route path="/admin/planos" element={<AdminPlanos />} />
-        <Route path="/admin/usuarios" element={<AdminUsuarios />} />
-        <Route path="/admin/sistema" element={<AdminSistema />} />
-        <Route path="/admin/perfil" element={<AdminPerfilPage />} />
+        <Route path="/admin" element={<PrivateRoute roles={['ADMIN']} element={<AdminDashboard />} />} />
+        <Route path="/admin/comercios" element={<PrivateRoute roles={['ADMIN']} element={<AdminComercios />} />} />
+        <Route path="/admin/planos" element={<PrivateRoute roles={['ADMIN']} element={<AdminPlanos />} />} />
+        <Route path="/admin/usuarios" element={<PrivateRoute roles={['ADMIN']} element={<AdminUsuarios />} />} />
+        <Route path="/admin/sistema" element={<PrivateRoute roles={['ADMIN']} element={<AdminSistema />} />} />
+        <Route path="/admin/perfil" element={<PrivateRoute roles={['ADMIN']} element={<AdminPerfilPage />} />} />
       </Routes>
 
       {/* BottomNav apenas nas rotas do cliente */}

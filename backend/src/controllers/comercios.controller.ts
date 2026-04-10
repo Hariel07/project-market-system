@@ -22,7 +22,9 @@ export async function getPublicComercios(req: Request, res: Response): Promise<v
         nomeFantasia: true,
         razaoSocial: true,
         segmento: true,
+        descricao: true,
         logoUrl: true,
+        capaUrl: true,
         taxaEntrega: true,
         tempoMedio: true,
         isOpen: true,
@@ -33,6 +35,7 @@ export async function getPublicComercios(req: Request, res: Response): Promise<v
         lat: true,
         lng: true,
         categorias: { select: { nome: true } },
+        enderecos: { select: { logradouro: true, numero: true, bairro: true, cidade: true } },
       },
     });
 
@@ -117,9 +120,11 @@ export async function updateMyCommerce(req: Request, res: Response): Promise<voi
   if (!user?.comercioId) { res.status(403).json({ error: 'Não autorizado.' }); return; }
 
   const {
-    nomeFantasia, segmento, logoUrl, taxaEntrega, tempoMedio,
-    horarioAtendimento, isOpen, cidade, estado, pais, lat, lng,
+    nomeFantasia, segmento, descricao, logoUrl, capaUrl,
+    taxaEntrega, tempoMedio, raioEntregaKm, horarioAtendimento, isOpen,
+    cidade, estado, pais, lat, lng,
     alertaValidadeDias, estoqueMinimoPadrao,
+    impressaoAutomatica, copiasImpressao,
   } = req.body;
 
   try {
@@ -128,7 +133,9 @@ export async function updateMyCommerce(req: Request, res: Response): Promise<voi
       data: {
         ...(nomeFantasia !== undefined && { nomeFantasia }),
         ...(segmento !== undefined && { segmento }),
-        ...(logoUrl !== undefined && { logoUrl }),
+        ...(descricao !== undefined && { descricao: descricao || null }),
+        ...(logoUrl !== undefined && { logoUrl: logoUrl || null }),
+        ...(capaUrl !== undefined && { capaUrl: capaUrl || null }),
         ...(taxaEntrega !== undefined && { taxaEntrega: parseFloat(taxaEntrega) }),
         ...(tempoMedio !== undefined && { tempoMedio }),
         ...(horarioAtendimento !== undefined && { horarioAtendimento }),
@@ -140,6 +147,9 @@ export async function updateMyCommerce(req: Request, res: Response): Promise<voi
         ...(lng !== undefined && { lng: parseFloat(lng) }),
         ...(alertaValidadeDias !== undefined && { alertaValidadeDias: parseInt(alertaValidadeDias) }),
         ...(estoqueMinimoPadrao !== undefined && { estoqueMinimoPadrao: parseInt(estoqueMinimoPadrao) }),
+        ...(raioEntregaKm !== undefined && { raioEntregaKm: parseFloat(raioEntregaKm) }),
+        ...(impressaoAutomatica !== undefined && { impressaoAutomatica }),
+        ...(copiasImpressao !== undefined && { copiasImpressao: parseInt(copiasImpressao) }),
       },
     });
     res.json(updated);

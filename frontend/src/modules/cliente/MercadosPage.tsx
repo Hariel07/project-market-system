@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import TopBar from '../../shared/components/TopBar';
-import { formatPrice } from '../../data/mockData';
+import { formatPrice, getHorarioHoje } from '../../lib/utils';
 import { api } from '../../lib/api';
 import './MercadosPage.css';
 
@@ -15,13 +15,15 @@ export default function MercadosPage() {
   const [filtroAberto, setFiltroAberto] = useState(false);
   const [ordenar, setOrdenar] = useState<'avaliacao' | 'distancia' | 'entrega'>('avaliacao');
   const [categorias, setCategorias] = useState<{ id: string; nome: string; icone: string | null }[]>([]);
-  const [filtroCidade, setFiltroCidade] = useState('');
+  const [filtroCidade, setFiltroCidade] = useState(
+    searchParams.get('cidade') || localStorage.getItem('@MarketSystem:filtroCidade') || ''
+  );
   const [filtroEstado, setFiltroEstado] = useState('');
   const [showGeoFilter, setShowGeoFilter] = useState(false);
 
   useEffect(() => {
     fetchComercios();
-    api.get('categorias')
+    api.get('categorias/public')
       .then((res: any) => setCategorias(Array.isArray(res.data) ? res.data : []))
       .catch(() => setCategorias([]));
   }, [filtroCidade, filtroEstado]);
@@ -158,7 +160,10 @@ export default function MercadosPage() {
                   className="input"
                   placeholder="Cidade"
                   value={filtroCidade}
-                  onChange={e => setFiltroCidade(e.target.value)}
+                  onChange={e => {
+                    setFiltroCidade(e.target.value);
+                    if (e.target.value) localStorage.setItem('@MarketSystem:filtroCidade', e.target.value);
+                  }}
                   style={{ flex: 1, minWidth: 140 }}
                   id="filtro-cidade"
                 />
@@ -200,12 +205,25 @@ export default function MercadosPage() {
                 className={`store-list-card ${!store.aberto ? 'closed' : ''}`}
                 onClick={() => store.aberto && navigate(`/mercado/${store.id}`)}
                 id={`mercado-${store.id}`}
-                style={{ 
-                  filter: store.aberto ? 'none' : 'grayscale(100%) opacity(0.7)', 
+                style={{
+                  filter: store.aberto ? 'none' : 'grayscale(100%) opacity(0.7)',
                   cursor: store.aberto ? 'pointer' : 'not-allowed',
-                  position: 'relative'
+                  position: 'relative',
+                  padding: 0,
+                  overflow: 'hidden',
+                  flexDirection: 'column',
+                  alignItems: 'stretch',
                 }}
               >
+                {/* Capa (banner fino) */}
+                {store.capaUrl && (
+                  <div style={{
+                    height: 60,
+                    background: `url(${store.capaUrl}) center/cover no-repeat`,
+                    flexShrink: 0,
+                  }} />
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', flex: 1 }}>
                 {!store.aberto && (
                   <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(255,255,255,0.4)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div style={{ background: 'var(--bg-card)', padding: '0.8rem 1.5rem', borderRadius: '16px', boxShadow: '0 8px 30px rgba(0,0,0,0.15)', textAlign: 'center', border: '1px solid var(--border)' }}>
@@ -213,14 +231,21 @@ export default function MercadosPage() {
                       <strong style={{ color: 'var(--text-primary)', display: 'block' }}>Loja Fechada</strong>
                       {store.horarioAtendimento && (
                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.3rem', display: 'block', maxWidth: '200px' }}>
-                           {store.horarioAtendimento}
+                           {getHorarioHoje(store.horarioAtendimento) || ''}
                          </span>
                       )}
                     </div>
                   </div>
                 )}
 
-                <div className="store-list-logo">{store.logo}</div>
+                <div className="store-list-logo" style={{
+                  background: store.logoUrl
+                    ? `url(${store.logoUrl}) center/cover no-repeat`
+                    : 'var(--color-surface)',
+                  fontSize: store.logoUrl ? 0 : '2.2rem',
+                }}>
+                  {!store.logoUrl && '🏪'}
+                </div>
                 <div className="store-list-info">
                   <div className="store-list-top">
                     <h3 className="store-list-name">{store.nome}</h3>
@@ -246,6 +271,7 @@ export default function MercadosPage() {
                   </span>
                   <span className="delivery-label">entrega</span>
                 </div>
+                </div>{/* fim flex-row interno */}
               </div>
             ))}
           </div>

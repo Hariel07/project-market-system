@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TopBar from '../../shared/components/TopBar';
 import { useCart } from '../../contexts/CartContext';
-import { formatPrice } from '../../data/mockData';
+import { formatPrice } from '../../lib/utils';
 import { api } from '../../lib/api';
 import './CheckoutPage.css';
 
@@ -30,6 +30,7 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
   const { items, subtotal, clearCart, comercioId } = useCart();
   const [formaPagamento, setFormaPagamento] = useState('pix');
+  const [modoEntrega, setModoEntrega] = useState<'entrega' | 'retirada'>('entrega');
   const [enderecos, setEnderecos] = useState<Endereco[]>([]);
   const [enderecoSelecionado, setEnderecoSelecionado] = useState<Endereco | null>(null);
   const [processing, setProcessing] = useState(false);
@@ -70,11 +71,11 @@ export default function CheckoutPage() {
     }
   }, [navigate, comercioId]);
 
-  const taxaEntrega = comercio?.taxaEntrega ?? 0;
+  const taxaEntrega = modoEntrega === 'retirada' ? 0 : (comercio?.taxaEntrega ?? 0);
   const total = subtotal + taxaEntrega;
 
   const handleConfirm = async () => {
-    if (!enderecoSelecionado) {
+    if (modoEntrega === 'entrega' && !enderecoSelecionado) {
       setErro('Selecione um endereço de entrega.');
       return;
     }
@@ -86,14 +87,16 @@ export default function CheckoutPage() {
     setProcessing(true);
     setErro(null);
 
-    const enderecoStr = [
-      enderecoSelecionado.logradouro,
-      enderecoSelecionado.numero,
-      enderecoSelecionado.complemento,
-      enderecoSelecionado.bairro,
-      enderecoSelecionado.cidade,
-      enderecoSelecionado.estado,
-    ].filter(Boolean).join(', ');
+    const enderecoStr = modoEntrega === 'retirada'
+      ? 'RETIRADA NA LOJA'
+      : [
+          enderecoSelecionado!.logradouro,
+          enderecoSelecionado!.numero,
+          enderecoSelecionado!.complemento,
+          enderecoSelecionado!.bairro,
+          enderecoSelecionado!.cidade,
+          enderecoSelecionado!.estado,
+        ].filter(Boolean).join(', ');
 
     const payload = {
       comercioId: String(comercioId),
@@ -128,7 +131,29 @@ export default function CheckoutPage() {
 
       <main className="page-content">
         <div className="container">
-          {/* Endereço */}
+          {/* Modo de entrega */}
+          <section className="checkout-section animate-fade-in-up">
+            <h2 className="checkout-section-title">🚚 Como deseja receber?</h2>
+            <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+              <button
+                className={`btn ${modoEntrega === 'entrega' ? 'btn-primary' : 'btn-outline'}`}
+                style={{ flex: 1, padding: '0.8rem' }}
+                onClick={() => setModoEntrega('entrega')}
+              >
+                🛵 Entrega
+              </button>
+              <button
+                className={`btn ${modoEntrega === 'retirada' ? 'btn-primary' : 'btn-outline'}`}
+                style={{ flex: 1, padding: '0.8rem' }}
+                onClick={() => setModoEntrega('retirada')}
+              >
+                🏪 Retirar na loja
+              </button>
+            </div>
+          </section>
+
+          {/* Endereço — só aparece se modo é entrega */}
+          {modoEntrega === 'entrega' && (
           <section className="checkout-section animate-fade-in-up">
             <h2 className="checkout-section-title">📍 Endereço de entrega</h2>
             {enderecos.length === 0 ? (
@@ -171,6 +196,19 @@ export default function CheckoutPage() {
               </div>
             )}
           </section>
+          )}
+
+          {modoEntrega === 'retirada' && (
+            <section className="checkout-section animate-fade-in-up">
+              <div style={{ textAlign: 'center', padding: 'var(--space-4)', background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)' }}>
+                <span style={{ fontSize: '2rem' }}>🏪</span>
+                <p style={{ fontWeight: 700, margin: 'var(--space-2) 0 0' }}>Retirada na loja</p>
+                <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+                  Você retirará o pedido diretamente no estabelecimento. Sem taxa de entrega!
+                </p>
+              </div>
+            </section>
+          )}
 
           {/* Itens */}
           <section className="checkout-section animate-fade-in-up delay-1">

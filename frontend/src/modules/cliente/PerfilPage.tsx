@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import TopBar from '../../shared/components/TopBar';
 import ProfileEditModal from '../../shared/components/ProfileEditModal';
 import ProfileSwitcherModal from '../../shared/components/ProfileSwitcherModal';
+import { useMultiProfile } from '../../lib/useMultiProfile';
+import { api } from '../../lib/api';
 import './PerfilPage.css';
 
 export default function PerfilPage() {
@@ -15,6 +17,14 @@ export default function PerfilPage() {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
+  const hasMultipleProfiles = useMultiProfile();
+  const [totalPedidos, setTotalPedidos] = useState(0);
+
+  useEffect(() => {
+    api.get('/pedidos/meus')
+      .then(res => setTotalPedidos(Array.isArray(res.data) ? res.data.length : 0))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('@MarketSystem:token');
@@ -43,13 +53,8 @@ export default function PerfilPage() {
   }, [navigate]);
 
   const menuItems = [
-    { icon: '📍', label: 'Endereços', desc: 'Gerencie seus endereços de entrega' },
-    { icon: '💳', label: 'Pagamentos', desc: 'Cartões e métodos de pagamento' },
-    { icon: '🎟️', label: 'Cupons', desc: 'Seus cupons de desconto' },
-    { icon: '⭐', label: 'Favoritos', desc: 'Mercados e produtos favoritos' },
-    { icon: '🔔', label: 'Notificações', desc: 'Configurar alertas' },
-    { icon: '❓', label: 'Ajuda', desc: 'Central de atendimento' },
-    { icon: '📄', label: 'Termos de uso', desc: 'Políticas e termos' },
+    { icon: '📍', label: 'Endereços', desc: 'Gerencie seus endereços de entrega', path: '/enderecos' },
+    { icon: '📋', label: 'Meus Pedidos', desc: 'Acompanhe seus pedidos', path: '/pedidos' },
   ];
 
   return (
@@ -76,16 +81,8 @@ export default function PerfilPage() {
           {/* Stats */}
           <div className="perfil-stats animate-fade-in-up delay-1">
             <div className="stat-card">
-              <span className="stat-value">12</span>
+              <span className="stat-value">{totalPedidos}</span>
               <span className="stat-label">Pedidos</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-value">3</span>
-              <span className="stat-label">Favoritos</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-value">2</span>
-              <span className="stat-label">Cupons</span>
             </div>
           </div>
 
@@ -96,11 +93,7 @@ export default function PerfilPage() {
                 key={item.label} 
                 className="perfil-menu-item" 
                 id={`menu-${item.label.toLowerCase()}`}
-                onClick={() => {
-                  if (item.label === 'Endereços') {
-                    navigate('/enderecos');
-                  }
-                }}
+                onClick={() => navigate(item.path)}
               >
                 <span className="perfil-menu-icon">{item.icon}</span>
                 <div className="perfil-menu-info">
@@ -112,14 +105,16 @@ export default function PerfilPage() {
             ))}
           </div>
 
-          {/* Switch Profile */}
-          <button
-            className="btn btn-block animate-fade-in-up delay-3"
-            style={{ marginBottom: '1rem', background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', fontWeight: 700 }}
-            onClick={() => setIsSwitcherOpen(true)}
-          >
-            🔄 Trocar de Perfil
-          </button>
+          {/* Switch Profile — só mostra se o CPF tem mais de 1 perfil */}
+          {hasMultipleProfiles && (
+            <button
+              className="btn btn-block animate-fade-in-up delay-3"
+              style={{ marginBottom: '1rem', background: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', fontWeight: 700 }}
+              onClick={() => setIsSwitcherOpen(true)}
+            >
+              🔄 Trocar de Perfil
+            </button>
+          )}
 
           {/* Logout */}
           <button

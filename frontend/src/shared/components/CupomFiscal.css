@@ -1,0 +1,48 @@
+/* Cupom Fiscal — estilo de recibo térmico */
+.cupom-fiscal {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.8rem;
+  background: #fff;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  max-width: 320px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.cupom-header { text-align: center; }
+.cupom-store { font-weight: 800; font-size: 1rem; margin-bottom: 2px; }
+.cupom-cnpj { font-size: 0.7rem; color: var(--color-text-tertiary); }
+.cupom-title { font-weight: 700; margin-top: 4px; }
+.cupom-number { font-size: 1.1rem; font-weight: 800; }
+.cupom-date { font-size: 0.7rem; color: var(--color-text-secondary); }
+
+.cupom-separator {
+  border-top: 1px dashed var(--color-border);
+  margin: var(--space-2) 0;
+}
+
+.cupom-client { font-size: 0.75rem; }
+
+.cupom-items {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.cupom-items td { padding: 2px 0; vertical-align: top; }
+.cupom-bold { font-weight: 700; }
+.cupom-right { text-align: right; }
+
+.cupom-totals { display: flex; flex-direction: column; gap: 2px; }
+.cupom-row { display: flex; justify-content: space-between; font-size: 0.8rem; }
+.cupom-total-line { font-size: 1rem; margin-top: var(--space-1); }
+
+.cupom-pagto { font-size: 0.8rem; font-weight: 600; text-align: center; }
+.cupom-footer { text-align: center; font-size: 0.7rem; color: var(--color-text-tertiary); font-style: italic; }
+
+.cupom-print-btn {
+  display: block;
+  margin: var(--space-3) auto 0;
+}

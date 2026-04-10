@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import TopBar from '../../shared/components/TopBar';
 import { useCart } from '../../contexts/CartContext';
-import { formatPrice } from '../../data/mockData';
+import { formatPrice } from '../../lib/utils';
 import './CarrinhoPage.css';
 
 export default function CarrinhoPage() {

@@ -2,6 +2,7 @@ import { type ReactNode, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppName } from '../../lib/useAppName';
 import { useLogout } from '../../lib/useAuth';
+import { useMultiProfile } from '../../lib/useMultiProfile';
 import ProfileSwitcherModal from '../../shared/components/ProfileSwitcherModal';
 import './EntregadorLayout.css';
 
@@ -17,6 +18,7 @@ export default function EntregadorLayout({ title, hideHeader = false, children }
   const nomeApp = useAppName();
   const logout = useLogout();
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
+  const hasMultipleProfiles = useMultiProfile();
 
   const isRotaDetail = location.pathname.includes('/entregador/rota/');
 
@@ -35,7 +37,7 @@ export default function EntregadorLayout({ title, hideHeader = false, children }
           <div className="entregador-header-inner">
             <h1 className="entregador-title">{title || `${nomeApp} Entregador`}</h1>
             <div className="entregador-actions">
-              <button className="entregador-btn-icon" onClick={() => setIsSwitcherOpen(true)} title="Trocar Perfil">🔄</button>
+              {hasMultipleProfiles && <button className="entregador-btn-icon" onClick={() => setIsSwitcherOpen(true)} title="Trocar Perfil">🔄</button>}
               <button className="entregador-btn-icon" onClick={logout} title="Sair">🚪</button>
             </div>
           </div>

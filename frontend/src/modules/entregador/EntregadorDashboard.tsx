@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EntregadorLayout from './EntregadorLayout';
-import { oportunidadesMock } from '../../data/entregadorMock';
-import { formatPrice } from '../../data/mockData';
+import { formatPrice } from '../../lib/utils';
 import { api } from '../../lib/api';
 import { useAuthProtected, useAuthUser } from '../../lib/useAuth';
 import { Entrega, OportunidadeEntrega } from '../../types/entrega';
@@ -15,24 +14,13 @@ export default function EntregadorDashboard() {
   useAuthProtected(['ENTREGADOR']);
   const { userId: entregadorId } = useAuthUser();
 
-  // Recupera dados do entregador logado
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('@MarketSystem:user');
-    return saved ? JSON.parse(saved) : null;
-  });
-
   const [isOnline, setIsOnline] = useState(false);
-  const [oportunidades, setOportunidades] = useState<OportunidadeEntrega[]>(oportunidadesMock);
-  const [entregasAtivas, setEntregasAtivas] = useState<Entrega[]>([]);
+  const [oportunidades, setOportunidades] = useState<OportunidadeEntrega[]>([]);
+  const [, setEntregasAtivas] = useState<Entrega[]>([]);
   const [loading, setLoading] = useState(false);
   const [erroOportunidades, setErroOportunidades] = useState<string | null>(null);
 
   const [stats, setStats] = useState({ ganhosHoje: 0, corridasHoje: 0, taxaAceitacao: 100, avaliacao: 5.0 });
-
-  const formatCPF = (cpf: string) => {
-    if (!cpf) return '';
-    return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-  };
 
   const handleAceitarCorrida = async (opp: OportunidadeEntrega) => {
     const entregaId = opp.id;
@@ -88,19 +76,12 @@ export default function EntregadorDashboard() {
           lngEntrega: -46.6573,
         }));
         
-        if (oportunidadesAPI.length === 0) {
-          // Se nenhuma entrega real, mostrar mock
-          setOportunidades(oportunidadesMock);
-          setErroOportunidades('Usando dados de demonstração');
-        } else {
-          setOportunidades(oportunidadesAPI);
-        }
+        setOportunidades(oportunidadesAPI);
       })
       .catch((err: any) => {
         console.error('Erro ao carregar oportunidades:', err);
-        // Fallback para mock
-        setOportunidades(oportunidadesMock);
-        setErroOportunidades('Usando dados de demonstração (API indisponível)');
+        setOportunidades([]);
+        setErroOportunidades('Não foi possível carregar as oportunidades. Tente novamente.');
       })
       .finally(() => setLoading(false));
   }, [isOnline]);
@@ -124,26 +105,6 @@ export default function EntregadorDashboard() {
     <EntregadorLayout title="Início">
       <div className="ent-dashboard animate-fade-in-up">
         
-        {/* Perfil do Entregador (Conta vinculada ao CPF) */}
-        <div className="gestor-profile-card">
-          <div className="gestor-avatar">
-            {user?.nomeCompleto?.charAt(0) || user?.nome?.charAt(0) || '🛵'}
-          </div>
-          <div className="gestor-info">
-            <div className="gestor-main">
-              <h3 className="gestor-name">{user?.nomeCompleto || user?.nome || 'Entregador'}</h3>
-              <span className="gestor-badge">CPF: {formatCPF(user?.cpf)}</span>
-            </div>
-            <div className="gestor-details">
-              <span className="gestor-detail-item">📧 {user?.email}</span>
-              <span className="gestor-detail-item">📱 {user?.telefone || 'Não informado'}</span>
-            </div>
-          </div>
-          <button className="gestor-edit-btn" onClick={() => navigate('/entregador/editar-perfil')}>
-            ⚙️ Perfil
-          </button>
-        </div>
-
         {/* Toggle Online/Offline Header */}
         <div className={`ent-status-header ${isOnline ? 'online' : 'offline'}`}>
           <div className="ent-status-info">

@@ -18,21 +18,12 @@ export default function AdminDashboard() {
   const [loadingFake, setLoadingFake] = useState(false);
   const [msg, setMsg] = useState('');
 
-  const user = (() => {
-    try { return JSON.parse(localStorage.getItem('@MarketSystem:user') || '{}'); } catch { return {}; }
-  })();
-
   useEffect(() => {
     api.get('/admin/stats')
       .then((res: any) => setStats(res.data))
       .catch(() => setStats(null))
       .finally(() => setLoadingStats(false));
   }, []);
-
-  const formatCPF = (cpf: string) => {
-    if (!cpf) return '';
-    return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-  };
 
   const handleCreateFake = async () => {
     if (!window.confirm('Deseja criar um set de contas fake (Cliente, Loja, Entregador)?')) return;
@@ -59,27 +50,6 @@ export default function AdminDashboard() {
   return (
     <AdminLayout title="Dashboard">
       <div className="admin-dash animate-fade-in-up">
-
-        {/* Perfil do Admin */}
-        <div className="gestor-profile-card">
-          <div className="gestor-avatar">
-            {user?.nomeCompleto?.charAt(0) || user?.nome?.charAt(0) || '⚙️'}
-          </div>
-          <div className="gestor-info">
-            <div className="gestor-main">
-              <h3 className="gestor-name">{user?.nomeCompleto || user?.nome || 'Admin Master'}</h3>
-              <span className="gestor-badge">CPF: {formatCPF(user?.cpf)}</span>
-            </div>
-            <div className="gestor-details">
-              <span className="gestor-detail-item">📧 {user?.email || '—'}</span>
-              <span className="gestor-detail-item">📱 {user?.telefone || 'Não informado'}</span>
-              <span className="gestor-detail-item">🔑 {user?.role}</span>
-            </div>
-          </div>
-          <button className="gestor-edit-btn" onClick={() => navigate('/admin/perfil')}>
-            ⚙️ Editar Perfil
-          </button>
-        </div>
 
         {/* KPIs reais */}
         <div className="admin-kpi-grid">

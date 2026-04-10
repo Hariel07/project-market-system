@@ -1,17 +1,34 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
-import { getMyProfile, updateMyProfile, deleteMyAccount, deleteMyProfile } from '../controllers/perfil.controller.js';
+import {
+  getMyProfile,
+  getProfileById,
+  updateMyProfile,
+  deleteMyAccount,
+  deleteMyProfile,
+  getMyEnderecos,
+  createEndereco,
+  updateEndereco,
+  setPrincipalEndereco,
+  deleteEndereco,
+} from '../controllers/perfil.controller.js';
 
 const router = Router();
 
-// Rota unificada para o usuário ver seus próprios dados mestres
+// Dados do perfil autenticado
 router.get('/me', authMiddleware, getMyProfile);
-
-// Rota unificada para o usuário editar seus dados (reflete em todos os perfis)
 router.patch('/me', authMiddleware, updateMyProfile);
-
-// Rotas de exclusão (Soft Delete)
 router.delete('/me', authMiddleware, deleteMyProfile);
 router.delete('/account', authMiddleware, deleteMyAccount);
+
+// Endereços
+router.get('/enderecos', authMiddleware, getMyEnderecos);
+router.post('/enderecos', authMiddleware, createEndereco);
+router.put('/enderecos/:id/principal', authMiddleware, setPrincipalEndereco);
+router.put('/enderecos/:id', authMiddleware, updateEndereco);
+router.delete('/enderecos/:id', authMiddleware, deleteEndereco);
+
+// Perfil por ID (usado pelo EntregadorConfig — retorna dados do JWT)
+router.get('/:id', authMiddleware, getProfileById);
 
 export { router as perfilRoutes };

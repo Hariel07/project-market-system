@@ -25,6 +25,34 @@ export async function listarProdutos(req: Request, res: Response): Promise<void>
   }
 }
 
+export async function buscarProdutoPublico(req: Request, res: Response): Promise<void> {
+  try {
+    const id = req.params.id as string;
+
+    const produto = await prisma.product.findFirst({
+      where: { id, ativo: true },
+      include: {
+        categoria: true,
+        comercio: {
+          select: {
+            id: true,
+            nomeFantasia: true,
+            logoUrl: true,
+            taxaEntrega: true,
+            tempoMedio: true,
+          },
+        },
+      },
+    });
+
+    if (!produto) { res.status(404).json({ error: 'Produto não encontrado.' }); return; }
+    res.json(produto);
+  } catch (error) {
+    console.error('Erro ao buscar produto público:', error);
+    res.status(500).json({ error: 'Erro interno ao buscar produto.' });
+  }
+}
+
 export async function buscarProduto(req: Request, res: Response): Promise<void> {
   try {
     const comercioId = req.user?.comercioId;

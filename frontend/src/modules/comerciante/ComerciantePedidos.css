@@ -29,6 +29,37 @@
 .pedido-filter-btn.filter-novo { border-color: var(--color-warning); color: var(--color-warning); }
 .pedido-filter-btn.filter-novo.active { background: var(--color-warning); color: white; }
 
+/* New order alert banner */
+.pedidos-new-banner {
+  background: var(--color-warning);
+  color: white;
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  animation: bannerPulse 2s ease-in-out infinite;
+}
+
+@keyframes bannerPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.01); box-shadow: 0 4px 20px rgba(245, 158, 11, 0.35); }
+}
+
+/* Observações do pedido */
+.pedido-com-obs {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  padding: 0 0 var(--space-2);
+}
+
+/* PENDENTE card highlight */
+.pedido-com-card.status-pendente {
+  border-left: 4px solid var(--color-warning);
+  background: linear-gradient(to right, #FFFBEB, var(--color-bg-card));
+}
+
 /* Cards */
 .pedidos-com-list {
   display: flex;

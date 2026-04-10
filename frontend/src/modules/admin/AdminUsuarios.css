@@ -2,6 +2,24 @@
   padding: 20px;
 }
 
+/* Table responsive wrapper */
+.admin-usuarios .table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-lg);
+}
+
+@media (max-width: 768px) {
+  .admin-usuarios { padding: var(--space-2); }
+  .admin-usuarios table { font-size: 0.8rem; }
+  .admin-usuarios th:nth-child(3),
+  .admin-usuarios td:nth-child(3),
+  .admin-usuarios th:nth-child(4),
+  .admin-usuarios td:nth-child(4) {
+    display: none;
+  }
+}
+
 .user-profile-cell {
   display: flex;
   align-items: center;

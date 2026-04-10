@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import { formatPrice } from '../../data/mockData';
+import { formatPrice } from '../../lib/utils';
 import { api } from '../../lib/api';
 import './AdminComercios.css';
 

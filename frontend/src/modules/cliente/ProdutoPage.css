@@ -17,6 +17,46 @@
   animation: float 3s ease-in-out infinite;
 }
 
+/* Image carousel nav */
+.produto-img-nav {
+  position: absolute;
+  top: 50%; transform: translateY(-50%);
+  background: rgba(0,0,0,0.35);
+  color: white;
+  border: none;
+  font-size: 1.8rem;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.2s;
+}
+.produto-img-nav:hover { background: rgba(0,0,0,0.6); }
+.produto-img-nav.prev { left: 12px; }
+.produto-img-nav.next { right: 12px; }
+
+.produto-img-dots {
+  position: absolute;
+  bottom: 12px;
+  left: 50%; transform: translateX(-50%);
+  display: flex; gap: 6px;
+  z-index: 10;
+}
+
+.produto-img-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.produto-img-dot.active {
+  background: white;
+  width: 20px;
+  border-radius: 4px;
+}
+
 .produto-promo-tag {
   position: absolute;
   bottom: 12px;
@@ -196,6 +236,7 @@
   backdrop-filter: blur(20px);
   border-top: 1px solid var(--color-border-light);
   padding: var(--space-4) 0;
+  padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
   z-index: 800;
 }
 

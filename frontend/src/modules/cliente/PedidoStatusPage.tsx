@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import TopBar from '../../shared/components/TopBar';
-import { formatPrice } from '../../data/mockData';
+import CupomFiscal from '../../shared/components/CupomFiscal';
+import { formatPrice } from '../../lib/utils';
 import { api } from '../../lib/api';
 import './PedidoStatusPage.css';
 
@@ -218,10 +219,24 @@ export default function PedidoStatusPage() {
             </div>
           </div>
 
+          {/* Cupom fiscal para pedidos concluídos */}
+          {pedido.status === 'ENTREGUE' && (
+            <div className="animate-fade-in-up delay-4" style={{ marginBottom: 'var(--space-4)' }}>
+              <CupomFiscal
+                pedidoId={pedido.id}
+                comercioNome={pedido.comercio.nomeFantasia}
+                clienteNome={pedido.cliente.nome}
+                itens={pedido.itens.map(i => ({ nome: i.produto.nome, quantidade: i.quantidade, precoUnitario: i.precoUnitario }))}
+                subtotal={pedido.valorTotal - pedido.taxaEntrega}
+                taxaEntrega={pedido.taxaEntrega}
+                total={pedido.valorTotal}
+                metodoPagto={pedido.metodoPagto}
+                data={pedido.createdAt}
+              />
+            </div>
+          )}
+
           <div className="status-actions animate-fade-in-up delay-4">
-            {pedido.status === 'ENTREGUE' && (
-              <button className="btn btn-primary btn-block">Pedir novamente</button>
-            )}
             <button className="btn btn-outline btn-block">Preciso de ajuda</button>
           </div>
         </div>

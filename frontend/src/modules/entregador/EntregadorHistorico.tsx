@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import EntregadorLayout from './EntregadorLayout';
-import { historicoMock } from '../../data/entregadorMock';
-import { formatPrice } from '../../data/mockData';
+import { formatPrice } from '../../lib/utils';
 import { api } from '../../lib/api';
 import { useAuthProtected, useAuthUser } from '../../lib/useAuth';
 import './EntregadorHistorico.css';
@@ -48,13 +46,11 @@ interface EntregaAgrupada {
 }
 
 export default function EntregadorHistorico() {
-  const navigate = useNavigate();
   useAuthProtected(['ENTREGADOR']);
   const { userId } = useAuthUser();
 
   const [entregas, setEntregas] = useState<EntregaHistorico[]>([]);
   const [loading, setLoading] = useState(true);
-  const [usingMockData, setUsingMockData] = useState(false);
   const [filtro, setFiltro] = useState<PeriodoFiltro>('mes');
   const [entregasAgrupadas, setEntregasAgrupadas] = useState<EntregaAgrupada[]>([]);
 
@@ -120,50 +116,10 @@ export default function EntregadorHistorico() {
         }
 
         const response = await api.get('entregas/historico');
-        setEntregas(response.data.entregas);
-        setUsingMockData(false);
+        setEntregas(response.data.entregas ?? []);
       } catch (error) {
         console.error('Erro ao carregar histórico:', error);
-        // Fallback para dados mock
-        const mapeadas = historicoMock.map((h, idx) => ({
-          id: `mock-${idx}`,
-          status: h.status === 'concluida' ? 'ENTREGUE' : 'CANCELADA',
-          entregueEm: new Date(h.data),
-          coletadoEm: new Date(new Date(h.data).getTime() - Math.random() * 60 * 60 * 1000),
-          pedido: {
-            id: `order-${idx}`,
-            valorTotal: h.valorDaCorrida + h.caixinha,
-            nomeCliente: 'Cliente Teste',
-            contato: '(11) 99999-9999',
-            comercio: {
-              nomeFantasia: h.restaurante,
-              enderecoColeta: 'Av. Paulista, 1000 - São Paulo - SP',
-              enderecoEntrega: 'Rua Augusta, 400 - Consolação - São Paulo - SP',
-            },
-            itens: [
-              {
-                codigo: `PROD-${idx}-001`,
-                nome: 'Hamburger Duplo',
-                quantidade: 1,
-                valor: 25.50,
-              },
-              {
-                codigo: `PROD-${idx}-002`,
-                nome: 'Refrigerante 2L',
-                quantidade: 1,
-                valor: 8.90,
-              },
-              {
-                codigo: `PROD-${idx}-003`,
-                nome: 'Batata Frita G',
-                quantidade: 1,
-                valor: 12.50,
-              },
-            ],
-          },
-        }));
-        setEntregas(mapeadas);
-        setUsingMockData(true);
+        setEntregas([]);
       } finally {
         setLoading(false);
       }
@@ -191,21 +147,6 @@ export default function EntregadorHistorico() {
   return (
     <EntregadorLayout title="Histórico de Corridas">
       <div className="ent-historico">
-        {/* Aviso se usando dados de demonstração */}
-        {usingMockData && (
-          <div style={{
-            background: '#fff3cd',
-            border: '1px solid #ffc107',
-            borderRadius: '8px',
-            padding: '12px 16px',
-            marginBottom: '16px',
-            color: '#856404',
-            fontSize: '14px'
-          }}>
-            ⚠️ Usando dados de demonstração (API indisponível)
-          </div>
-        )}
-
         {/* Filtros por Período */}
         <div style={{
           display: 'flex',
@@ -273,7 +214,7 @@ export default function EntregadorHistorico() {
 
               {/* Lista de Corridas do Período */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {grupo.entregas.map((entrega, idx) => {
+                {grupo.entregas.map((entrega) => {
                   const dataEntrega = entrega.entregueEm ? new Date(entrega.entregueEm) : new Date();
                   const dataColeta = entrega.coletadoEm ? new Date(entrega.coletadoEm) : new Date();
                   const horaColeta = dataColeta.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });

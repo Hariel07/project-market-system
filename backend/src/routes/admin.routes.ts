@@ -10,6 +10,7 @@ import {
   deleteFakeData,
   factoryReset
 } from '../controllers/admin.controller.js';
+import { getConfig, updateConfig } from '../controllers/config.controller.js';
 
 const router = Router();
 
@@ -24,5 +25,9 @@ router.get('/users/:id/details', getUserDetails);
 router.post('/fake-data/create', createFakeData);
 router.delete('/fake-data/cleanup', deleteFakeData);
 router.post('/system/factory-reset', factoryReset);
+
+// Configurações globais da plataforma
+router.get('/config', getConfig);
+router.put('/config', updateConfig);
 
 export default router;

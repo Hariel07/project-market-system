@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth.routes.js';
 import categoriasRoutes from './routes/categorias.routes.js';
@@ -19,6 +20,7 @@ import adminRoutes from './routes/admin.routes.js';
 import caixaRoutes from './routes/caixa.routes.js';
 import funcionariosRoutes from './routes/funcionarios.routes.js';
 import financeiroRoutes from './routes/financeiro.routes.js';
+import uploadRoutes from './routes/upload.routes.js';
 import { maintenanceMiddleware } from './middlewares/maintenance.middleware.js';
 
 dotenv.config();
@@ -62,6 +64,11 @@ app.use((req, res, next) => {
 const publicPath = path.join(__dirname, '..', 'public');
 app.use(express.static(publicPath));
 
+// Servir uploads (imagens) como estáticos
+const uploadsPath = path.join(publicPath, 'uploads');
+fs.mkdirSync(uploadsPath, { recursive: true }); // garante existência em dev
+app.use('/uploads', express.static(uploadsPath));
+
 app.get('/api/status', (req, res) => {
   res.json({ status: 'Online', message: 'Market System API rodando perfeitamente!' });
 });
@@ -80,6 +87,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/notificacoes', notificationRoutes);
 app.use('/api/avaliacoes', ratingRoutes);
 
+app.use('/api/upload', uploadRoutes);
 app.use('/api/caixa', caixaRoutes);
 app.use('/api/funcionarios', funcionariosRoutes);
 app.use('/api/financeiro', financeiroRoutes);

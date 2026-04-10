@@ -179,6 +179,98 @@ export async function confirmarPagamento(req: Request, res: Response) {
   }
 }
 
+// GET /api/financeiro/ganhos?periodo=hoje|semana|mes|ano — Ganhos do entregador logado
+export async function getGanhosEntregador(req: Request, res: Response) {
+  try {
+    const userId = req.user!.id;
+    const periodo = (req.query.periodo as string) || 'mes';
+
+    const now = new Date();
+    let startDate: Date;
+    let labelPeriodo: string;
+
+    switch (periodo) {
+      case 'hoje':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        labelPeriodo = 'Hoje';
+        break;
+      case 'semana':
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - now.getDay());
+        startDate.setHours(0, 0, 0, 0);
+        labelPeriodo = 'Esta Semana';
+        break;
+      case 'ano':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        labelPeriodo = 'Este Ano';
+        break;
+      case 'mes':
+      default:
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        labelPeriodo = 'Este Mês';
+    }
+
+    // Buscar entregas finalizadas no período
+    const entregas = await prisma.delivery.findMany({
+      where: {
+        entregadorId: userId,
+        status: 'ENTREGUE',
+        entregueEm: { gte: startDate },
+      },
+      select: { id: true, taxaRepasse: true, entregueEm: true },
+    });
+
+    const totalGanho = entregas.reduce((sum, e) => sum + (e.taxaRepasse ?? 0), 0);
+    const totalEntregas = entregas.length;
+
+    // Avaliação média (últimos 90 dias para relevância)
+    const dataAvaliacao = new Date();
+    dataAvaliacao.setDate(dataAvaliacao.getDate() - 90);
+    const ratings = await (prisma.rating as any).findMany({
+      where: { entregadorId: userId, createdAt: { gte: dataAvaliacao } },
+      select: { estrelas: true },
+    }) as { estrelas: number }[];
+    const avaliacao = ratings.length > 0
+      ? +(ratings.reduce((s, r) => s + r.estrelas, 0) / ratings.length).toFixed(2)
+      : 0;
+
+    // Totais por mês (últimos 12 meses para o gráfico)
+    const dozeAno = new Date();
+    dozeAno.setMonth(dozeAno.getMonth() - 11);
+    dozeAno.setDate(1);
+    dozeAno.setHours(0, 0, 0, 0);
+
+    const entregasAno = await prisma.delivery.findMany({
+      where: { entregadorId: userId, status: 'ENTREGUE', entregueEm: { gte: dozeAno } },
+      select: { taxaRepasse: true, entregueEm: true },
+    });
+
+    const mesesNomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const meses = Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
+      return { mes: mesesNomes[d.getMonth()], ano: d.getFullYear(), mes_num: d.getMonth(), valor: 0 };
+    });
+
+    for (const e of entregasAno) {
+      if (!e.entregueEm) continue;
+      const d = new Date(e.entregueEm);
+      const idx = meses.findIndex(m => m.mes_num === d.getMonth() && m.ano === d.getFullYear());
+      if (idx !== -1) meses[idx].valor += e.taxaRepasse ?? 0;
+    }
+
+    return res.json({
+      periodo: labelPeriodo,
+      totalGanho: +totalGanho.toFixed(2),
+      totalEntregas,
+      avaliacao,
+      meses: meses.map(m => ({ mes: m.mes, valor: +m.valor.toFixed(2) })),
+    });
+  } catch (error) {
+    console.error('Erro ao buscar ganhos:', error);
+    return res.status(500).json({ error: 'Erro interno.' });
+  }
+}
+
 // GET /api/financeiro/assinaturas — Histórico de assinaturas do comércio
 export async function getAssinaturas(req: Request, res: Response) {
   try {
@@ -226,7 +318,7 @@ export async function pagarAssinatura(req: Request, res: Response) {
       ?? await obterOuCriarConta('PLATAFORMA');
 
     await prisma.$transaction(async (tx) => {
-      const transacao = await tx.transacaoFinanceira.create({
+      await tx.transacaoFinanceira.create({
         data: {
           tipo: 'PAGAMENTO_ASSINATURA' as TipoTransacao,
           status: 'PROCESSADO' as StatusTransacao,

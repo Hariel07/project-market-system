@@ -160,6 +160,127 @@ export const deleteMyAccount = async (req: Request, res: Response) => {
 };
 
 /**
+ * GET /api/perfil/:id
+ * Retorna dados do usuário autenticado (ignora o param, usa JWT)
+ */
+export const getProfileById = async (req: Request, res: Response) => {
+  return getMyProfile(req, res);
+};
+
+// ============================================================
+// Endereços do Perfil (associados à conta)
+// ============================================================
+
+/**
+ * GET /api/perfil/enderecos
+ */
+export const getMyEnderecos = async (req: Request, res: Response) => {
+  const accountId = req.user?.accountId;
+  try {
+    const enderecos = await prisma.address.findMany({
+      where: { accountId },
+      orderBy: [{ isPrincipal: 'desc' }, { createdAt: 'asc' }],
+    });
+    res.json(enderecos);
+  } catch {
+    res.status(500).json({ error: 'Erro ao buscar endereços.' });
+  }
+};
+
+/**
+ * POST /api/perfil/enderecos
+ */
+export const createEndereco = async (req: Request, res: Response) => {
+  const accountId = req.user?.accountId;
+  const { logradouro, numero, complemento, bairro, cidade, estado, pais, cep, pontoReferencia, rotulo, icone, lat, lng, isPrincipal } = req.body;
+
+  try {
+    if (isPrincipal) {
+      await prisma.address.updateMany({ where: { accountId }, data: { isPrincipal: false } });
+    }
+    const endereco = await prisma.address.create({
+      data: {
+        accountId,
+        logradouro, numero, complemento, bairro, cidade, estado,
+        pais: pais || 'BR', cep, pontoReferencia,
+        rotulo: rotulo || 'CASA', icone: icone || '🏠',
+        lat: lat ? parseFloat(lat) : null,
+        lng: lng ? parseFloat(lng) : null,
+        isPrincipal: isPrincipal || false,
+      },
+    });
+    res.status(201).json(endereco);
+  } catch {
+    res.status(500).json({ error: 'Erro ao criar endereço.' });
+  }
+};
+
+/**
+ * PUT /api/perfil/enderecos/:id
+ */
+export const updateEndereco = async (req: Request, res: Response) => {
+  const accountId = req.user?.accountId;
+  const { id } = req.params;
+  const { logradouro, numero, complemento, bairro, cidade, estado, pais, cep, pontoReferencia, rotulo, icone, lat, lng, isPrincipal } = req.body;
+
+  try {
+    const existing = await prisma.address.findFirst({ where: { id, accountId } });
+    if (!existing) { res.status(404).json({ error: 'Endereço não encontrado.' }); return; }
+
+    if (isPrincipal) {
+      await prisma.address.updateMany({ where: { accountId }, data: { isPrincipal: false } });
+    }
+    const updated = await prisma.address.update({
+      where: { id },
+      data: {
+        logradouro, numero, complemento, bairro, cidade, estado, pais, cep, pontoReferencia,
+        rotulo, icone,
+        lat: lat ? parseFloat(lat) : existing.lat,
+        lng: lng ? parseFloat(lng) : existing.lng,
+        isPrincipal: isPrincipal ?? existing.isPrincipal,
+      },
+    });
+    res.json(updated);
+  } catch {
+    res.status(500).json({ error: 'Erro ao atualizar endereço.' });
+  }
+};
+
+/**
+ * PUT /api/perfil/enderecos/:id/principal
+ */
+export const setPrincipalEndereco = async (req: Request, res: Response) => {
+  const accountId = req.user?.accountId;
+  const { id } = req.params;
+  try {
+    const existing = await prisma.address.findFirst({ where: { id, accountId } });
+    if (!existing) { res.status(404).json({ error: 'Endereço não encontrado.' }); return; }
+
+    await prisma.address.updateMany({ where: { accountId }, data: { isPrincipal: false } });
+    const updated = await prisma.address.update({ where: { id }, data: { isPrincipal: true } });
+    res.json(updated);
+  } catch {
+    res.status(500).json({ error: 'Erro ao definir endereço principal.' });
+  }
+};
+
+/**
+ * DELETE /api/perfil/enderecos/:id
+ */
+export const deleteEndereco = async (req: Request, res: Response) => {
+  const accountId = req.user?.accountId;
+  const { id } = req.params;
+  try {
+    const existing = await prisma.address.findFirst({ where: { id, accountId } });
+    if (!existing) { res.status(404).json({ error: 'Endereço não encontrado.' }); return; }
+    await prisma.address.delete({ where: { id } });
+    res.json({ message: 'Endereço removido.' });
+  } catch {
+    res.status(500).json({ error: 'Erro ao remover endereço.' });
+  }
+};
+
+/**
  * DELETE /api/perfil/me
  * Marca apenas o PERFIL ATUAL para exclusão (Soft Delete)
  */

@@ -322,3 +322,9 @@
     box-shadow: 0 15px 30px rgba(255, 255, 255, 0.25);
   }
 }
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+  .btn-adicionar-endereco { padding: 1rem; font-size: 1rem; border-radius: 16px; }
+  .btn-concluir-premium { padding: 1.1rem; font-size: 1rem; border-radius: 16px; }
+}

@@ -10,7 +10,7 @@ export default function ComercianteConfig() {
       title: '🏪 Comércio',
       items: [
         { path: '/comerciante/config/perfil', icon: '📝', label: 'Perfil da Loja', desc: 'Dados e Horário de Funcionamento' },
-        { path: '#', icon: '📍', label: 'Área de entrega', desc: 'Raio de cobertura e taxas por região' },
+        { path: '/comerciante/config/area-entrega', icon: '📍', label: 'Área de entrega', desc: 'Localização, CEP, mapa e raio de cobertura' },
       ]
     },
     {

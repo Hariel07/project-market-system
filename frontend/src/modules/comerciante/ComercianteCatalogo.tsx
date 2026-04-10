@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ComercianteLayout from './ComercianteLayout';
 import { api } from '../../lib/api';
-import { formatPrice } from '../../data/mockData';
+import { formatPrice } from '../../lib/utils';
 import './ComercianteCatalogo.css';
 
 interface Produto {

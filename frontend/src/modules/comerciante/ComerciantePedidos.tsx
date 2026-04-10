@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../../lib/api';
+import { playNotificationSound } from '../../lib/sounds';
 import ComercianteLayout from './ComercianteLayout';
 import './ComerciantePedidos.css';
 
@@ -73,29 +73,49 @@ function timeAgo(iso: string) {
 }
 
 export default function ComerciantePedidos() {
-  const navigate = useNavigate();
   const [filtro, setFiltro] = useState<string>('todos');
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
   const [advancing, setAdvancing] = useState<string | null>(null);
 
+  // Rastrear IDs de pedidos PENDENTE para detectar novos
+  const prevPendenteIdsRef = useRef<Set<string> | null>(null);
+  const isFirstLoadRef = useRef(true);
+
   const fetchPedidos = useCallback(async () => {
     try {
       const res = await api.get('/pedidos/comercio');
-      setPedidos(Array.isArray(res.data) ? res.data : []);
-    } catch (err: any) {
-      if (err.response?.status === 401) {
-        navigate('/login');
+      const lista: Pedido[] = Array.isArray(res.data) ? res.data : [];
+      setPedidos(lista);
+
+      // Detectar novos pedidos PENDENTE e tocar som
+      const currentPendenteIds = new Set(lista.filter(p => p.status === 'PENDENTE').map(p => p.id));
+
+      if (isFirstLoadRef.current) {
+        // Primeira carga — apenas gravar, sem tocar som
+        isFirstLoadRef.current = false;
+      } else if (prevPendenteIdsRef.current) {
+        // Verificar se há IDs novos que não estavam no set anterior
+        const hasNew = [...currentPendenteIds].some(id => !prevPendenteIdsRef.current!.has(id));
+        if (hasNew) {
+          playNotificationSound();
+          // Vibrar se dispositivo móvel suportar
+          if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        }
       }
+
+      prevPendenteIdsRef.current = currentPendenteIds;
+    } catch {
+      // silently retry on next poll
     } finally {
       setLoading(false);
     }
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
     fetchPedidos();
-    // Polling a cada 30s para novos pedidos
-    const interval = setInterval(fetchPedidos, 30000);
+    // Polling a cada 15s para novos pedidos (era 30s, reduzido para melhor resposta)
+    const interval = setInterval(fetchPedidos, 15000);
     return () => clearInterval(interval);
   }, [fetchPedidos]);
 
@@ -165,16 +185,7 @@ export default function ComerciantePedidos() {
       {/* Banner de novos pedidos */}
       {novos > 0 && filtro !== 'PENDENTE' && (
         <div
-          className="animate-fade-in-up"
-          style={{
-            background: 'var(--color-warning)',
-            color: 'white',
-            borderRadius: 'var(--radius-lg)',
-            padding: 'var(--space-3) var(--space-4)',
-            marginBottom: 'var(--space-4)',
-            cursor: 'pointer',
-            fontWeight: 600,
-          }}
+          className="pedidos-new-banner animate-fade-in-up"
           onClick={() => setFiltro('PENDENTE')}
         >
           🔔 {novos} novo{novos > 1 ? 's pedidos precisam' : ' pedido precisa'} de atenção!
@@ -212,7 +223,7 @@ export default function ComerciantePedidos() {
               </div>
 
               {pedido.observacoes && (
-                <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', padding: '0 0 var(--space-2)' }}>
+                <div className="pedido-com-obs">
                   📝 {pedido.observacoes}
                 </div>
               )}

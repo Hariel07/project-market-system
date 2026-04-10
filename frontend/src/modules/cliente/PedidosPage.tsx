@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TopBar from '../../shared/components/TopBar';
-import { formatPrice } from '../../data/mockData';
+import { formatPrice } from '../../lib/utils';
 import { api } from '../../lib/api';
 import './PedidosPage.css';
 

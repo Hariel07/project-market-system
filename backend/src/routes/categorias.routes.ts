@@ -3,6 +3,7 @@ import { authMiddleware } from '../middlewares/auth.middleware.js';
 import { roleMiddleware } from '../middlewares/role.middleware.js';
 import {
   listarCategorias,
+  listarCategoriasPublico,
   criarCategoria,
   atualizarCategoria,
   deletarCategoria,
@@ -10,7 +11,10 @@ import {
 
 const router = Router();
 
-// Todas as rotas de categorias exigem autenticação
+// Rota pública — deve ficar ANTES do authMiddleware
+router.get('/public', listarCategoriasPublico);
+
+// Rotas autenticadas
 router.use(authMiddleware);
 
 // GET    /api/categorias        → Listar (DONO, GERENTE, ESTOQUE)

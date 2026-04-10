@@ -1,105 +1,41 @@
 import { useEffect, useState } from 'react';
 import EntregadorLayout from './EntregadorLayout';
-import { formatPrice } from '../../data/mockData';
 import { api } from '../../lib/api';
-import { useAuthProtected, useAuthUser } from '../../lib/useAuth';
+import { useAuthProtected } from '../../lib/useAuth';
 import './EntregadorHistorico.css';
 
 type PeriodoFiltro = 'hoje' | 'semana' | 'mes' | 'ano';
 
-interface GanhosPeriodo {
+interface GanhosData {
   periodo: string;
   totalGanho: number;
   totalEntregas: number;
-  distanciaTotal: number;
   avaliacao: number;
+  meses: { mes: string; valor: number }[];
+}
+
+function formatPrice(value: number) {
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 export default function EntregadorGanhos() {
   useAuthProtected(['ENTREGADOR']);
-  const { userId } = useAuthUser();
 
   const [filtro, setFiltro] = useState<PeriodoFiltro>('mes');
-  const [ganhosData, setGanhosData] = useState<GanhosPeriodo | null>(null);
+  const [ganhosData, setGanhosData] = useState<GanhosData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saldoDisponivel] = useState(2548.70);
-  const [totalTransferido] = useState(5420.00);
-
-  // Dados mock para ganhos por período
-  const ganhosMock = {
-    hoje: {
-      periodo: 'Hoje',
-      totalGanho: 245.80,
-      totalEntregas: 8,
-      distanciaTotal: 42.5,
-      avaliacao: 4.9,
-    },
-    semana: {
-      periodo: 'Esta Semana',
-      totalGanho: 1420.50,
-      totalEntregas: 48,
-      distanciaTotal: 285.0,
-      avaliacao: 4.85,
-    },
-    mes: {
-      periodo: 'Este Mês',
-      totalGanho: 5680.30,
-      totalEntregas: 195,
-      distanciaTotal: 1200.0,
-      avaliacao: 4.8,
-    },
-    ano: {
-      periodo: 'Este Ano',
-      totalGanho: 68540.00,
-      totalEntregas: 2400,
-      distanciaTotal: 14400.0,
-      avaliacao: 4.75,
-    },
-  };
+  const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
-    const carregarGanhos = async () => {
-      setLoading(true);
-      try {
-        if (!userId) {
-          setGanhosData(null);
-          return;
-        }
+    setLoading(true);
+    setErro(null);
+    api.get(`financeiro/ganhos?periodo=${filtro}`)
+      .then(r => setGanhosData(r.data))
+      .catch(() => setErro('Não foi possível carregar os ganhos.'))
+      .finally(() => setLoading(false));
+  }, [filtro]);
 
-        // Por enquanto usando mock, futuramente conectar à API
-        const data = ganhosMock[filtro];
-        setGanhosData(data);
-      } catch (error) {
-        console.error('Erro ao carregar ganhos:', error);
-        const data = ganhosMock[filtro];
-        setGanhosData(data);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    carregarGanhos();
-  }, [filtro, userId]);
-
-  const getTotaisPorMes = () => {
-    // Mock de dados para 12 meses (para gráfico)
-    return [
-      { mes: 'Jan', valor: 4200 },
-      { mes: 'Fev', valor: 5100 },
-      { mes: 'Mar', valor: 6200 },
-      { mes: 'Abr', valor: 5680 },
-      { mes: 'Mai', valor: 7100 },
-      { mes: 'Jun', valor: 6800 },
-      { mes: 'Jul', valor: 7500 },
-      { mes: 'Ago', valor: 8200 },
-      { mes: 'Set', valor: 6900 },
-      { mes: 'Out', valor: 7600 },
-      { mes: 'Nov', valor: 8100 },
-      { mes: 'Dez', valor: 0 },
-    ];
-  };
-
-  const maxValor = Math.max(...getTotaisPorMes().map(d => d.valor));
+  const maxValor = ganhosData ? Math.max(...ganhosData.meses.map(m => m.valor), 1) : 1;
 
   if (loading) {
     return (
@@ -111,43 +47,25 @@ export default function EntregadorGanhos() {
     );
   }
 
+  if (erro) {
+    return (
+      <EntregadorLayout title="Meus Ganhos">
+        <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+          <p style={{ fontSize: '2rem' }}>😕</p>
+          <p>{erro}</p>
+        </div>
+      </EntregadorLayout>
+    );
+  }
+
   return (
     <EntregadorLayout title="Meus Ganhos">
       <div className="ent-historico" style={{ paddingBottom: '80px' }}>
-        {/* Saldo Principal */}
-        <div className="ent-balanco-card animate-fade-in-up">
-          <span className="balanco-subtitle">💰 Saldo Disponível</span>
-          <h2 className="balanco-title">{formatPrice(saldoDisponivel)}</h2>
-          <div className="balanco-actions">
-            <button
-              className="btn btn-primary balance-btn"
-              onClick={() => alert('Redirecionando para Pix...')}
-            >
-              💸 Transferir via Pix
-            </button>
-            <button
-              className="btn btn-outline"
-              style={{
-                background: 'white',
-                border: '2px solid #ff6b35',
-                color: '#ff6b35',
-                padding: '10px 16px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-              }}
-              onClick={() => alert('Extrato: Total transferido R$ ' + totalTransferido)}
-            >
-              📊 Ver Extrato
-            </button>
-          </div>
-        </div>
-
         {/* Filtros de Período */}
         <div
           style={{
             display: 'flex',
             gap: '8px',
-            marginTop: '20px',
             marginBottom: '20px',
             overflowX: 'auto',
             paddingBottom: '8px',
@@ -204,9 +122,9 @@ export default function EntregadorGanhos() {
                   textAlign: 'center',
                 }}
               >
-                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Distância Total</div>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#4caf50' }}>
-                  {ganhosData.distanciaTotal.toFixed(1)} km
+                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Ganho Total</div>
+                <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#4caf50' }}>
+                  {formatPrice(ganhosData.totalGanho)}
                 </div>
               </div>
             </div>
@@ -233,7 +151,7 @@ export default function EntregadorGanhos() {
                   height: '150px',
                 }}
               >
-                {getTotaisPorMes().map((item, idx) => (
+                {ganhosData.meses.map((item, idx) => (
                   <div
                     key={idx}
                     style={{
@@ -268,7 +186,6 @@ export default function EntregadorGanhos() {
                 border: '1px solid #e0e0e0',
                 borderRadius: '8px',
                 padding: '16px',
-                marginBottom: '20px',
               }}
             >
               <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 'bold' }}>
@@ -283,61 +200,29 @@ export default function EntregadorGanhos() {
                   <span style={{ fontSize: '13px', color: '#666' }}>🛵 Total de Corridas</span>
                   <span style={{ fontWeight: 'bold', fontSize: '15px' }}>{ganhosData.totalEntregas}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
-                  <span style={{ fontSize: '13px', color: '#666' }}>📍 Distância Rodada</span>
-                  <span style={{ fontWeight: 'bold', fontSize: '15px' }}>{ganhosData.distanciaTotal.toFixed(1)} km</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px' }}>
+                {ganhosData.totalEntregas > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
+                    <span style={{ fontSize: '13px', color: '#666' }}>💵 Ganho Médio / Entrega</span>
+                    <span style={{ fontWeight: 'bold', fontSize: '15px' }}>
+                      {formatPrice(ganhosData.totalGanho / ganhosData.totalEntregas)}
+                    </span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '13px', color: '#666' }}>⭐ Avaliação Média</span>
                   <span style={{ fontWeight: 'bold', fontSize: '15px', color: '#ffc107' }}>
-                    ⭐ {ganhosData.avaliacao.toFixed(2)}
+                    {ganhosData.avaliacao > 0 ? `⭐ ${ganhosData.avaliacao.toFixed(2)}` : '—'}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Histórico de Transferências */}
-            <div
-              style={{
-                background: 'white',
-                border: '1px solid #e0e0e0',
-                borderRadius: '8px',
-                padding: '16px',
-              }}
-            >
-              <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 'bold' }}>
-                💳 Últimas Transferências
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: 'bold' }}>Transferência Pix</div>
-                    <div style={{ fontSize: '11px', color: '#999' }}>02/04/2026 às 14:30</div>
-                  </div>
-                  <div style={{ textAlign: 'right', fontWeight: 'bold', color: '#4caf50' }}>
-                    +{formatPrice(500)}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: 'bold' }}>Transferência Pix</div>
-                    <div style={{ fontSize: '11px', color: '#999' }}>01/04/2026 às 18:15</div>
-                  </div>
-                  <div style={{ textAlign: 'right', fontWeight: 'bold', color: '#4caf50' }}>
-                    +{formatPrice(1200)}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px' }}>
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: 'bold' }}>Transferência Pix</div>
-                    <div style={{ fontSize: '11px', color: '#999' }}>31/03/2026 às 10:45</div>
-                  </div>
-                  <div style={{ textAlign: 'right', fontWeight: 'bold', color: '#4caf50' }}>
-                    +{formatPrice(800)}
-                  </div>
-                </div>
+            {ganhosData.totalEntregas === 0 && (
+              <div style={{ textAlign: 'center', padding: '24px', color: '#999', marginTop: '16px' }}>
+                <p style={{ fontSize: '2rem' }}>🛵</p>
+                <p>Nenhuma entrega finalizada neste período.</p>
               </div>
-            </div>
+            )}
           </>
         )}
       </div>

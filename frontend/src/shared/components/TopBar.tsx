@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
 import { useAppConfig } from '../../lib/useAppName';
+import { useMultiProfile } from '../../lib/useMultiProfile';
 import ProfileSwitcherModal from './ProfileSwitcherModal';
 import './TopBar.css';
 
@@ -29,6 +30,7 @@ export default function TopBar({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const hasMultipleProfiles = useMultiProfile();
 
   const isLoggedIn = !!localStorage.getItem('@MarketSystem:token');
   const userStr = localStorage.getItem('@MarketSystem:user');
@@ -169,12 +171,14 @@ export default function TopBar({
                       🏪 Painel do comércio
                     </button>
                   )}
-                  <button
-                    style={{ display: 'block', width: '100%', padding: '0.65rem 1rem', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}
-                    onClick={() => { setDropdownOpen(false); setSwitcherOpen(true); }}
-                  >
-                    🔄 Trocar perfil
-                  </button>
+                  {hasMultipleProfiles && (
+                    <button
+                      style={{ display: 'block', width: '100%', padding: '0.65rem 1rem', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}
+                      onClick={() => { setDropdownOpen(false); setSwitcherOpen(true); }}
+                    >
+                      🔄 Trocar perfil
+                    </button>
+                  )}
                   <button
                     style={{ display: 'block', width: '100%', padding: '0.65rem 1rem', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--color-danger)' }}
                     onClick={handleLogout}
@@ -186,12 +190,12 @@ export default function TopBar({
             </div>
           ) : (
             <button
-              className="btn btn-outline btn-sm hide-mobile"
+              className="btn btn-primary btn-sm"
               onClick={() => navigate('/login')}
               id="btn-login-header"
-              style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+              style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
             >
-              Entrar / Cadastrar
+              Entrar
             </button>
           )}
         </div>

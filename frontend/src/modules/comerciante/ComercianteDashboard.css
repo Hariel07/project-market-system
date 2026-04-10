@@ -98,6 +98,9 @@
   align-items: center;
   justify-content: center;
 }
+.sidebar-label { white-space: nowrap; }
+.sidebar-switch { color: var(--color-primary); font-weight: 700; }
+.sidebar-switch:hover { background: rgba(59,130,246,0.08); }
 .sidebar-logout { margin-top: auto; color: #EF4444; }
 .sidebar-logout:hover { background: rgba(239,68,68,0.1); }
 
@@ -353,11 +356,58 @@
 }
 
 @media (max-width: 1100px) and (min-width: 768px) {
-  .com-sidebar { width: 72px; padding: var(--space-4) var(--space-2); align-items: center; }
-  .sidebar-name, .sidebar-link span:not(.sidebar-icon) { display: none; }
+  .com-sidebar { width: 72px; padding: var(--space-4) var(--space-2); align-items: center; overflow: hidden; }
+  .sidebar-name, .sidebar-label { display: none; }
   .sidebar-brand { justify-content: center; }
-  .sidebar-link { justify-content: center; padding: var(--space-3); }
+  .sidebar-link { justify-content: center; padding: var(--space-3); width: 48px; height: 48px; border-radius: 14px; }
+  .sidebar-link .sidebar-icon { margin: 0; }
 }
+
+/* Mobile menu hamburger */
+.com-topbar-menu-btn {
+  font-size: 1.4rem;
+  padding: var(--space-1) var(--space-2);
+  color: var(--color-text-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.com-mobile-menu {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.com-mobile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.com-mobile-menu-item:hover, .com-mobile-menu-item.active {
+  background: var(--color-surface);
+  color: var(--color-primary);
+}
+
+.com-mobile-menu-divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin: var(--space-2) var(--space-4);
+}
+
+.com-mobile-logout { color: var(--color-danger); }
 
 /* Gestor Profile Card */
 .gestor-profile-card {

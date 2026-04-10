@@ -2,6 +2,84 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { TipoMovimentoCaixa } from '@prisma/client';
 
+// ========== VENDA PDV ==========
+
+export const registrarVenda = async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  const { comercioId, pdvId, itens, formaPagamento, valorRecebido } = req.body;
+
+  if (!comercioId || !itens || !Array.isArray(itens) || itens.length === 0) {
+    res.status(400).json({ error: 'comercioId e itens são obrigatórios.' });
+    return;
+  }
+
+  try {
+    // Buscar caixa ativo do comércio (não filtra por pdvId — PDVs são terminais do mesmo caixa)
+    const caixaAtivo = await (prisma.aberturaCaixa as any).findFirst({
+      where: { comercioId, status: 'ABERTA' },
+      orderBy: { dataAbertura: 'desc' },
+    });
+    if (!caixaAtivo) {
+      res.status(400).json({ error: 'Nenhum caixa aberto para este comércio.' });
+      return;
+    }
+
+    // Calcular total e validar estoque
+    let total = 0;
+    const linhas: { produtoId: string; quantidade: number; precoUnitario: number; subtotal: number }[] = [];
+
+    for (const item of itens) {
+      const produto = await prisma.product.findUnique({ where: { id: item.produtoId } });
+      if (!produto) { res.status(404).json({ error: `Produto ${item.produtoId} não encontrado.` }); return; }
+      if (produto.estoque < item.quantidade) {
+        res.status(400).json({ error: `Estoque insuficiente para "${produto.nome}": disponível ${produto.estoque}.` });
+        return;
+      }
+      const preco = item.precoUnitario ?? produto.precoVenda;
+      const sub = preco * item.quantidade;
+      total += sub;
+      linhas.push({ produtoId: produto.id, quantidade: item.quantidade, precoUnitario: preco, subtotal: sub });
+    }
+
+    // Baixar estoque e registrar venda atomicamente
+    await prisma.$transaction(async (tx: any) => {
+      // Baixar estoque de cada produto
+      for (const linha of linhas) {
+        await tx.product.update({
+          where: { id: linha.produtoId },
+          data: { estoque: { decrement: linha.quantidade } },
+        });
+      }
+
+      // Registrar movimento de caixa
+      await tx.movimentoCaixa.create({
+        data: {
+          comercioId,
+          pdvId: pdvId || null,
+          tipo: 'VENDA' as TipoMovimentoCaixa,
+          valor: total,
+          descricao: `Venda PDV — ${formaPagamento || 'DINHEIRO'} — ${linhas.length} item(ns)`,
+          responsavelId: userId,
+          aberturaCaixaId: caixaAtivo.id,
+        },
+      });
+    });
+
+    const troco = formaPagamento === 'DINHEIRO' && valorRecebido ? valorRecebido - total : 0;
+
+    res.status(201).json({
+      ok: true,
+      total,
+      troco: Math.max(0, troco),
+      itens: linhas,
+      formaPagamento: formaPagamento || 'DINHEIRO',
+    });
+  } catch (error) {
+    console.error('Erro ao registrar venda:', error);
+    res.status(500).json({ error: 'Erro ao registrar venda.' });
+  }
+};
+
 // ========== MOVIMENTO DE CAIXA ==========
 
 export const listarMovimentos = async (req: Request, res: Response) => {
@@ -56,9 +134,9 @@ export const criarMovimento = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Campos obrigatórios: comercioId, tipo, valor, descricao' });
     }
 
-    // Buscar abertura de caixa ativa
-    const aberturaCaixa = await prisma.aberturaCaixa.findFirst({
-      where: { comercioId, status: 'ABERTA', pdvId: pdvId || undefined },
+    // Buscar abertura de caixa ativa do comércio (PDVs compartilham o mesmo caixa)
+    const aberturaCaixa = await (prisma.aberturaCaixa as any).findFirst({
+      where: { comercioId, status: 'ABERTA' },
       orderBy: { dataAbertura: 'desc' },
     });
 

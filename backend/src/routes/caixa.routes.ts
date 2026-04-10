@@ -6,6 +6,7 @@ import {
   listarAberturasCaixa,
   listarMovimentos,
   criarMovimento,
+  registrarVenda,
 } from '../controllers/caixa.controller.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 import { roleMiddleware } from '../middlewares/role.middleware.js';
@@ -13,7 +14,7 @@ import { roleMiddleware } from '../middlewares/role.middleware.js';
 const router = Router();
 
 router.use(authMiddleware);
-router.use(roleMiddleware('DONO', 'GERENTE', 'CAIXA', 'ADMIN'));
+router.use(roleMiddleware('DONO', 'GERENTE', 'CAIXA', 'AJUDANTE_GERAL', 'GARCOM', 'ADMIN'));
 
 // Abertura e fechamento
 router.post('/abrir', abrirCaixa);
@@ -27,5 +28,8 @@ router.get('/ativo/:comercioId', obterAberturaAtiva);
 // Movimentos
 router.get('/movimentos/:comercioId', listarMovimentos);
 router.post('/movimentos', criarMovimento);
+
+// PDV — Venda
+router.post('/venda', registrarVenda);
 
 export default router;

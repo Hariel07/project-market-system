@@ -285,6 +285,11 @@
   font-weight: 600;
 }
 
+.store-card-dist {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
 .store-dot {
   opacity: 0.4;
 }

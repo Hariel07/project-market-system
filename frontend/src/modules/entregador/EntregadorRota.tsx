@@ -7,7 +7,7 @@ import EntregadorLayout from './EntregadorLayout';
 import SignaturePad from '../../shared/components/SignaturePad';
 import { ChatModal } from '../../shared/components/ChatModal';
 import { RatingModal } from '../../shared/components/RatingModal';
-import { formatPrice } from '../../data/mockData';
+import { formatPrice } from '../../lib/utils';
 import { api } from '../../lib/api';
 import { useAuthProtected, useAuthUser } from '../../lib/useAuth';
 import { Entrega } from '../../types/entrega';
