@@ -220,7 +220,7 @@ export const createEndereco = async (req: Request, res: Response) => {
  */
 export const updateEndereco = async (req: Request, res: Response) => {
   const accountId = req.user?.accountId;
-  const { id } = req.params;
+  const id = req.params.id as string;
   const { logradouro, numero, complemento, bairro, cidade, estado, pais, cep, pontoReferencia, rotulo, icone, lat, lng, isPrincipal } = req.body;
 
   try {
@@ -251,7 +251,7 @@ export const updateEndereco = async (req: Request, res: Response) => {
  */
 export const setPrincipalEndereco = async (req: Request, res: Response) => {
   const accountId = req.user?.accountId;
-  const { id } = req.params;
+  const id = req.params.id as string;
   try {
     const existing = await prisma.address.findFirst({ where: { id, accountId } });
     if (!existing) { res.status(404).json({ error: 'Endereço não encontrado.' }); return; }
@@ -269,7 +269,7 @@ export const setPrincipalEndereco = async (req: Request, res: Response) => {
  */
 export const deleteEndereco = async (req: Request, res: Response) => {
   const accountId = req.user?.accountId;
-  const { id } = req.params;
+  const id = req.params.id as string;
   try {
     const existing = await prisma.address.findFirst({ where: { id, accountId } });
     if (!existing) { res.status(404).json({ error: 'Endereço não encontrado.' }); return; }
